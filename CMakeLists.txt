@@ -24,6 +24,8 @@ message(STATUS "Building with Qt ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}")
 # Source files
 set(SOURCES
     src/main.cpp
+    src/editor/StyleManager.cpp
+    src/editor/StyleManager.h
 )
 
 # Create executable
@@ -64,3 +66,53 @@ install(DIRECTORY styles/
 install(DIRECTORY resources/
     DESTINATION share/qtvanity/resources
 )
+
+
+# Testing configuration
+option(BUILD_TESTING "Build tests" ON)
+
+if(BUILD_TESTING)
+    enable_testing()
+    
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test REQUIRED)
+    
+    # Create a library target for testable code
+    add_library(qtvanity_lib STATIC
+        src/editor/StyleManager.cpp
+        src/editor/StyleManager.h
+    )
+    
+    target_link_libraries(qtvanity_lib PUBLIC
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Gui
+    )
+    
+    target_include_directories(qtvanity_lib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gallery
+    )
+    
+    # Test executable
+    add_executable(qtvanity_tests
+        tests/test_main.cpp
+        tests/test_stylemanager.cpp
+        tests/test_stylemanager.h
+    )
+    
+    target_link_libraries(qtvanity_tests PRIVATE
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        qtvanity_lib
+    )
+    
+    target_include_directories(qtvanity_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    
+    # Register tests with CTest
+    add_test(NAME qtvanity_tests COMMAND qtvanity_tests)
+endif()
