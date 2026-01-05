@@ -30,6 +30,18 @@ set(SOURCES
     src/editor/QssSyntaxHighlighter.h
     src/editor/QssEditor.cpp
     src/editor/QssEditor.h
+    src/gallery/GalleryPage.cpp
+    src/gallery/GalleryPage.h
+    src/gallery/ButtonsPage.cpp
+    src/gallery/ButtonsPage.h
+    src/gallery/InputsPage.cpp
+    src/gallery/InputsPage.h
+    src/gallery/ViewsPage.cpp
+    src/gallery/ViewsPage.h
+    src/gallery/ContainersPage.cpp
+    src/gallery/ContainersPage.h
+    src/gallery/DialogsPage.cpp
+    src/gallery/DialogsPage.h
 )
 
 # Create executable
@@ -88,6 +100,18 @@ if(BUILD_TESTING)
         src/editor/QssSyntaxHighlighter.h
         src/editor/QssEditor.cpp
         src/editor/QssEditor.h
+        src/gallery/GalleryPage.cpp
+        src/gallery/GalleryPage.h
+        src/gallery/ButtonsPage.cpp
+        src/gallery/ButtonsPage.h
+        src/gallery/InputsPage.cpp
+        src/gallery/InputsPage.h
+        src/gallery/ViewsPage.cpp
+        src/gallery/ViewsPage.h
+        src/gallery/ContainersPage.cpp
+        src/gallery/ContainersPage.h
+        src/gallery/DialogsPage.cpp
+        src/gallery/DialogsPage.h
     )
     
     target_link_libraries(qtvanity_lib PUBLIC
