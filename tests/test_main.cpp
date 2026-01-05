@@ -4,6 +4,7 @@
 // Include all test classes
 #include "test_stylemanager.h"
 #include "test_qsssyntaxhighlighter.h"
+#include "test_qsseditor.h"
 
 int main(int argc, char *argv[])
 {
@@ -20,6 +21,12 @@ int main(int argc, char *argv[])
     // Run QssSyntaxHighlighter tests
     {
         TestQssSyntaxHighlighter test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run QssEditor tests
+    {
+        TestQssEditor test;
         status |= QTest::qExec(&test, argc, argv);
     }
     

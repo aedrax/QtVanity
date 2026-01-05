@@ -28,6 +28,8 @@ set(SOURCES
     src/editor/StyleManager.h
     src/editor/QssSyntaxHighlighter.cpp
     src/editor/QssSyntaxHighlighter.h
+    src/editor/QssEditor.cpp
+    src/editor/QssEditor.h
 )
 
 # Create executable
@@ -84,6 +86,8 @@ if(BUILD_TESTING)
         src/editor/StyleManager.h
         src/editor/QssSyntaxHighlighter.cpp
         src/editor/QssSyntaxHighlighter.h
+        src/editor/QssEditor.cpp
+        src/editor/QssEditor.h
     )
     
     target_link_libraries(qtvanity_lib PUBLIC
@@ -105,6 +109,8 @@ if(BUILD_TESTING)
         tests/test_stylemanager.h
         tests/test_qsssyntaxhighlighter.cpp
         tests/test_qsssyntaxhighlighter.h
+        tests/test_qsseditor.cpp
+        tests/test_qsseditor.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE
