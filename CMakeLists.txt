@@ -42,6 +42,8 @@ set(SOURCES
     src/gallery/ContainersPage.h
     src/gallery/DialogsPage.cpp
     src/gallery/DialogsPage.h
+    src/gallery/WidgetGallery.cpp
+    src/gallery/WidgetGallery.h
 )
 
 # Create executable
@@ -112,6 +114,8 @@ if(BUILD_TESTING)
         src/gallery/ContainersPage.h
         src/gallery/DialogsPage.cpp
         src/gallery/DialogsPage.h
+        src/gallery/WidgetGallery.cpp
+        src/gallery/WidgetGallery.h
     )
     
     target_link_libraries(qtvanity_lib PUBLIC
@@ -135,6 +139,8 @@ if(BUILD_TESTING)
         tests/test_qsssyntaxhighlighter.h
         tests/test_qsseditor.cpp
         tests/test_qsseditor.h
+        tests/test_widgetgallery.cpp
+        tests/test_widgetgallery.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE
