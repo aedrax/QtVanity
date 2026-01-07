@@ -70,22 +70,116 @@ target_include_directories(QtVanity PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gallery
 )
 
-# Install targets
+# =============================================================================
+# Deployment Script Integration
+# =============================================================================
+
+# Qt 6 deployment using qt_generate_deploy_app_script
+if(QT_VERSION_MAJOR EQUAL 6)
+    # Generate deployment script for Qt 6
+    # This handles platform-specific deployment (windeployqt, macdeployqt, etc.)
+    qt_generate_deploy_app_script(
+        TARGET QtVanity
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    
+    # Install the deployment script to be executed during installation
+    install(SCRIPT ${deploy_script})
+    
+    message(STATUS "Qt 6 deployment script configured")
+else()
+    # Qt 5 fallback - manual deployment handling
+    # For Qt 5, deployment must be handled manually or via platform-specific tools
+    message(STATUS "Qt 5 detected - manual deployment required")
+    message(STATUS "  Windows: Use windeployqt manually after build")
+    message(STATUS "  macOS: Use macdeployqt manually after build")
+    message(STATUS "  Linux: Make sure Qt libraries are available in system or use linuxdeployqt")
+    
+    # Create a helper script for Qt 5 deployment (optional convenience)
+    if(WIN32)
+        # Windows Qt 5 deployment helper
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/deploy_qt5_windows.cmake.in"
+            "${CMAKE_CURRENT_BINARY_DIR}/deploy_qt5_windows.cmake"
+            @ONLY
+        )
+    elseif(APPLE)
+        # macOS Qt 5 deployment helper
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/deploy_qt5_macos.cmake.in"
+            "${CMAKE_CURRENT_BINARY_DIR}/deploy_qt5_macos.cmake"
+            @ONLY
+        )
+    endif()
+endif()
+
+# =============================================================================
+# Install Targets
+# =============================================================================
+
+# Platform-specific install destinations
+if(WIN32)
+    set(QTVANITY_INSTALL_BINDIR ".")
+    set(QTVANITY_INSTALL_DATADIR ".")
+elseif(APPLE)
+    set(QTVANITY_INSTALL_BINDIR ".")
+    set(QTVANITY_INSTALL_DATADIR "QtVanity.app/Contents/Resources")
+else()
+    # Linux/Unix
+    include(GNUInstallDirs)
+    set(QTVANITY_INSTALL_BINDIR "${CMAKE_INSTALL_BINDIR}")
+    set(QTVANITY_INSTALL_DATADIR "${CMAKE_INSTALL_DATADIR}/qtvanity")
+endif()
+
+# Install executable
 install(TARGETS QtVanity
     BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    RUNTIME DESTINATION ${QTVANITY_INSTALL_BINDIR}
 )
 
 # Install style templates
 install(DIRECTORY styles/
-    DESTINATION share/qtvanity/styles
+    DESTINATION ${QTVANITY_INSTALL_DATADIR}/styles
     FILES_MATCHING PATTERN "*.qss"
 )
 
 # Install resources
 install(DIRECTORY resources/
-    DESTINATION share/qtvanity/resources
+    DESTINATION ${QTVANITY_INSTALL_DATADIR}/resources
+    PATTERN ".gitkeep" EXCLUDE
 )
+
+# =============================================================================
+# macOS Bundle Configuration
+# =============================================================================
+
+if(APPLE)
+    set_target_properties(QtVanity PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.qtvanity.QtVanity"
+        MACOSX_BUNDLE_BUNDLE_NAME "QtVanity"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/Info.plist.in"
+    )
+    
+    # Copy styles into the bundle
+    install(DIRECTORY styles/
+        DESTINATION QtVanity.app/Contents/Resources/styles
+        FILES_MATCHING PATTERN "*.qss"
+    )
+endif()
+
+# =============================================================================
+# Windows Configuration
+# =============================================================================
+
+if(WIN32)
+    set_target_properties(QtVanity PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif()
 
 
 # Testing configuration
