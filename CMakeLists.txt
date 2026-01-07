@@ -182,6 +182,225 @@ if(WIN32)
 endif()
 
 
+# =============================================================================
+# CPack Configuration for Linux Packaging
+# =============================================================================
+
+include(InstallRequiredSystemLibraries)
+
+# Common package metadata
+set(CPACK_PACKAGE_NAME "QtVanity")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "QSS Editor and Widget Gallery for Qt")
+set(CPACK_PACKAGE_DESCRIPTION "QtVanity is a QSS (Qt Style Sheets) editor and widget demonstration tool for Qt developers and designers. It provides a comprehensive gallery of Qt widgets in various states alongside a live QSS editor for real-time style development and testing.")
+set(CPACK_PACKAGE_VENDOR "QtVanity Project")
+set(CPACK_PACKAGE_CONTACT "paulsorensen5@gmail.com")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/aedrax/qtvanity")
+
+# License and documentation
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+
+# Package file name format
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+# Linux-specific CPack configuration
+if(UNIX AND NOT APPLE)
+    # Set generators for Linux: DEB and TGZ
+    set(CPACK_GENERATOR "DEB;TGZ")
+    
+    # -----------------------------------------------------------------------------
+    # DEB Package Configuration (Debian/Ubuntu)
+    # -----------------------------------------------------------------------------
+    set(CPACK_DEBIAN_PACKAGE_NAME "qtvanity")
+    set(CPACK_DEBIAN_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "QtVanity Maintainer <paulsorensen5@gmail.com>")
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    
+    # Architecture detection
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686|i386")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "armv7")
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "armhf")
+    else()
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    
+    # Dependencies based on Qt version
+    if(QT_VERSION_MAJOR EQUAL 6)
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6 (>= 6.0.0), libqt6gui6 (>= 6.0.0), libqt6core6 (>= 6.0.0)")
+    else()
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5widgets5 (>= 5.15.0), libqt5gui5 (>= 5.15.0), libqt5core5a (>= 5.15.0)")
+    endif()
+    
+    # Enable automatic dependency detection (shlibdeps)
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    
+    # DEB-specific file name
+    set(CPACK_DEBIAN_FILE_NAME "qtvanity_${PROJECT_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}.deb")
+    
+    # -----------------------------------------------------------------------------
+    # TGZ Archive Configuration
+    # -----------------------------------------------------------------------------
+    set(CPACK_ARCHIVE_COMPONENT_INSTALL OFF)
+    # TGZ uses the default CPACK_PACKAGE_FILE_NAME
+    
+    # -----------------------------------------------------------------------------
+    # Install desktop file and icon for Linux
+    # -----------------------------------------------------------------------------
+    
+    # Create desktop file
+    set(DESKTOP_FILE_CONTENT "[Desktop Entry]
+Name=QtVanity
+Comment=QSS Editor and Widget Gallery for Qt
+Exec=qtvanity
+Icon=qtvanity
+Terminal=false
+Type=Application
+Categories=Development;Qt;
+Keywords=Qt;QSS;StyleSheet;CSS;Editor;
+")
+    file(WRITE "${CMAKE_BINARY_DIR}/qtvanity.desktop" "${DESKTOP_FILE_CONTENT}")
+    
+    # Install desktop file
+    install(FILES "${CMAKE_BINARY_DIR}/qtvanity.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+    )
+    
+    # Install icons at multiple sizes for proper desktop integration
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+        # Find ImageMagick for icon scaling
+        find_program(CONVERT_EXECUTABLE convert
+            HINTS ENV PATH
+            DOC "ImageMagick convert for scaling icons"
+        )
+        
+        if(CONVERT_EXECUTABLE)
+            # Standard icon sizes for freedesktop.org hicolor theme
+            set(ICON_SIZES 16 32 48 64 128 256 512)
+            
+            foreach(SIZE ${ICON_SIZES})
+                set(ICON_OUTPUT_DIR "${CMAKE_BINARY_DIR}/icons/${SIZE}x${SIZE}")
+                set(ICON_OUTPUT_FILE "${ICON_OUTPUT_DIR}/qtvanity.png")
+                
+                # Create scaled icon at configure time
+                file(MAKE_DIRECTORY "${ICON_OUTPUT_DIR}")
+                execute_process(
+                    COMMAND ${CONVERT_EXECUTABLE} 
+                        "${CMAKE_SOURCE_DIR}/resources/qtvanity.png"
+                        -resize ${SIZE}x${SIZE}
+                        "${ICON_OUTPUT_FILE}"
+                    RESULT_VARIABLE CONVERT_RESULT
+                )
+                
+                if(CONVERT_RESULT EQUAL 0)
+                    install(FILES "${ICON_OUTPUT_FILE}"
+                        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${SIZE}x${SIZE}/apps"
+                    )
+                endif()
+            endforeach()
+            
+            message(STATUS "Icon scaling configured using ImageMagick")
+        else()
+            # Fallback: install original high-res icon
+            message(STATUS "ImageMagick not found - installing original icon only")
+            install(FILES "${CMAKE_SOURCE_DIR}/resources/qtvanity.png"
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps"
+            )
+        endif()
+        
+        # Also install to pixmaps as fallback for older systems
+        install(FILES "${CMAKE_SOURCE_DIR}/resources/qtvanity.png"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/pixmaps"
+        )
+    endif()
+    
+endif()
+
+# Include CPack module (must be after all CPACK_* variables are set)
+include(CPack)
+
+# =============================================================================
+# AppImage Build Target (Linux only)
+# =============================================================================
+
+if(UNIX AND NOT APPLE)
+    # Find linuxdeploy for AppImage creation
+    find_program(LINUXDEPLOY_EXECUTABLE 
+        NAMES linuxdeploy linuxdeploy-x86_64.AppImage
+        HINTS ENV PATH
+        DOC "linuxdeploy executable for creating AppImages"
+    )
+    
+    find_program(LINUXDEPLOY_QT_PLUGIN
+        NAMES linuxdeploy-plugin-qt linuxdeploy-plugin-qt-x86_64.AppImage
+        HINTS ENV PATH
+        DOC "linuxdeploy Qt plugin for bundling Qt dependencies"
+    )
+    
+    if(LINUXDEPLOY_EXECUTABLE)
+        # Create AppDir structure
+        set(APPDIR "${CMAKE_BINARY_DIR}/AppDir")
+        
+        # Create AppImage target
+        add_custom_target(appimage
+            COMMENT "Creating AppImage package..."
+            
+            # Clean previous AppDir
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${APPDIR}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${APPDIR}"
+            
+            # Install to AppDir
+            COMMAND ${CMAKE_COMMAND} -E env DESTDIR="${APPDIR}"
+                ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}" --prefix /usr
+            
+            # Run linuxdeploy with Qt plugin
+            COMMAND ${CMAKE_COMMAND} -E env 
+                QMAKE=$<IF:$<BOOL:${QT_QMAKE_EXECUTABLE}>,${QT_QMAKE_EXECUTABLE},qmake>
+                ${LINUXDEPLOY_EXECUTABLE}
+                --appdir "${APPDIR}"
+                --executable "${APPDIR}/usr/bin/QtVanity"
+                --desktop-file "${APPDIR}/usr/share/applications/qtvanity.desktop"
+                $<$<BOOL:${LINUXDEPLOY_QT_PLUGIN}>:--plugin qt>
+                --output appimage
+            
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            DEPENDS QtVanity
+            VERBATIM
+        )
+        
+        message(STATUS "AppImage target configured (use 'make appimage' or 'cmake --build . --target appimage')")
+        message(STATUS "  linuxdeploy found: ${LINUXDEPLOY_EXECUTABLE}")
+        if(LINUXDEPLOY_QT_PLUGIN)
+            message(STATUS "  Qt plugin found: ${LINUXDEPLOY_QT_PLUGIN}")
+        else()
+            message(STATUS "  Qt plugin not found - Qt libraries may need manual handling")
+        endif()
+    else()
+        message(STATUS "linuxdeploy not found - AppImage target will not be available")
+        message(STATUS "  To enable AppImage creation, install linuxdeploy:")
+        message(STATUS "    wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage")
+        message(STATUS "    chmod +x linuxdeploy-x86_64.AppImage")
+        message(STATUS "  Also install the Qt plugin:")
+        message(STATUS "    wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage")
+        message(STATUS "    chmod +x linuxdeploy-plugin-qt-x86_64.AppImage")
+    endif()
+endif()
+
+# =============================================================================
+# Testing Configuration
+# =============================================================================
+
 # Testing configuration
 option(BUILD_TESTING "Build tests" ON)
 
