@@ -6,6 +6,7 @@
 #include "test_qsssyntaxhighlighter.h"
 #include "test_qsseditor.h"
 #include "test_widgetgallery.h"
+#include "test_mainwindow.h"
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +35,12 @@ int main(int argc, char *argv[])
     // Run WidgetGallery tests
     {
         TestWidgetGallery test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run MainWindow tests
+    {
+        TestMainWindow test;
         status |= QTest::qExec(&test, argc, argv);
     }
     

@@ -24,6 +24,8 @@ message(STATUS "Building with Qt ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}")
 # Source files
 set(SOURCES
     src/main.cpp
+    src/MainWindow.cpp
+    src/MainWindow.h
     src/editor/StyleManager.cpp
     src/editor/StyleManager.h
     src/editor/QssSyntaxHighlighter.cpp
@@ -96,6 +98,8 @@ if(BUILD_TESTING)
     
     # Create a library target for testable code
     add_library(qtvanity_lib STATIC
+        src/MainWindow.cpp
+        src/MainWindow.h
         src/editor/StyleManager.cpp
         src/editor/StyleManager.h
         src/editor/QssSyntaxHighlighter.cpp
@@ -141,6 +145,8 @@ if(BUILD_TESTING)
         tests/test_qsseditor.h
         tests/test_widgetgallery.cpp
         tests/test_widgetgallery.h
+        tests/test_mainwindow.cpp
+        tests/test_mainwindow.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE
