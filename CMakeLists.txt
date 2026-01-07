@@ -327,6 +327,161 @@ Keywords=Qt;QSS;StyleSheet;CSS;Editor;
     
 endif()
 
+# =============================================================================
+# CPack Configuration for Windows Packaging
+# =============================================================================
+
+if(WIN32)
+    # Set generators for Windows: NSIS, WIX, IFW, ZIP
+    set(CPACK_GENERATOR "NSIS;WIX;IFW;ZIP")
+    
+    # -----------------------------------------------------------------------------
+    # NSIS Installer Configuration
+    # -----------------------------------------------------------------------------
+    
+    # Display name shown in installer and Add/Remove Programs
+    set(CPACK_NSIS_DISPLAY_NAME "QtVanity ${PROJECT_VERSION}")
+    set(CPACK_NSIS_PACKAGE_NAME "QtVanity")
+    
+    # Publisher information
+    set(CPACK_NSIS_PUBLISHER "QtVanity Project")
+    set(CPACK_NSIS_HELP_LINK "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    set(CPACK_NSIS_URL_INFO_ABOUT "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    set(CPACK_NSIS_CONTACT "${CPACK_PACKAGE_CONTACT}")
+    
+    # Install/Uninstall registry keys
+    set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "QtVanity.exe")
+    set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
+    
+    # Start menu shortcuts
+    set(CPACK_NSIS_CREATE_ICONS_EXTRA
+        "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\QtVanity.lnk' '$INSTDIR\\\\QtVanity.exe'"
+    )
+    set(CPACK_NSIS_DELETE_ICONS_EXTRA
+        "Delete '$SMPROGRAMS\\\\$START_MENU\\\\QtVanity.lnk'"
+    )
+    
+    # Enable component-based installation
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    
+    # Modify PATH option (optional - disabled by default)
+    set(CPACK_NSIS_MODIFY_PATH OFF)
+    
+    # Request admin privileges for installation
+    set(CPACK_NSIS_DEFINES "RequestExecutionLevel admin")
+    
+    # MUI (Modern UI) settings
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+        set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+        set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+    endif()
+    
+    # Branding text
+    set(CPACK_NSIS_BRANDING_TEXT "QtVanity - QSS Editor and Widget Gallery")
+    
+    # -----------------------------------------------------------------------------
+    # WiX MSI Installer Configuration
+    # -----------------------------------------------------------------------------
+    
+    # Unique upgrade GUID - IMPORTANT: Generate once and keep constant for upgrades
+    # Generated using: uuidgen or https://www.uuidgenerator.net/
+    set(CPACK_WIX_UPGRADE_GUID "A1B2C3D4-E5F6-7890-ABCD-EF1234567890")
+    
+    # Product GUID (auto-generated per version is fine)
+    # set(CPACK_WIX_PRODUCT_GUID "...")  # Let WiX auto-generate
+    
+    # MSI package settings
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+        set(CPACK_WIX_PRODUCT_ICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+    endif()
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/wix_banner.bmp")
+        set(CPACK_WIX_UI_BANNER "${CMAKE_SOURCE_DIR}/resources/wix_banner.bmp")
+    endif()
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/wix_dialog.bmp")
+        set(CPACK_WIX_UI_DIALOG "${CMAKE_SOURCE_DIR}/resources/wix_dialog.bmp")
+    endif()
+    
+    # License file for WiX
+    set(CPACK_WIX_LICENSE_RTF "${CMAKE_SOURCE_DIR}/LICENSE")
+    
+    # Program menu folder
+    set(CPACK_WIX_PROGRAM_MENU_FOLDER "QtVanity")
+    
+    # Property settings
+    set(CPACK_WIX_PROPERTY_ARPHELPLINK "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    set(CPACK_WIX_PROPERTY_ARPCONTACT "${CPACK_PACKAGE_CONTACT}")
+    
+    # Culture/language
+    set(CPACK_WIX_CULTURES "en-US")
+    
+    # Install scope (per-machine installation)
+    set(CPACK_WIX_INSTALL_SCOPE "perMachine")
+    
+    # -----------------------------------------------------------------------------
+    # Qt Installer Framework (IFW) Configuration
+    # -----------------------------------------------------------------------------
+    
+    # IFW root directory (set via environment or CMake variable)
+    if(DEFINED ENV{QTIFWDIR})
+        set(CPACK_IFW_ROOT "$ENV{QTIFWDIR}")
+    elseif(DEFINED QTIFWDIR)
+        set(CPACK_IFW_ROOT "${QTIFWDIR}")
+    endif()
+    
+    # Package metadata for IFW
+    set(CPACK_IFW_PACKAGE_TITLE "QtVanity Installer")
+    set(CPACK_IFW_PACKAGE_PUBLISHER "QtVanity Project")
+    set(CPACK_IFW_PACKAGE_NAME "com.qtvanity.qtvanity")
+    set(CPACK_IFW_PACKAGE_START_MENU_DIRECTORY "QtVanity")
+    
+    # Target directory
+    set(CPACK_IFW_TARGET_DIRECTORY "@ApplicationsDir@/QtVanity")
+    
+    # Installer window settings
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+        set(CPACK_IFW_PACKAGE_WINDOW_ICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.ico")
+    endif()
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+        set(CPACK_IFW_PACKAGE_LOGO "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+    endif()
+    
+    # Maintenance tool settings
+    set(CPACK_IFW_PACKAGE_MAINTENANCE_TOOL_NAME "QtVanityMaintenanceTool")
+    set(CPACK_IFW_PACKAGE_MAINTENANCE_TOOL_INI_FILE "")
+    
+    # Allow non-ASCII characters in paths
+    set(CPACK_IFW_PACKAGE_ALLOW_NON_ASCII_CHARACTERS ON)
+    
+    # Create desktop shortcut
+    set(CPACK_IFW_PACKAGE_RUN_PROGRAM "@TargetDir@/QtVanity.exe")
+    set(CPACK_IFW_PACKAGE_RUN_PROGRAM_DESCRIPTION "Launch QtVanity")
+    
+    # -----------------------------------------------------------------------------
+    # ZIP Archive Configuration
+    # -----------------------------------------------------------------------------
+    
+    # ZIP is included in CPACK_GENERATOR above
+    # Uses default CPACK_PACKAGE_FILE_NAME for archive name
+    # No additional configuration needed for basic ZIP archive
+    
+    # Archive-specific settings (applies to ZIP and other archive formats)
+    set(CPACK_ARCHIVE_COMPONENT_INSTALL OFF)
+    
+    # -----------------------------------------------------------------------------
+    # Windows-specific install configuration
+    # -----------------------------------------------------------------------------
+    
+    # Install Visual C++ runtime (if using MSVC)
+    if(MSVC)
+        set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP FALSE)
+        include(InstallRequiredSystemLibraries)
+    endif()
+    
+endif()
+
 # Include CPack module (must be after all CPACK_* variables are set)
 include(CPack)
 
