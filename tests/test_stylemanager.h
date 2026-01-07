@@ -21,6 +21,10 @@ private slots:
     // Property-based tests
     void testRoundTripProperty();
     void testRoundTripProperty_data();
+    
+    // Property 10: Template Loading Content
+    void testTemplateLoadingProperty();
+    void testTemplateLoadingProperty_data();
 };
 
 #endif // TEST_STYLEMANAGER_H
