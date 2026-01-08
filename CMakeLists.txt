@@ -164,6 +164,19 @@ if(APPLE)
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/resources/Info.plist.in"
     )
     
+    # Set the icon file for the bundle
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.icns")
+        set_target_properties(QtVanity PROPERTIES
+            MACOSX_BUNDLE_ICON_FILE "qtvanity.icns"
+        )
+        
+        # Copy icon into the bundle's Resources directory
+        set_source_files_properties("${CMAKE_SOURCE_DIR}/resources/qtvanity.icns" PROPERTIES
+            MACOSX_PACKAGE_LOCATION "Resources"
+        )
+        target_sources(QtVanity PRIVATE "${CMAKE_SOURCE_DIR}/resources/qtvanity.icns")
+    endif()
+    
     # Copy styles into the bundle
     install(DIRECTORY styles/
         DESTINATION QtVanity.app/Contents/Resources/styles
@@ -479,6 +492,136 @@ if(WIN32)
         set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP FALSE)
         include(InstallRequiredSystemLibraries)
     endif()
+    
+endif()
+
+# =============================================================================
+# CPack Configuration for macOS Packaging
+# =============================================================================
+
+if(APPLE)
+    # Set generators for macOS: DragNDrop (DMG), productbuild, IFW
+    set(CPACK_GENERATOR "DragNDrop;productbuild;IFW")
+    
+    # -----------------------------------------------------------------------------
+    # DragNDrop (DMG) Configuration
+    # -----------------------------------------------------------------------------
+    
+    # Volume name displayed when DMG is mounted
+    set(CPACK_DMG_VOLUME_NAME "QtVanity ${PROJECT_VERSION}")
+    
+    # DMG format (UDBZ = bzip2 compressed, good balance of size and compatibility)
+    set(CPACK_DMG_FORMAT "UDBZ")
+    
+    # DMG appearance configuration
+    # Background image for DMG window (optional)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/dmg_background.png")
+        set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/resources/dmg_background.png")
+    endif()
+    
+    # DMG window size and icon positions
+    set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/dmg_setup.scpt")
+    
+    # Create symbolic link to /Applications in DMG for easy drag-and-drop installation
+    set(CPACK_DMG_SLA_USE_RESOURCE_FILE_LICENSE ON)
+    
+    # Disable SLA (Software License Agreement) prompt - use if you want silent install
+    # set(CPACK_DMG_SLA_DIR "${CMAKE_SOURCE_DIR}/resources/sla")
+    
+    # -----------------------------------------------------------------------------
+    # productbuild Configuration (macOS App Store / MDM deployment)
+    # -----------------------------------------------------------------------------
+    
+    # Package identifier (reverse DNS notation)
+    set(CPACK_PRODUCTBUILD_IDENTIFIER "com.qtvanity.QtVanity")
+    
+    # Package version
+    set(CPACK_PRODUCTBUILD_PACKAGE_VERSION "${PROJECT_VERSION}")
+    
+    # Installation destination
+    set(CPACK_PRODUCTBUILD_DESTINATION "/Applications")
+    
+    # Code signing configuration (optional - set via environment or CMake variable)
+    # For App Store distribution, signing is required
+    if(DEFINED ENV{APPLE_DEVELOPER_ID})
+        set(CPACK_PRODUCTBUILD_IDENTITY "$ENV{APPLE_DEVELOPER_ID}")
+        message(STATUS "macOS code signing enabled with identity: $ENV{APPLE_DEVELOPER_ID}")
+    elseif(DEFINED APPLE_DEVELOPER_ID)
+        set(CPACK_PRODUCTBUILD_IDENTITY "${APPLE_DEVELOPER_ID}")
+        message(STATUS "macOS code signing enabled with identity: ${APPLE_DEVELOPER_ID}")
+    else()
+        message(STATUS "macOS code signing not configured - set APPLE_DEVELOPER_ID to enable")
+    endif()
+    
+    # Keychain for signing (optional)
+    if(DEFINED ENV{APPLE_KEYCHAIN})
+        set(CPACK_PRODUCTBUILD_KEYCHAIN "$ENV{APPLE_KEYCHAIN}")
+    elseif(DEFINED APPLE_KEYCHAIN)
+        set(CPACK_PRODUCTBUILD_KEYCHAIN "${APPLE_KEYCHAIN}")
+    endif()
+    
+    # Resources for productbuild (welcome, readme, license screens)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/pkg_welcome.txt")
+        set(CPACK_PRODUCTBUILD_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources/pkg")
+    endif()
+    
+    # -----------------------------------------------------------------------------
+    # Qt Installer Framework (IFW) Configuration for macOS
+    # -----------------------------------------------------------------------------
+    
+    # IFW root directory (set via environment or CMake variable)
+    if(DEFINED ENV{QTIFWDIR})
+        set(CPACK_IFW_ROOT "$ENV{QTIFWDIR}")
+    elseif(DEFINED QTIFWDIR)
+        set(CPACK_IFW_ROOT "${QTIFWDIR}")
+    endif()
+    
+    # Package metadata for IFW
+    set(CPACK_IFW_PACKAGE_TITLE "QtVanity Installer")
+    set(CPACK_IFW_PACKAGE_PUBLISHER "QtVanity Project")
+    set(CPACK_IFW_PACKAGE_NAME "com.qtvanity.qtvanity")
+    
+    # Target directory (macOS standard Applications folder)
+    set(CPACK_IFW_TARGET_DIRECTORY "@ApplicationsDir@/QtVanity")
+    
+    # Installer window settings
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.icns")
+        set(CPACK_IFW_PACKAGE_WINDOW_ICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.icns")
+    elseif(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+        set(CPACK_IFW_PACKAGE_WINDOW_ICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+    endif()
+    
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+        set(CPACK_IFW_PACKAGE_LOGO "${CMAKE_SOURCE_DIR}/resources/qtvanity.png")
+    endif()
+    
+    # Maintenance tool settings
+    set(CPACK_IFW_PACKAGE_MAINTENANCE_TOOL_NAME "QtVanityMaintenanceTool")
+    
+    # Allow non-ASCII characters in paths
+    set(CPACK_IFW_PACKAGE_ALLOW_NON_ASCII_CHARACTERS ON)
+    
+    # Run program after installation
+    set(CPACK_IFW_PACKAGE_RUN_PROGRAM "@TargetDir@/QtVanity.app/Contents/MacOS/QtVanity")
+    set(CPACK_IFW_PACKAGE_RUN_PROGRAM_DESCRIPTION "Launch QtVanity")
+    
+    # -----------------------------------------------------------------------------
+    # macOS-specific bundle configuration
+    # -----------------------------------------------------------------------------
+    
+    # Bundle name
+    set(CPACK_BUNDLE_NAME "QtVanity")
+    
+    # Bundle plist file
+    set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/resources/Info.plist.in")
+    
+    # Bundle icon (macOS uses .icns format)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qtvanity.icns")
+        set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/resources/qtvanity.icns")
+    endif()
+    
+    # Startup command (path to executable inside bundle)
+    set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_BINARY_DIR}/QtVanity.app/Contents/MacOS/QtVanity")
     
 endif()
 
