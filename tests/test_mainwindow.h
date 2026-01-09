@@ -20,6 +20,11 @@ private slots:
     void testFileMenuActions();
     void testEditMenuActions();
     void testHelpMenuActions();
+    
+    // Style toggle integration tests
+    void testToggleStyleActionExistsInEditMenu();
+    void testToggleStyleKeyboardShortcut();
+    void testToggleActionTriggersModeChange();
 };
 
 #endif // TEST_MAINWINDOW_H

@@ -14,9 +14,11 @@ QssEditor::QssEditor(QWidget *parent)
     , m_textEdit(nullptr)
     , m_highlighter(nullptr)
     , m_applyButton(nullptr)
+    , m_toggleButton(nullptr)
     , m_autoApplyCheckbox(nullptr)
     , m_autoApplyTimer(nullptr)
     , m_hasUnsavedChanges(false)
+    , m_customStyleActive(true)
     , m_autoApplyDelay(DEFAULT_AUTO_APPLY_DELAY_MS)
     , m_isApplying(false)
 {
@@ -66,9 +68,14 @@ void QssEditor::setupUi()
         tr("Automatically apply styles after a brief delay when text changes"));
     m_autoApplyCheckbox->setChecked(false);
 
+    // Create Toggle button for switching between Custom and Default styles
+    m_toggleButton = new QPushButton(tr("Custom"), this);
+    m_toggleButton->setToolTip(tr("Toggle between custom QSS and default Qt style (Ctrl+T)"));
+
     // Add widgets to button layout
     buttonLayout->addWidget(m_applyButton);
     buttonLayout->addWidget(m_autoApplyCheckbox);
+    buttonLayout->addWidget(m_toggleButton);
     buttonLayout->addStretch();
 
     // Add widgets to main layout
@@ -97,6 +104,10 @@ void QssEditor::setupConnections()
     // Connect auto-apply timer
     connect(m_autoApplyTimer, &QTimer::timeout,
             this, &QssEditor::onAutoApplyTimeout);
+
+    // Connect Toggle button
+    connect(m_toggleButton, &QPushButton::clicked,
+            this, &QssEditor::toggleStyleMode);
 }
 
 QString QssEditor::styleSheet() const
@@ -154,8 +165,54 @@ QTextEdit* QssEditor::textEdit() const
     return m_textEdit;
 }
 
+bool QssEditor::isCustomStyleActive() const
+{
+    return m_customStyleActive;
+}
+
+void QssEditor::setCustomStyleActive(bool customActive)
+{
+    if (m_customStyleActive == customActive) {
+        return;
+    }
+    
+    m_customStyleActive = customActive;
+    
+    // Update toggle button text
+    if (m_toggleButton) {
+        m_toggleButton->setText(m_customStyleActive ? tr("Custom") : tr("Default"));
+    }
+    
+    emit styleModeChanged(m_customStyleActive);
+    
+    if (m_customStyleActive) {
+        // Switching to custom mode - apply the editor content
+        emit applyRequested(m_textEdit->toPlainText());
+    } else {
+        // Switching to default mode - request default style
+        emit defaultStyleRequested();
+    }
+}
+
+void QssEditor::toggleStyleMode()
+{
+    setCustomStyleActive(!m_customStyleActive);
+}
+
 void QssEditor::apply()
 {
+    // If in Default mode, switch to Custom mode first
+    if (!m_customStyleActive) {
+        m_customStyleActive = true;
+        
+        // Update toggle button text
+        if (m_toggleButton) {
+            m_toggleButton->setText(tr("Custom"));
+        }
+        
+        emit styleModeChanged(true);
+    }
+    
     // Store cursor position before applying
     int cursorPosition = m_textEdit->textCursor().position();
     

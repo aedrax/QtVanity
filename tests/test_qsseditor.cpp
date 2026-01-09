@@ -347,3 +347,266 @@ void TestQssEditor::testAutoApplyTiming()
              qPrintable(QString("Auto-apply triggered too early: %1ms < %2ms")
                        .arg(elapsed).arg(delayMs)));
 }
+
+
+// ============================================================================
+// Style Toggle Property-Based Tests
+// ============================================================================
+
+/**
+ * Feature: style-toggle, Property 3: Editor Content Preservation
+ * 
+ * For any editor content, toggling to Default mode should not modify the text
+ * content in the editor. The editor text before and after toggling to Default
+ * mode should be identical.
+ */
+void TestQssEditor::testEditorContentPreservation_data()
+{
+    QTest::addColumn<QString>("qssContent");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    QStringList selectors = {
+        "QPushButton", "QLabel", "QLineEdit", "QComboBox", 
+        "QCheckBox", "QRadioButton", "QSlider", "QSpinBox",
+        "QWidget", "QMainWindow", "QDialog", "QFrame"
+    };
+    
+    QStringList properties = {
+        "color", "background-color", "border", "padding", "margin",
+        "font-size", "font-weight", "border-radius"
+    };
+    
+    QStringList values = {
+        "red", "blue", "#ffffff", "#000000", "10px", "1px solid black",
+        "5px", "bold", "transparent", "none"
+    };
+    
+    // Generate 100 random test cases
+    for (int i = 0; i < 100; ++i) {
+        QString qss;
+        
+        // Generate 1-4 rules
+        int numRules = 1 + (rng->generate() % 4);
+        for (int r = 0; r < numRules; ++r) {
+            QString selector = selectors[rng->generate() % selectors.size()];
+            qss += selector + " {\n";
+            
+            int numProps = 1 + (rng->generate() % 4);
+            for (int p = 0; p < numProps; ++p) {
+                QString prop = properties[rng->generate() % properties.size()];
+                QString val = values[rng->generate() % values.size()];
+                qss += "    " + prop + ": " + val + ";\n";
+            }
+            qss += "}\n";
+        }
+        
+        QTest::newRow(qPrintable(QString("content_preserve_%1").arg(i))) << qss;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_content") << QString("");
+    QTest::newRow("whitespace_only") << QString("   \n\t  ");
+    QTest::newRow("comment_only") << QString("/* This is a comment */");
+    QTest::newRow("special_chars") << QString("/* Special: äöü €@# */");
+    QTest::newRow("multiline") << QString("QPushButton {\n    color: red;\n}\n\nQLabel {\n    color: blue;\n}");
+}
+
+void TestQssEditor::testEditorContentPreservation()
+{
+    // Feature: style-toggle, Property 3: Editor Content Preservation
+    
+    QFETCH(QString, qssContent);
+    
+    QssEditor editor;
+    
+    // Set initial content and make sure we're in Custom mode
+    editor.setStyleSheet(qssContent);
+    QVERIFY(editor.isCustomStyleActive());
+    
+    // Store content before toggle
+    QString contentBeforeToggle = editor.styleSheet();
+    
+    // Toggle to Default mode
+    editor.setCustomStyleActive(false);
+    QVERIFY(!editor.isCustomStyleActive());
+    
+    // Verify content is preserved
+    QString contentAfterToggle = editor.styleSheet();
+    QCOMPARE(contentAfterToggle, contentBeforeToggle);
+    
+    // Toggle back to Custom mode
+    editor.setCustomStyleActive(true);
+    QVERIFY(editor.isCustomStyleActive());
+    
+    // Verify content is still preserved
+    QString contentAfterSecondToggle = editor.styleSheet();
+    QCOMPARE(contentAfterSecondToggle, contentBeforeToggle);
+}
+
+/**
+ * Feature: style-toggle, Property 4: Mode Persistence During Edit
+ * 
+ * For any text edit operation performed while in Default mode, the style mode
+ * should remain Default (the mode should not automatically switch to Custom).
+ */
+void TestQssEditor::testModePersistenceDuringEdit_data()
+{
+    QTest::addColumn<QString>("initialContent");
+    QTest::addColumn<QString>("newContent");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    QStringList selectors = {
+        "QPushButton", "QLabel", "QLineEdit", "QComboBox"
+    };
+    
+    QStringList properties = {
+        "color", "background-color", "border", "padding"
+    };
+    
+    QStringList values = {
+        "red", "blue", "green", "#ffffff", "10px"
+    };
+    
+    // Generate 100 random test cases
+    for (int i = 0; i < 100; ++i) {
+        // Generate initial content
+        QString initial;
+        QString selector = selectors[rng->generate() % selectors.size()];
+        QString prop = properties[rng->generate() % properties.size()];
+        QString val = values[rng->generate() % values.size()];
+        initial = selector + " { " + prop + ": " + val + "; }";
+        
+        // Generate new content (different from initial)
+        QString newContent;
+        QString selector2 = selectors[rng->generate() % selectors.size()];
+        QString prop2 = properties[rng->generate() % properties.size()];
+        QString val2 = values[rng->generate() % values.size()];
+        newContent = selector2 + " { " + prop2 + ": " + val2 + "; } /* edited */";
+        
+        QTest::newRow(qPrintable(QString("mode_persist_%1").arg(i))) 
+            << initial << newContent;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_to_content") << QString("") << QString("/* new content */");
+    QTest::newRow("content_to_empty") << QString("/* old */") << QString("");
+    QTest::newRow("append_text") << QString("a") << QString("ab");
+    QTest::newRow("delete_text") << QString("abc") << QString("a");
+}
+
+void TestQssEditor::testModePersistenceDuringEdit()
+{
+    // Feature: style-toggle, Property 4: Mode Persistence During Edit
+    
+    QFETCH(QString, initialContent);
+    QFETCH(QString, newContent);
+    
+    QssEditor editor;
+    
+    // Set initial content
+    editor.setStyleSheet(initialContent);
+    
+    // Switch to Default mode
+    editor.setCustomStyleActive(false);
+    QVERIFY2(!editor.isCustomStyleActive(), "Should be in Default mode");
+    
+    // Edit the content while in Default mode
+    editor.textEdit()->setPlainText(newContent);
+    
+    // Verify mode is still Default (not automatically switched to Custom)
+    QVERIFY2(!editor.isCustomStyleActive(), 
+             "Mode should remain Default after editing content");
+    
+    // Verify the content was actually changed
+    QCOMPARE(editor.styleSheet(), newContent);
+}
+
+/**
+ * Feature: style-toggle, Property 5: Apply Switches to Custom Mode
+ * 
+ * For any Apply action triggered while in Default mode, the style mode should
+ * switch to Custom mode and the editor content should be applied as the stylesheet.
+ */
+void TestQssEditor::testApplySwitchesToCustomMode_data()
+{
+    QTest::addColumn<QString>("qssContent");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    QStringList selectors = {
+        "QPushButton", "QLabel", "QLineEdit", "QComboBox",
+        "QCheckBox", "QRadioButton", "QSlider", "QSpinBox"
+    };
+    
+    QStringList properties = {
+        "color", "background-color", "border", "padding", "margin"
+    };
+    
+    QStringList values = {
+        "red", "blue", "#ffffff", "10px", "1px solid black"
+    };
+    
+    // Generate 100 random test cases
+    for (int i = 0; i < 100; ++i) {
+        QString qss;
+        
+        // Generate 1-3 rules
+        int numRules = 1 + (rng->generate() % 3);
+        for (int r = 0; r < numRules; ++r) {
+            QString selector = selectors[rng->generate() % selectors.size()];
+            qss += selector + " {\n";
+            
+            int numProps = 1 + (rng->generate() % 3);
+            for (int p = 0; p < numProps; ++p) {
+                QString prop = properties[rng->generate() % properties.size()];
+                QString val = values[rng->generate() % values.size()];
+                qss += "    " + prop + ": " + val + ";\n";
+            }
+            qss += "}\n";
+        }
+        
+        QTest::newRow(qPrintable(QString("apply_switch_%1").arg(i))) << qss;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_content") << QString("");
+    QTest::newRow("simple_rule") << QString("* { color: red; }");
+    QTest::newRow("complex_rule") << QString("QPushButton:hover { background: blue; border: 1px solid red; }");
+}
+
+void TestQssEditor::testApplySwitchesToCustomMode()
+{
+    // Feature: style-toggle, Property 5: Apply Switches to Custom Mode
+    
+    QFETCH(QString, qssContent);
+    
+    QssEditor editor;
+    
+    // Set content
+    editor.setStyleSheet(qssContent);
+    
+    // Switch to Default mode
+    editor.setCustomStyleActive(false);
+    QVERIFY2(!editor.isCustomStyleActive(), "Should be in Default mode");
+    
+    // Set up signal spies
+    QSignalSpy modeSpy(&editor, &QssEditor::styleModeChanged);
+    QSignalSpy applySpy(&editor, &QssEditor::applyRequested);
+    
+    // Call apply() while in Default mode
+    editor.apply();
+    
+    // Verify mode switched to Custom
+    QVERIFY2(editor.isCustomStyleActive(), 
+             "Mode should switch to Custom after apply()");
+    
+    // Verify styleModeChanged signal was emitted with true
+    QCOMPARE(modeSpy.count(), 1);
+    QCOMPARE(modeSpy.at(0).at(0).toBool(), true);
+    
+    // Verify applyRequested signal was emitted with the content
+    QCOMPARE(applySpy.count(), 1);
+    QCOMPARE(applySpy.at(0).at(0).toString(), qssContent);
+}

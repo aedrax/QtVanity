@@ -66,6 +66,17 @@ public:
     QString currentStyleSheet() const;
 
     /**
+     * @brief Clears the application stylesheet (applies default Qt styling).
+     */
+    void clearStyleSheet();
+
+    /**
+     * @brief Returns whether a custom stylesheet is currently applied.
+     * @return true if a non-empty stylesheet is applied.
+     */
+    bool hasCustomStyleSheet() const;
+
+    /**
      * @brief Sets the templates directory path.
      * @param path The path to the templates directory.
      */
@@ -82,6 +93,11 @@ signals:
      * @brief Emitted when a stylesheet is successfully applied.
      */
     void styleApplied();
+
+    /**
+     * @brief Emitted when the stylesheet is cleared.
+     */
+    void styleCleared();
 
     /**
      * @brief Emitted when a file load error occurs.

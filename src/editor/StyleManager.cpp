@@ -130,6 +130,18 @@ QString StyleManager::currentStyleSheet() const
     return m_currentStyleSheet;
 }
 
+void StyleManager::clearStyleSheet()
+{
+    m_currentStyleSheet = QString();
+    qApp->setStyleSheet(QString());
+    emit styleCleared();
+}
+
+bool StyleManager::hasCustomStyleSheet() const
+{
+    return !m_currentStyleSheet.isEmpty();
+}
+
 void StyleManager::setTemplatesPath(const QString &path)
 {
     m_templatesPath = path;

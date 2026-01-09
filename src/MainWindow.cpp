@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_saveAction(nullptr)
     , m_exitAction(nullptr)
     , m_applyAction(nullptr)
+    , m_toggleStyleAction(nullptr)
     , m_aboutAction(nullptr)
     , m_aboutQtAction(nullptr)
 {
@@ -123,6 +124,13 @@ void MainWindow::setupEditMenu()
     m_applyAction->setStatusTip(tr("Apply the current stylesheet to the application"));
     connect(m_applyAction, &QAction::triggered, this, &MainWindow::onApplyStyle);
     m_editMenu->addAction(m_applyAction);
+
+    // Toggle Style Mode action
+    m_toggleStyleAction = new QAction(tr("&Toggle Style Mode"), this);
+    m_toggleStyleAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
+    m_toggleStyleAction->setStatusTip(tr("Toggle between custom QSS and default Qt styling (Ctrl+T)"));
+    connect(m_toggleStyleAction, &QAction::triggered, this, &MainWindow::onToggleStyle);
+    m_editMenu->addAction(m_toggleStyleAction);
 }
 
 void MainWindow::setupHelpMenu()
@@ -172,9 +180,19 @@ void MainWindow::setupConnections()
     connect(m_editor, &QssEditor::applyRequested,
             m_styleManager, &StyleManager::applyStyleSheet);
 
+    // Connect editor default style request to style manager
+    connect(m_editor, &QssEditor::defaultStyleRequested,
+            m_styleManager, &StyleManager::clearStyleSheet);
+
+    // Connect editor style mode changed to update status bar
+    connect(m_editor, &QssEditor::styleModeChanged,
+            this, &MainWindow::onStyleModeChanged);
+
     // Connect style manager signals
     connect(m_styleManager, &StyleManager::styleApplied,
             this, &MainWindow::onStyleApplied);
+    connect(m_styleManager, &StyleManager::styleCleared,
+            this, &MainWindow::onStyleCleared);
     connect(m_styleManager, &StyleManager::loadError,
             this, &MainWindow::onLoadError);
     connect(m_styleManager, &StyleManager::saveError,
@@ -296,6 +314,11 @@ void MainWindow::onApplyStyle()
     m_editor->apply();
 }
 
+void MainWindow::onToggleStyle()
+{
+    m_editor->toggleStyleMode();
+}
+
 void MainWindow::onLoadTemplate(const QString &templateName)
 {
     // Check for unsaved changes first
@@ -319,6 +342,21 @@ void MainWindow::onStyleApplied()
     // Style was successfully applied
     // Could show status bar message here
     statusBar()->showMessage(tr("Style applied"), 2000);
+}
+
+void MainWindow::onStyleCleared()
+{
+    // Default style was applied
+    statusBar()->showMessage(tr("Default Qt style applied"), 2000);
+}
+
+void MainWindow::onStyleModeChanged(bool customActive)
+{
+    if (customActive) {
+        statusBar()->showMessage(tr("Custom style mode"), 2000);
+    } else {
+        statusBar()->showMessage(tr("Default style mode"), 2000);
+    }
 }
 
 void MainWindow::onLoadError(const QString &error)

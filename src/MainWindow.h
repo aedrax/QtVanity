@@ -73,8 +73,11 @@ private slots:
     void onLoadStyle();
     void onSaveStyle();
     void onApplyStyle();
+    void onToggleStyle();
     void onLoadTemplate(const QString &templateName);
     void onStyleApplied();
+    void onStyleCleared();
+    void onStyleModeChanged(bool customActive);
     void onLoadError(const QString &error);
     void onSaveError(const QString &error);
     void onUnsavedChangesChanged(bool hasChanges);
@@ -107,6 +110,7 @@ private:
     QAction *m_saveAction;
     QAction *m_exitAction;
     QAction *m_applyAction;
+    QAction *m_toggleStyleAction;
     QAction *m_aboutAction;
     QAction *m_aboutQtAction;
 

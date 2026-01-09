@@ -94,6 +94,23 @@ public:
      */
     QTextEdit* textEdit() const;
 
+    /**
+     * @brief Returns whether custom style mode is active.
+     * @return true if custom QSS is being applied, false if default style.
+     */
+    bool isCustomStyleActive() const;
+
+    /**
+     * @brief Sets the style mode.
+     * @param customActive true for custom QSS, false for default style.
+     */
+    void setCustomStyleActive(bool customActive);
+
+    /**
+     * @brief Toggles between custom and default style modes.
+     */
+    void toggleStyleMode();
+
 signals:
     /**
      * @brief Emitted when the user requests style application.
@@ -111,6 +128,17 @@ signals:
      * @param hasChanges true if there are unsaved changes.
      */
     void unsavedChangesChanged(bool hasChanges);
+
+    /**
+     * @brief Emitted when the style mode changes.
+     * @param customActive true if custom mode is now active.
+     */
+    void styleModeChanged(bool customActive);
+
+    /**
+     * @brief Emitted when default style should be applied.
+     */
+    void defaultStyleRequested();
 
 public slots:
     /**
@@ -133,10 +161,12 @@ private:
     QTextEdit *m_textEdit;
     QssSyntaxHighlighter *m_highlighter;
     QPushButton *m_applyButton;
+    QPushButton *m_toggleButton;
     QCheckBox *m_autoApplyCheckbox;
     QTimer *m_autoApplyTimer;
     
     bool m_hasUnsavedChanges;
+    bool m_customStyleActive;
     int m_autoApplyDelay;
     
     // For cursor position preservation

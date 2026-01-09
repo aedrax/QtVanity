@@ -1,5 +1,6 @@
 #include "test_stylemanager.h"
 #include "StyleManager.h"
+#include "QssEditor.h"
 
 #include <QTemporaryFile>
 #include <QTemporaryDir>
@@ -8,6 +9,7 @@
 #include <QRandomGenerator>
 #include <QDir>
 #include <QCoreApplication>
+#include <QSignalSpy>
 
 void TestStyleManager::initTestCase()
 {
@@ -96,6 +98,53 @@ void TestStyleManager::testAvailableTemplates()
     QVERIFY(templates.contains("dark"));
     QVERIFY(templates.contains("light"));
     QVERIFY(templates.contains("solarized"));
+}
+
+void TestStyleManager::testClearStyleSheet()
+{
+    StyleManager manager;
+    
+    // Apply a stylesheet first
+    QString testQss = "QPushButton { color: red; }";
+    manager.applyStyleSheet(testQss);
+    QCOMPARE(qApp->styleSheet(), testQss);
+    QCOMPARE(manager.currentStyleSheet(), testQss);
+    
+    // Connect to styleCleared signal to verify it's emitted
+    QSignalSpy spy(&manager, &StyleManager::styleCleared);
+    
+    // Clear the stylesheet
+    manager.clearStyleSheet();
+    
+    // Verify qApp stylesheet is empty
+    QVERIFY(qApp->styleSheet().isEmpty());
+    
+    // Verify internal state is cleared
+    QVERIFY(manager.currentStyleSheet().isEmpty());
+    
+    // Verify signal was emitted
+    QCOMPARE(spy.count(), 1);
+}
+
+void TestStyleManager::testHasCustomStyleSheet()
+{
+    StyleManager manager;
+    
+    // Initially should have no custom stylesheet
+    QVERIFY(!manager.hasCustomStyleSheet());
+    
+    // Apply a stylesheet
+    QString testQss = "QLabel { background: blue; }";
+    manager.applyStyleSheet(testQss);
+    QVERIFY(manager.hasCustomStyleSheet());
+    
+    // Clear the stylesheet
+    manager.clearStyleSheet();
+    QVERIFY(!manager.hasCustomStyleSheet());
+    
+    // Apply empty stylesheet should also result in no custom stylesheet
+    manager.applyStyleSheet(QString());
+    QVERIFY(!manager.hasCustomStyleSheet());
 }
 
 /**
@@ -289,4 +338,209 @@ void TestStyleManager::testTemplateLoadingProperty()
                  qPrintable(QString("Template '%1' has unbalanced braces: %2 open, %3 close")
                            .arg(templateName).arg(openBraces).arg(closeBraces)));
     }
+}
+
+
+// ============================================================================
+// Style Toggle Integration Property Tests
+// ============================================================================
+
+/**
+ * Feature: style-toggle, Property 1: Default Mode Empty Stylesheet
+ * 
+ * For any toggle action that switches to Default mode, the application's
+ * stylesheet (qApp->styleSheet()) should be empty immediately after the toggle.
+ */
+void TestStyleManager::testDefaultModeEmptyStylesheet_data()
+{
+    QTest::addColumn<QString>("qssContent");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    QStringList selectors = {
+        "QPushButton", "QLabel", "QLineEdit", "QComboBox", 
+        "QCheckBox", "QRadioButton", "QSlider", "QSpinBox",
+        "QWidget", "QMainWindow", "QDialog", "QFrame"
+    };
+    
+    QStringList properties = {
+        "color", "background-color", "border", "padding", "margin",
+        "font-size", "font-weight", "border-radius"
+    };
+    
+    QStringList values = {
+        "red", "blue", "#ffffff", "#000000", "10px", "1px solid black",
+        "5px", "bold", "transparent", "none"
+    };
+    
+    // Generate 100 random test cases
+    for (int i = 0; i < 100; ++i) {
+        QString qss;
+        
+        // Generate 1-4 rules
+        int numRules = 1 + (rng->generate() % 4);
+        for (int r = 0; r < numRules; ++r) {
+            QString selector = selectors[rng->generate() % selectors.size()];
+            qss += selector + " {\n";
+            
+            int numProps = 1 + (rng->generate() % 4);
+            for (int p = 0; p < numProps; ++p) {
+                QString prop = properties[rng->generate() % properties.size()];
+                QString val = values[rng->generate() % values.size()];
+                qss += "    " + prop + ": " + val + ";\n";
+            }
+            qss += "}\n";
+        }
+        
+        QTest::newRow(qPrintable(QString("default_mode_%1").arg(i))) << qss;
+    }
+    
+    // Edge cases
+    QTest::newRow("simple_rule") << QString("* { color: red; }");
+    QTest::newRow("complex_rule") << QString("QPushButton:hover { background: blue; border: 1px solid red; }");
+    QTest::newRow("multiline") << QString("QPushButton {\n    color: red;\n}\n\nQLabel {\n    color: blue;\n}");
+}
+
+void TestStyleManager::testDefaultModeEmptyStylesheet()
+{
+    // Feature: style-toggle, Property 1: Default Mode Empty Stylesheet
+    
+    QFETCH(QString, qssContent);
+    
+    QssEditor editor;
+    StyleManager manager;
+    
+    // Connect editor signals to manager
+    QObject::connect(&editor, &QssEditor::applyRequested,
+                     &manager, &StyleManager::applyStyleSheet);
+    QObject::connect(&editor, &QssEditor::defaultStyleRequested,
+                     &manager, &StyleManager::clearStyleSheet);
+    
+    // Set content and make sure we're in Custom mode
+    editor.setStyleSheet(qssContent);
+    QVERIFY(editor.isCustomStyleActive());
+    
+    // Apply the stylesheet first (to verify qApp has a stylesheet)
+    editor.apply();
+    
+    // Verify stylesheet is applied (if content is non-empty)
+    if (!qssContent.isEmpty()) {
+        QCOMPARE(qApp->styleSheet(), qssContent);
+    }
+    
+    // Toggle to Default mode
+    editor.setCustomStyleActive(false);
+    QVERIFY(!editor.isCustomStyleActive());
+    
+    // Property: qApp->styleSheet() should be empty after toggling to Default mode
+    QVERIFY2(qApp->styleSheet().isEmpty(),
+             qPrintable(QString("Expected empty stylesheet after toggling to Default mode, "
+                               "but got: '%1'").arg(qApp->styleSheet().left(50))));
+    
+    // Also verify StyleManager state
+    QVERIFY(!manager.hasCustomStyleSheet());
+}
+
+/**
+ * Feature: style-toggle, Property 2: Custom Mode Restores Stylesheet
+ * 
+ * For any editor content and any toggle sequence that ends in Custom mode,
+ * the application's stylesheet should equal the editor's content.
+ */
+void TestStyleManager::testCustomModeRestoresStylesheet_data()
+{
+    QTest::addColumn<QString>("qssContent");
+    QTest::addColumn<int>("toggleCount");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    QStringList selectors = {
+        "QPushButton", "QLabel", "QLineEdit", "QComboBox", 
+        "QCheckBox", "QRadioButton", "QSlider", "QSpinBox",
+        "QWidget", "QMainWindow", "QDialog", "QFrame"
+    };
+    
+    QStringList properties = {
+        "color", "background-color", "border", "padding", "margin",
+        "font-size", "font-weight", "border-radius"
+    };
+    
+    QStringList values = {
+        "red", "blue", "#ffffff", "#000000", "10px", "1px solid black",
+        "5px", "bold", "transparent", "none"
+    };
+    
+    // Generate 100 random test cases
+    for (int i = 0; i < 100; ++i) {
+        QString qss;
+        
+        // Generate 1-4 rules
+        int numRules = 1 + (rng->generate() % 4);
+        for (int r = 0; r < numRules; ++r) {
+            QString selector = selectors[rng->generate() % selectors.size()];
+            qss += selector + " {\n";
+            
+            int numProps = 1 + (rng->generate() % 4);
+            for (int p = 0; p < numProps; ++p) {
+                QString prop = properties[rng->generate() % properties.size()];
+                QString val = values[rng->generate() % values.size()];
+                qss += "    " + prop + ": " + val + ";\n";
+            }
+            qss += "}\n";
+        }
+        
+        // Random number of toggles (1-5), always ending in Custom mode (odd number)
+        int toggles = 1 + 2 * (rng->generate() % 3); // 1, 3, or 5
+        
+        QTest::newRow(qPrintable(QString("custom_restore_%1").arg(i))) << qss << toggles;
+    }
+    
+    // Edge cases
+    QTest::newRow("single_toggle") << QString("* { color: red; }") << 1;
+    QTest::newRow("triple_toggle") << QString("QLabel { background: blue; }") << 3;
+    QTest::newRow("five_toggles") << QString("QPushButton { border: 1px solid black; }") << 5;
+}
+
+void TestStyleManager::testCustomModeRestoresStylesheet()
+{
+    // Feature: style-toggle, Property 2: Custom Mode Restores Stylesheet
+    
+    QFETCH(QString, qssContent);
+    QFETCH(int, toggleCount);
+    
+    QssEditor editor;
+    StyleManager manager;
+    
+    // Connect editor signals to manager
+    QObject::connect(&editor, &QssEditor::applyRequested,
+                     &manager, &StyleManager::applyStyleSheet);
+    QObject::connect(&editor, &QssEditor::defaultStyleRequested,
+                     &manager, &StyleManager::clearStyleSheet);
+    
+    // Set content
+    editor.setStyleSheet(qssContent);
+    QVERIFY(editor.isCustomStyleActive());
+    
+    // Start in Default mode
+    editor.setCustomStyleActive(false);
+    QVERIFY(!editor.isCustomStyleActive());
+    QVERIFY(qApp->styleSheet().isEmpty());
+    
+    // Perform toggle sequence (toggleCount times, ending in Custom mode)
+    for (int i = 0; i < toggleCount; ++i) {
+        editor.toggleStyleMode();
+    }
+    
+    // After odd number of toggles from Default, should be in Custom mode
+    QVERIFY2(editor.isCustomStyleActive(),
+             qPrintable(QString("Expected Custom mode after %1 toggles from Default").arg(toggleCount)));
+    
+    // Property: qApp->styleSheet() should equal editor content when in Custom mode
+    QCOMPARE(qApp->styleSheet(), qssContent);
+    
+    // Also verify StyleManager state matches
+    QCOMPARE(manager.currentStyleSheet(), qssContent);
+    
+    // Verify editor content is unchanged
+    QCOMPARE(editor.styleSheet(), qssContent);
 }

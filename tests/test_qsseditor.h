@@ -28,6 +28,16 @@ private slots:
     
     void testAutoApplyTiming();
     void testAutoApplyTiming_data();
+    
+    // Style toggle property-based tests
+    void testEditorContentPreservation();
+    void testEditorContentPreservation_data();
+    
+    void testModePersistenceDuringEdit();
+    void testModePersistenceDuringEdit_data();
+    
+    void testApplySwitchesToCustomMode();
+    void testApplySwitchesToCustomMode_data();
 };
 
 #endif // TEST_QSSEDITOR_H

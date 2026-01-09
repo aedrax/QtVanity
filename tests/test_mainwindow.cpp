@@ -257,3 +257,128 @@ void TestMainWindow::testHelpMenuActions()
     QVERIFY2(hasAbout, "Help menu should have About QtVanity action");
     QVERIFY2(hasAboutQt, "Help menu should have About Qt action");
 }
+
+/**
+ * Test that Toggle Style Mode action exists in Edit menu.
+ */
+void TestMainWindow::testToggleStyleActionExistsInEditMenu()
+{
+    MainWindow mainWindow;
+    
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *editMenu = nullptr;
+    
+    // Find Edit menu
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "Edit") {
+            editMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(editMenu != nullptr, "Edit menu should exist");
+    
+    // Check for Toggle Style Mode action
+    QList<QAction*> actions = editMenu->actions();
+    
+    bool hasToggleStyle = false;
+    
+    for (QAction *action : actions) {
+        QString text = action->text().remove('&');
+        if (text.contains("Toggle Style Mode")) {
+            hasToggleStyle = true;
+        }
+    }
+    
+    QVERIFY2(hasToggleStyle, "Edit menu should have Toggle Style Mode action");
+}
+
+/**
+ * Test that Toggle Style Mode action has Ctrl+T keyboard shortcut.
+ */
+void TestMainWindow::testToggleStyleKeyboardShortcut()
+{
+    MainWindow mainWindow;
+    
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *editMenu = nullptr;
+    
+    // Find Edit menu
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "Edit") {
+            editMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(editMenu != nullptr, "Edit menu should exist");
+    
+    // Find Toggle Style Mode action and check its shortcut
+    QAction *toggleAction = nullptr;
+    for (QAction *action : editMenu->actions()) {
+        QString text = action->text().remove('&');
+        if (text.contains("Toggle Style Mode")) {
+            toggleAction = action;
+            break;
+        }
+    }
+    
+    QVERIFY2(toggleAction != nullptr, "Toggle Style Mode action should exist");
+    
+    // Verify the shortcut is Ctrl+T
+    QKeySequence expectedShortcut(Qt::CTRL | Qt::Key_T);
+    QCOMPARE(toggleAction->shortcut(), expectedShortcut);
+}
+
+/**
+ * Test that triggering toggle action changes the style mode.
+ */
+void TestMainWindow::testToggleActionTriggersModeChange()
+{
+    MainWindow mainWindow;
+    
+    QssEditor *editor = mainWindow.editor();
+    QVERIFY2(editor != nullptr, "MainWindow should have an editor");
+    
+    // Initial state should be Custom mode
+    QVERIFY2(editor->isCustomStyleActive(), "Initial mode should be Custom");
+    
+    // Find the Toggle Style Mode action
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *editMenu = nullptr;
+    
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "Edit") {
+            editMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(editMenu != nullptr, "Edit menu should exist");
+    
+    QAction *toggleAction = nullptr;
+    for (QAction *action : editMenu->actions()) {
+        QString text = action->text().remove('&');
+        if (text.contains("Toggle Style Mode")) {
+            toggleAction = action;
+            break;
+        }
+    }
+    
+    QVERIFY2(toggleAction != nullptr, "Toggle Style Mode action should exist");
+    
+    // Trigger the action
+    toggleAction->trigger();
+    
+    // Mode should now be Default
+    QVERIFY2(!editor->isCustomStyleActive(), "Mode should be Default after toggle");
+    
+    // Trigger again
+    toggleAction->trigger();
+    
+    // Mode should be back to Custom
+    QVERIFY2(editor->isCustomStyleActive(), "Mode should be Custom after second toggle");
+    
+    // Clean up - reset stylesheet
+    qApp->setStyleSheet("");
+}

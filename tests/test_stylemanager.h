@@ -17,6 +17,8 @@ private slots:
     void testLoadNonexistentFile();
     void testSaveAndLoad();
     void testAvailableTemplates();
+    void testClearStyleSheet();
+    void testHasCustomStyleSheet();
     
     // Property-based tests
     void testRoundTripProperty();
@@ -25,6 +27,15 @@ private slots:
     // Property 10: Template Loading Content
     void testTemplateLoadingProperty();
     void testTemplateLoadingProperty_data();
+    
+    // Style Toggle Integration Property Tests
+    // Property 1: Default Mode Empty Stylesheet
+    void testDefaultModeEmptyStylesheet();
+    void testDefaultModeEmptyStylesheet_data();
+    
+    // Property 2: Custom Mode Restores Stylesheet
+    void testCustomModeRestoresStylesheet();
+    void testCustomModeRestoresStylesheet_data();
 };
 
 #endif // TEST_STYLEMANAGER_H
