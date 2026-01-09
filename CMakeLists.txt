@@ -276,7 +276,7 @@ if(UNIX AND NOT APPLE)
     set(DESKTOP_FILE_CONTENT "[Desktop Entry]
 Name=QtVanity
 Comment=QSS Editor and Widget Gallery for Qt
-Exec=qtvanity
+Exec=QtVanity
 Icon=qtvanity
 Terminal=false
 Type=Application
@@ -646,11 +646,32 @@ if(UNIX AND NOT APPLE)
         DOC "linuxdeploy Qt plugin for bundling Qt dependencies"
     )
     
+    # Find qmake for linuxdeploy-plugin-qt
+    # Try Qt's provided qmake first, then fall back to system qmake
+    if(TARGET Qt${QT_VERSION_MAJOR}::qmake)
+        get_target_property(QTVANITY_QMAKE_EXECUTABLE Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+    endif()
+    if(NOT QTVANITY_QMAKE_EXECUTABLE)
+        find_program(QTVANITY_QMAKE_EXECUTABLE
+            NAMES qmake qmake-qt${QT_VERSION_MAJOR} qmake${QT_VERSION_MAJOR}
+            HINTS ${Qt${QT_VERSION_MAJOR}_DIR}/../../../bin
+            DOC "qmake executable for linuxdeploy Qt plugin"
+        )
+    endif()
+    
     if(LINUXDEPLOY_EXECUTABLE)
         # Create AppDir structure
         set(APPDIR "${CMAKE_BINARY_DIR}/AppDir")
         
-        # Create AppImage target
+        # Determine Qt plugin argument
+        if(LINUXDEPLOY_QT_PLUGIN)
+            set(LINUXDEPLOY_QT_ARG "--plugin;qt")
+        else()
+            set(LINUXDEPLOY_QT_ARG "")
+        endif()
+        
+        # Create AppImage target using a helper script approach
+        # This ensures proper sequencing and avoids path issues
         add_custom_target(appimage
             COMMENT "Creating AppImage package..."
             
@@ -658,23 +679,26 @@ if(UNIX AND NOT APPLE)
             COMMAND ${CMAKE_COMMAND} -E remove_directory "${APPDIR}"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APPDIR}"
             
-            # Install to AppDir
-            COMMAND ${CMAKE_COMMAND} -E env DESTDIR="${APPDIR}"
-                ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}" --prefix /usr
+            # Install to AppDir using DESTDIR
+            COMMAND ${CMAKE_COMMAND} -E env DESTDIR=${APPDIR}
+                ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR} --prefix /usr
             
-            # Run linuxdeploy with Qt plugin
+            # Debug: List what was installed
+            COMMAND ${CMAKE_COMMAND} -E echo "Contents of AppDir/usr/bin:"
+            COMMAND ls -la ${APPDIR}/usr/bin/ || true
+            
+            # Run linuxdeploy
             COMMAND ${CMAKE_COMMAND} -E env 
-                QMAKE=$<IF:$<BOOL:${QT_QMAKE_EXECUTABLE}>,${QT_QMAKE_EXECUTABLE},qmake>
+                QMAKE=${QTVANITY_QMAKE_EXECUTABLE}
                 ${LINUXDEPLOY_EXECUTABLE}
-                --appdir "${APPDIR}"
-                --executable "${APPDIR}/usr/bin/QtVanity"
-                --desktop-file "${APPDIR}/usr/share/applications/qtvanity.desktop"
-                $<$<BOOL:${LINUXDEPLOY_QT_PLUGIN}>:--plugin qt>
+                --appdir ${APPDIR}
+                --executable ${APPDIR}/usr/bin/QtVanity
+                --desktop-file ${APPDIR}/usr/share/applications/qtvanity.desktop
+                ${LINUXDEPLOY_QT_ARG}
                 --output appimage
             
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             DEPENDS QtVanity
-            VERBATIM
         )
         
         message(STATUS "AppImage target configured (use 'make appimage' or 'cmake --build . --target appimage')")
@@ -683,6 +707,11 @@ if(UNIX AND NOT APPLE)
             message(STATUS "  Qt plugin found: ${LINUXDEPLOY_QT_PLUGIN}")
         else()
             message(STATUS "  Qt plugin not found - Qt libraries may need manual handling")
+        endif()
+        if(QTVANITY_QMAKE_EXECUTABLE)
+            message(STATUS "  qmake found: ${QTVANITY_QMAKE_EXECUTABLE}")
+        else()
+            message(WARNING "  qmake not found - AppImage Qt plugin may fail. Set QMAKE environment variable or install qt5-qmake/qt6-base-dev-tools")
         endif()
     else()
         message(STATUS "linuxdeploy not found - AppImage target will not be available")

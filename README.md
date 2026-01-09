@@ -12,11 +12,11 @@ It serves two primary purposes:
 * **Complete Widget Zoo:** Includes specific tabs/pages for all standard widgets (Buttons, Inputs, Views, Containers, Dialogs) to make sure no UI element is left unstyled.
 * **State Simulation:** Easily toggle widgets between enabled/disabled and read-only/editable states to test pseudo-states like `:disabled` or `:hover`.
 * **Dual-Stack Support:** Native support for both **Qt 5 (5.15+)** and **Qt 6**.
-* **Syntax Highlighting:** (Planned) Basic syntax highlighting for the QSS editor.
+* **Syntax Highlighting:** Full syntax highlighting for QSS selectors, properties, pseudo-states, sub-controls, and comments.
 
 ## Prerequisites
 
-* C++20 compatible compiler (GCC, Clang, or MSVC)
+* C++17 compatible compiler (GCC, Clang, or MSVC)
 * CMake (3.16 or higher)
 * **Qt SDK**: Either Qt 5 or Qt 6 must be installed on your system.
 
@@ -54,11 +54,98 @@ To force the build to use Qt 5:
 cmake -DQT_VERSION_MAJOR=5 -DCMAKE_PREFIX_PATH="/path/to/qt5" ..
 ```
 
-3. Compile
+### 3. Compile
 
 ```bash
 cmake --build . --config Release
 ```
+
+### 4. Run Tests (Optional)
+
+```bash
+ctest --output-on-failure
+```
+
+## Creating Distribution Packages
+
+QtVanity uses CPack to generate platform-native installers and packages. After building, you can create packages using the following commands.
+
+### Linux Packages
+
+**Debian/Ubuntu (.deb):**
+```bash
+cpack -G DEB
+```
+
+**Tarball (.tar.gz):**
+```bash
+cpack -G TGZ
+```
+
+**AppImage (requires linuxdeploy):**
+
+First, install linuxdeploy and the Qt plugin somewhere in your PATH:
+```bash
+# Download to /usr/local/bin or ~/bin (must be in PATH)
+sudo wget -O /usr/local/bin/linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+sudo wget -O /usr/local/bin/linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+sudo chmod +x /usr/local/bin/linuxdeploy /usr/local/bin/linuxdeploy-plugin-qt
+```
+
+Then **re-run CMake** to detect linuxdeploy and create the appimage target:
+```bash
+cmake ..
+cmake --build . --target appimage
+```
+
+> **Note:** The `appimage` target is only available if CMake finds `linuxdeploy` during configuration. Check the CMake output for "AppImage target configured" to confirm it's available.
+
+### Windows Packages
+
+**NSIS Installer:**
+```bash
+cpack -G NSIS
+```
+
+**WiX MSI Installer:**
+```bash
+cpack -G WIX
+```
+
+**ZIP Archive (Portable):**
+```bash
+cpack -G ZIP
+```
+
+**Qt Installer Framework:**
+```bash
+cpack -G IFW
+```
+
+### macOS Packages
+
+**DMG Disk Image:**
+```bash
+cpack -G DragNDrop
+```
+
+**productbuild Package:**
+```bash
+cpack -G productbuild
+```
+
+**Qt Installer Framework:**
+```bash
+cpack -G IFW
+```
+
+### Package Output
+
+Generated packages will be placed in the build directory with names like:
+- `qtvanity_1.0.0_amd64.deb` (Linux DEB)
+- `QtVanity-1.0.0-Linux-x86_64.tar.gz` (Linux TGZ)
+- `QtVanity-1.0.0-win64.exe` (Windows NSIS)
+- `QtVanity-1.0.0.dmg` (macOS DMG)
 
 ## Project Structure
 
