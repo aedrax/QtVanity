@@ -57,18 +57,18 @@ void MainWindow::setupCentralWidget()
     // Create splitter for split-pane layout
     m_splitter = new QSplitter(Qt::Horizontal, this);
 
-    // Create widget gallery (left panel)
-    m_gallery = new WidgetGallery(m_splitter);
-
-    // Create QSS editor (right panel)
+    // Create QSS editor (left panel)
     m_editor = new QssEditor(m_splitter);
 
-    // Add widgets to splitter
-    m_splitter->addWidget(m_gallery);
-    m_splitter->addWidget(m_editor);
+    // Create widget gallery (right panel)
+    m_gallery = new WidgetGallery(m_splitter);
 
-    // Set initial splitter sizes (60% gallery, 40% editor)
-    m_splitter->setSizes({600, 400});
+    // Add widgets to splitter
+    m_splitter->addWidget(m_editor);
+    m_splitter->addWidget(m_gallery);
+
+    // Set initial splitter sizes (40% editor, 60% gallery)
+    m_splitter->setSizes({400, 600});
 
     // Set splitter as central widget
     setCentralWidget(m_splitter);
