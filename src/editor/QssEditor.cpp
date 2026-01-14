@@ -263,7 +263,10 @@ void QssEditor::onApplyClicked()
 
 void QssEditor::onAutoApplyToggled(bool checked)
 {
-    if (!checked) {
+    if (checked) {
+        // Immediately apply the current QSS when auto-apply is enabled
+        apply();
+    } else {
         // Stop any pending auto-apply
         m_autoApplyTimer->stop();
     }
