@@ -6,6 +6,12 @@
 #include "test_qsssyntaxhighlighter.h"
 #include "test_qsseditor.h"
 #include "test_widgetgallery.h"
+#include "test_displaypage.h"
+#include "test_mainwindowpage.h"
+#include "test_advancedpage.h"
+#include "test_inputspage.h"
+#include "test_containerspage.h"
+#include "test_dialogspage.h"
 #include "test_mainwindow.h"
 
 int main(int argc, char *argv[])
@@ -35,6 +41,42 @@ int main(int argc, char *argv[])
     // Run WidgetGallery tests
     {
         TestWidgetGallery test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run DisplayPage tests
+    {
+        TestDisplayPage test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run MainWindowPage tests
+    {
+        TestMainWindowPage test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run AdvancedPage tests
+    {
+        TestAdvancedPage test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run InputsPage tests
+    {
+        TestInputsPage test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run ContainersPage tests
+    {
+        TestContainersPage test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run DialogsPage tests
+    {
+        TestDialogsPage test;
         status |= QTest::qExec(&test, argc, argv);
     }
     

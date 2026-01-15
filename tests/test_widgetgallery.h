@@ -31,6 +31,10 @@ private slots:
     
     void testInputReadOnlyStateToggle_data();
     void testInputReadOnlyStateToggle();
+    
+    // Property 1: Enabled State Propagation for new pages
+    void testNewPagesEnabledStatePropagation_data();
+    void testNewPagesEnabledStatePropagation();
 };
 
 #endif // TEST_WIDGETGALLERY_H

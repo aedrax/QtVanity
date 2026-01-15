@@ -44,6 +44,12 @@ set(SOURCES
     src/gallery/ContainersPage.h
     src/gallery/DialogsPage.cpp
     src/gallery/DialogsPage.h
+    src/gallery/DisplayPage.cpp
+    src/gallery/DisplayPage.h
+    src/gallery/MainWindowPage.cpp
+    src/gallery/MainWindowPage.h
+    src/gallery/AdvancedPage.cpp
+    src/gallery/AdvancedPage.h
     src/gallery/WidgetGallery.cpp
     src/gallery/WidgetGallery.h
 )
@@ -758,6 +764,12 @@ if(BUILD_TESTING)
         src/gallery/ContainersPage.h
         src/gallery/DialogsPage.cpp
         src/gallery/DialogsPage.h
+        src/gallery/DisplayPage.cpp
+        src/gallery/DisplayPage.h
+        src/gallery/MainWindowPage.cpp
+        src/gallery/MainWindowPage.h
+        src/gallery/AdvancedPage.cpp
+        src/gallery/AdvancedPage.h
         src/gallery/WidgetGallery.cpp
         src/gallery/WidgetGallery.h
     )
@@ -785,6 +797,18 @@ if(BUILD_TESTING)
         tests/test_qsseditor.h
         tests/test_widgetgallery.cpp
         tests/test_widgetgallery.h
+        tests/test_displaypage.cpp
+        tests/test_displaypage.h
+        tests/test_mainwindowpage.cpp
+        tests/test_mainwindowpage.h
+        tests/test_advancedpage.cpp
+        tests/test_advancedpage.h
+        tests/test_inputspage.cpp
+        tests/test_inputspage.h
+        tests/test_containerspage.cpp
+        tests/test_containerspage.h
+        tests/test_dialogspage.cpp
+        tests/test_dialogspage.h
         tests/test_mainwindow.cpp
         tests/test_mainwindow.h
     )

@@ -5,6 +5,8 @@
 #include <QStackedWidget>
 #include <QScrollArea>
 #include <QFrame>
+#include <QToolBox>
+#include <QTabBar>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -39,6 +41,8 @@ void ContainersPage::setupWidgets()
     setupStackedWidget();
     setupScrollArea();
     setupFrames();
+    setupToolBox();
+    setupTabBar();
 }
 
 void ContainersPage::setupGroupBoxes()
@@ -290,4 +294,84 @@ void ContainersPage::setupFrames()
     lineRow->addWidget(hLine, 1);
     groupLayout->addLayout(lineRow);
     m_widgets.append(hLine);
+}
+
+void ContainersPage::setupToolBox()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Tool Box")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QToolBox *toolBox = new QToolBox(group);
+    
+    // Section 1: General Settings
+    QWidget *generalPage = new QWidget();
+    QVBoxLayout *generalLayout = new QVBoxLayout(generalPage);
+    generalLayout->addWidget(new QLabel(tr("General Settings"), generalPage));
+    generalLayout->addWidget(new QCheckBox(tr("Enable feature A"), generalPage));
+    generalLayout->addWidget(new QCheckBox(tr("Enable feature B"), generalPage));
+    generalLayout->addStretch();
+    toolBox->addItem(generalPage, tr("General"));
+    
+    // Section 2: Appearance
+    QWidget *appearancePage = new QWidget();
+    QVBoxLayout *appearanceLayout = new QVBoxLayout(appearancePage);
+    appearanceLayout->addWidget(new QLabel(tr("Appearance Settings"), appearancePage));
+    QHBoxLayout *themeRow = new QHBoxLayout();
+    themeRow->addWidget(new QLabel(tr("Theme:"), appearancePage));
+    QComboBox *themeCombo = new QComboBox(appearancePage);
+    themeCombo->addItems({tr("Light"), tr("Dark"), tr("System")});
+    themeRow->addWidget(themeCombo);
+    themeRow->addStretch();
+    appearanceLayout->addLayout(themeRow);
+    appearanceLayout->addStretch();
+    toolBox->addItem(appearancePage, tr("Appearance"));
+    
+    // Section 3: Advanced
+    QWidget *advancedPage = new QWidget();
+    QVBoxLayout *advancedLayout = new QVBoxLayout(advancedPage);
+    advancedLayout->addWidget(new QLabel(tr("Advanced Settings"), advancedPage));
+    advancedLayout->addWidget(new QLabel(tr("These settings are for advanced users."), advancedPage));
+    advancedLayout->addWidget(new QLineEdit(advancedPage));
+    advancedLayout->addStretch();
+    toolBox->addItem(advancedPage, tr("Advanced"));
+    
+    toolBox->setMaximumHeight(250);
+    groupLayout->addWidget(toolBox);
+    m_widgets.append(toolBox);
+}
+
+void ContainersPage::setupTabBar()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Tab Bar (Standalone)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    groupLayout->addWidget(new QLabel(tr("Standalone QTabBar for styling tabs without QTabWidget:"), group));
+    
+    // Horizontal tab bar (top position style)
+    QTabBar *topTabBar = new QTabBar(group);
+    topTabBar->addTab(tr("Home"));
+    topTabBar->addTab(tr("Documents"));
+    topTabBar->addTab(tr("Settings"));
+    topTabBar->addTab(tr("Help"));
+    topTabBar->setTabEnabled(3, false);  // Disabled tab for styling
+    groupLayout->addWidget(topTabBar);
+    m_widgets.append(topTabBar);
+    
+    // Tab bar with closable tabs
+    QTabBar *closableTabBar = new QTabBar(group);
+    closableTabBar->setTabsClosable(true);
+    closableTabBar->addTab(tr("File 1"));
+    closableTabBar->addTab(tr("File 2"));
+    closableTabBar->addTab(tr("File 3"));
+    groupLayout->addWidget(closableTabBar);
+    m_widgets.append(closableTabBar);
+    
+    // Tab bar with movable tabs
+    QTabBar *movableTabBar = new QTabBar(group);
+    movableTabBar->setMovable(true);
+    movableTabBar->addTab(tr("Drag Me"));
+    movableTabBar->addTab(tr("Reorder"));
+    movableTabBar->addTab(tr("Tabs"));
+    groupLayout->addWidget(movableTabBar);
+    m_widgets.append(movableTabBar);
 }

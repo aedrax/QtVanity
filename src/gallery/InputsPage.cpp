@@ -2,14 +2,18 @@
 
 #include <QLineEdit>
 #include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QFontComboBox>
 #include <QSlider>
+#include <QScrollBar>
 #include <QDial>
 #include <QDateEdit>
 #include <QTimeEdit>
 #include <QDateTimeEdit>
+#include <QKeySequenceEdit>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -43,6 +47,9 @@ void InputsPage::setReadOnly(bool readOnly)
     for (QTextEdit *textEdit : m_textEdits) {
         textEdit->setReadOnly(readOnly);
     }
+    for (QPlainTextEdit *plainTextEdit : m_plainTextEdits) {
+        plainTextEdit->setReadOnly(readOnly);
+    }
 }
 
 void InputsPage::setupWidgets()
@@ -52,7 +59,9 @@ void InputsPage::setupWidgets()
     setupSpinBoxes();
     setupComboBoxes();
     setupSliders();
+    setupScrollBars();
     setupDateTimeEdits();
+    setupAdvancedInputs();
 }
 
 void InputsPage::setupLineEdits()
@@ -333,4 +342,79 @@ void InputsPage::setupDateTimeEdits()
     m_widgets.append(customDateEdit);
     
     groupLayout->addLayout(form);
+}
+
+void InputsPage::setupAdvancedInputs()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Advanced Inputs")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QFormLayout *form = new QFormLayout();
+    form->setSpacing(8);
+    
+    // Font combo box
+    QFontComboBox *fontCombo = new QFontComboBox(group);
+    fontCombo->setCurrentFont(QFont("Arial"));
+    form->addRow(tr("Font:"), fontCombo);
+    m_widgets.append(fontCombo);
+    
+    // Key sequence edit
+    QKeySequenceEdit *keySeqEdit = new QKeySequenceEdit(group);
+    keySeqEdit->setKeySequence(QKeySequence(tr("Ctrl+S")));
+    form->addRow(tr("Shortcut:"), keySeqEdit);
+    m_widgets.append(keySeqEdit);
+    
+    groupLayout->addLayout(form);
+    
+    // Plain text edit
+    QHBoxLayout *textRow = new QHBoxLayout();
+    textRow->setSpacing(12);
+    
+    QVBoxLayout *plainTextCol = new QVBoxLayout();
+    QLabel *plainTextLabel = new QLabel(tr("Plain Text Edit:"), group);
+    QPlainTextEdit *plainTextEdit = new QPlainTextEdit(group);
+    plainTextEdit->setPlainText(tr("This is a plain text edit.\nIt's simpler than QTextEdit."));
+    plainTextEdit->setMaximumHeight(100);
+    plainTextCol->addWidget(plainTextLabel);
+    plainTextCol->addWidget(plainTextEdit);
+    textRow->addLayout(plainTextCol);
+    m_widgets.append(plainTextEdit);
+    m_plainTextEdits.append(plainTextEdit);
+    
+    groupLayout->addLayout(textRow);
+}
+
+void InputsPage::setupScrollBars()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Scroll Bars")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    // Horizontal scroll bar
+    QVBoxLayout *hScrollCol = new QVBoxLayout();
+    QLabel *hScrollLabel = new QLabel(tr("Horizontal:"), group);
+    QScrollBar *hScrollBar = new QScrollBar(Qt::Horizontal, group);
+    hScrollBar->setRange(0, 100);
+    hScrollBar->setValue(50);
+    hScrollCol->addWidget(hScrollLabel);
+    hScrollCol->addWidget(hScrollBar);
+    groupLayout->addLayout(hScrollCol);
+    m_widgets.append(hScrollBar);
+    
+    // Vertical scroll bar row
+    QHBoxLayout *vScrollRow = new QHBoxLayout();
+    vScrollRow->setSpacing(24);
+    
+    QVBoxLayout *vScrollCol = new QVBoxLayout();
+    QLabel *vScrollLabel = new QLabel(tr("Vertical:"), group);
+    QScrollBar *vScrollBar = new QScrollBar(Qt::Vertical, group);
+    vScrollBar->setRange(0, 100);
+    vScrollBar->setValue(30);
+    vScrollBar->setFixedHeight(100);
+    vScrollCol->addWidget(vScrollLabel);
+    vScrollCol->addWidget(vScrollBar, 0, Qt::AlignHCenter);
+    vScrollRow->addLayout(vScrollCol);
+    m_widgets.append(vScrollBar);
+    
+    vScrollRow->addStretch();
+    groupLayout->addLayout(vScrollRow);
 }

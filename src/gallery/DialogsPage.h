@@ -14,6 +14,8 @@ class QWidget;
  * - Buttons to trigger QMessageBox variants
  * - Buttons to trigger QFileDialog, QColorDialog, QFontDialog
  * - QProgressBar (determinate, indeterminate)
+ * - Button to trigger QWizard dialog
+ * - Buttons to trigger QInputDialog variants (text, integer, item selection)
  */
 class DialogsPage : public GalleryPage
 {
@@ -42,6 +44,8 @@ private:
     void setupMessageBoxes();
     void setupDialogs();
     void setupProgressBars();
+    void setupWizard();
+    void setupInputDialogs();
 
     QList<QWidget*> m_widgets;
 };

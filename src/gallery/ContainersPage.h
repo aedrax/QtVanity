@@ -16,6 +16,8 @@ class QWidget;
  * - QStackedWidget with navigation
  * - QScrollArea with content
  * - QFrame with various frame styles
+ * - QToolBox with collapsible sections
+ * - QTabBar standalone for tab styling
  */
 class ContainersPage : public GalleryPage
 {
@@ -46,6 +48,8 @@ private:
     void setupStackedWidget();
     void setupScrollArea();
     void setupFrames();
+    void setupToolBox();
+    void setupTabBar();
 
     QList<QWidget*> m_widgets;
 };

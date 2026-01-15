@@ -4,6 +4,7 @@
 #include <QToolButton>
 #include <QRadioButton>
 #include <QCheckBox>
+#include <QCommandLinkButton>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -35,6 +36,7 @@ void ButtonsPage::setupWidgets()
     setupToolButtons();
     setupRadioButtons();
     setupCheckBoxes();
+    setupCommandLinkButtons();
 }
 
 void ButtonsPage::setupPushButtons()
@@ -276,4 +278,30 @@ void ButtonsPage::setupCheckBoxes()
     
     row2->addStretch();
     groupLayout->addLayout(row2);
+}
+
+void ButtonsPage::setupCommandLinkButtons()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Command Link Buttons")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    // Normal command link button
+    QCommandLinkButton *cmdLink1 = new QCommandLinkButton(tr("Open Settings"), group);
+    cmdLink1->setDescription(tr("Configure application preferences and options"));
+    groupLayout->addWidget(cmdLink1);
+    m_buttons.append(cmdLink1);
+    
+    // Command link button with icon
+    QCommandLinkButton *cmdLink2 = new QCommandLinkButton(tr("Browse Files"), group);
+    cmdLink2->setDescription(tr("Open file browser to select documents"));
+    cmdLink2->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+    groupLayout->addWidget(cmdLink2);
+    m_buttons.append(cmdLink2);
+    
+    // Checkable command link button
+    QCommandLinkButton *cmdLink3 = new QCommandLinkButton(tr("Enable Feature"), group);
+    cmdLink3->setDescription(tr("Toggle this feature on or off"));
+    cmdLink3->setCheckable(true);
+    groupLayout->addWidget(cmdLink3);
+    m_buttons.append(cmdLink3);
 }

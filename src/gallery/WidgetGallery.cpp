@@ -5,6 +5,9 @@
 #include "ViewsPage.h"
 #include "ContainersPage.h"
 #include "DialogsPage.h"
+#include "DisplayPage.h"
+#include "MainWindowPage.h"
+#include "AdvancedPage.h"
 
 #include <QTabWidget>
 #include <QCheckBox>
@@ -25,6 +28,9 @@ WidgetGallery::WidgetGallery(QWidget *parent)
     , m_viewsPage(nullptr)
     , m_containersPage(nullptr)
     , m_dialogsPage(nullptr)
+    , m_displayPage(nullptr)
+    , m_mainWindowPage(nullptr)
+    , m_advancedPage(nullptr)
 {
     setupUi();
 }
@@ -60,6 +66,9 @@ void WidgetGallery::setupPages()
     m_viewsPage = new ViewsPage(m_tabWidget);
     m_containersPage = new ContainersPage(m_tabWidget);
     m_dialogsPage = new DialogsPage(m_tabWidget);
+    m_displayPage = new DisplayPage(m_tabWidget);
+    m_mainWindowPage = new MainWindowPage(m_tabWidget);
+    m_advancedPage = new AdvancedPage(m_tabWidget);
 
     // Add pages as tabs
     m_tabWidget->addTab(m_buttonsPage, tr("Buttons"));
@@ -67,6 +76,9 @@ void WidgetGallery::setupPages()
     m_tabWidget->addTab(m_viewsPage, tr("Views"));
     m_tabWidget->addTab(m_containersPage, tr("Containers"));
     m_tabWidget->addTab(m_dialogsPage, tr("Dialogs"));
+    m_tabWidget->addTab(m_displayPage, tr("Display"));
+    m_tabWidget->addTab(m_mainWindowPage, tr("Main Window"));
+    m_tabWidget->addTab(m_advancedPage, tr("Advanced"));
 }
 
 void WidgetGallery::setupToggleControls()
@@ -116,6 +128,15 @@ void WidgetGallery::setWidgetsEnabled(bool enabled)
     }
     if (m_dialogsPage) {
         m_dialogsPage->setWidgetsEnabled(enabled);
+    }
+    if (m_displayPage) {
+        m_displayPage->setWidgetsEnabled(enabled);
+    }
+    if (m_mainWindowPage) {
+        m_mainWindowPage->setWidgetsEnabled(enabled);
+    }
+    if (m_advancedPage) {
+        m_advancedPage->setWidgetsEnabled(enabled);
     }
 
     // Update checkbox state if called programmatically

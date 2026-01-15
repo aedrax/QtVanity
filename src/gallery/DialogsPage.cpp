@@ -11,6 +11,10 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QTimer>
+#include <QWizard>
+#include <QWizardPage>
+#include <QInputDialog>
+#include <QLineEdit>
 
 DialogsPage::DialogsPage(QWidget *parent)
     : GalleryPage(parent)
@@ -34,6 +38,8 @@ void DialogsPage::setupWidgets()
 {
     setupMessageBoxes();
     setupDialogs();
+    setupWizard();
+    setupInputDialogs();
     setupProgressBars();
 }
 
@@ -267,4 +273,123 @@ void DialogsPage::setupProgressBars()
     
     ctrlRow->addStretch();
     groupLayout->addLayout(ctrlRow);
+}
+
+void DialogsPage::setupWizard()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Wizard Dialog")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QLabel *infoLabel = new QLabel(
+        tr("Click button below to show a sample wizard dialog:"), group);
+    groupLayout->addWidget(infoLabel);
+    
+    QHBoxLayout *row = new QHBoxLayout();
+    row->setSpacing(8);
+    
+    QPushButton *wizardBtn = new QPushButton(tr("Launch Wizard..."), group);
+    wizardBtn->setObjectName("wizardButton");
+    connect(wizardBtn, &QPushButton::clicked, [this]() {
+        QWizard wizard(this);
+        wizard.setWindowTitle(tr("Sample Wizard"));
+        wizard.setWizardStyle(QWizard::ModernStyle);
+        
+        // Page 1: Introduction
+        QWizardPage *introPage = new QWizardPage(&wizard);
+        introPage->setTitle(tr("Introduction"));
+        introPage->setSubTitle(tr("This wizard demonstrates QWizard styling."));
+        QVBoxLayout *introLayout = new QVBoxLayout(introPage);
+        introLayout->addWidget(new QLabel(tr("Welcome to the sample wizard.\n\n"
+            "This wizard is for demonstrating QSS styling of wizard dialogs.\n"
+            "Click Next to continue."), introPage));
+        wizard.addPage(introPage);
+        
+        // Page 2: Options
+        QWizardPage *optionsPage = new QWizardPage(&wizard);
+        optionsPage->setTitle(tr("Options"));
+        optionsPage->setSubTitle(tr("Configure your preferences."));
+        QVBoxLayout *optionsLayout = new QVBoxLayout(optionsPage);
+        optionsLayout->addWidget(new QLabel(tr("This page would contain configuration options.\n\n"
+            "In a real wizard, you would have form fields here."), optionsPage));
+        wizard.addPage(optionsPage);
+        
+        // Page 3: Conclusion
+        QWizardPage *conclusionPage = new QWizardPage(&wizard);
+        conclusionPage->setTitle(tr("Conclusion"));
+        conclusionPage->setSubTitle(tr("Setup is complete."));
+        QVBoxLayout *conclusionLayout = new QVBoxLayout(conclusionPage);
+        conclusionLayout->addWidget(new QLabel(tr("The wizard is now complete.\n\n"
+            "Click Finish to close the wizard."), conclusionPage));
+        wizard.addPage(conclusionPage);
+        
+        wizard.exec();
+    });
+    row->addWidget(wizardBtn);
+    m_widgets.append(wizardBtn);
+    
+    row->addStretch();
+    groupLayout->addLayout(row);
+}
+
+void DialogsPage::setupInputDialogs()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Input Dialogs")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QLabel *infoLabel = new QLabel(
+        tr("Click buttons below to show different input dialog types:"), group);
+    groupLayout->addWidget(infoLabel);
+    
+    QHBoxLayout *row = new QHBoxLayout();
+    row->setSpacing(8);
+    
+    // Text input dialog
+    QPushButton *textBtn = new QPushButton(tr("Text Input..."), group);
+    textBtn->setObjectName("textInputButton");
+    connect(textBtn, &QPushButton::clicked, [this]() {
+        bool ok;
+        QInputDialog::getText(this, tr("Text Input"),
+            tr("Enter your name:"), QLineEdit::Normal,
+            tr("John Doe"), &ok);
+    });
+    row->addWidget(textBtn);
+    m_widgets.append(textBtn);
+    
+    // Integer input dialog
+    QPushButton *intBtn = new QPushButton(tr("Integer Input..."), group);
+    intBtn->setObjectName("intInputButton");
+    connect(intBtn, &QPushButton::clicked, [this]() {
+        bool ok;
+        QInputDialog::getInt(this, tr("Integer Input"),
+            tr("Enter a number:"), 50, 0, 100, 1, &ok);
+    });
+    row->addWidget(intBtn);
+    m_widgets.append(intBtn);
+    
+    // Double input dialog
+    QPushButton *doubleBtn = new QPushButton(tr("Double Input..."), group);
+    doubleBtn->setObjectName("doubleInputButton");
+    connect(doubleBtn, &QPushButton::clicked, [this]() {
+        bool ok;
+        QInputDialog::getDouble(this, tr("Double Input"),
+            tr("Enter a decimal value:"), 3.14, 0.0, 100.0, 2, &ok);
+    });
+    row->addWidget(doubleBtn);
+    m_widgets.append(doubleBtn);
+    
+    // Item selection dialog
+    QPushButton *itemBtn = new QPushButton(tr("Item Selection..."), group);
+    itemBtn->setObjectName("itemSelectionButton");
+    connect(itemBtn, &QPushButton::clicked, [this]() {
+        QStringList items;
+        items << tr("Option A") << tr("Option B") << tr("Option C") << tr("Option D");
+        bool ok;
+        QInputDialog::getItem(this, tr("Item Selection"),
+            tr("Select an option:"), items, 0, false, &ok);
+    });
+    row->addWidget(itemBtn);
+    m_widgets.append(itemBtn);
+    
+    row->addStretch();
+    groupLayout->addLayout(row);
 }

@@ -8,6 +8,7 @@
 class QWidget;
 class QLineEdit;
 class QTextEdit;
+class QPlainTextEdit;
 
 /**
  * @brief Gallery page displaying input widgets.
@@ -15,11 +16,15 @@ class QTextEdit;
  * InputsPage demonstrates all standard Qt input widgets in various states:
  * - QLineEdit (normal, password, read-only)
  * - QTextEdit (normal, read-only)
+ * - QPlainTextEdit (normal, read-only)
  * - QSpinBox, QDoubleSpinBox
  * - QComboBox (editable, non-editable)
+ * - QFontComboBox
  * - QSlider (horizontal, vertical)
+ * - QScrollBar (horizontal, vertical)
  * - QDial
  * - QDateEdit, QTimeEdit, QDateTimeEdit
+ * - QKeySequenceEdit
  */
 class InputsPage : public GalleryPage
 {
@@ -57,10 +62,13 @@ private:
     void setupComboBoxes();
     void setupSliders();
     void setupDateTimeEdits();
+    void setupAdvancedInputs();
+    void setupScrollBars();
 
     QList<QWidget*> m_widgets;
     QList<QLineEdit*> m_lineEdits;
     QList<QTextEdit*> m_textEdits;
+    QList<QPlainTextEdit*> m_plainTextEdits;
 };
 
 #endif // INPUTSPAGE_H

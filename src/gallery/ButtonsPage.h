@@ -44,6 +44,7 @@ private:
     void setupToolButtons();
     void setupRadioButtons();
     void setupCheckBoxes();
+    void setupCommandLinkButtons();
 
     QList<QAbstractButton*> m_buttons;
 };

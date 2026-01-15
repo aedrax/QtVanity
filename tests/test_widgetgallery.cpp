@@ -5,6 +5,9 @@
 #include "ViewsPage.h"
 #include "ContainersPage.h"
 #include "DialogsPage.h"
+#include "DisplayPage.h"
+#include "MainWindowPage.h"
+#include "AdvancedPage.h"
 
 #include <QSignalSpy>
 #include <QRandomGenerator>
@@ -41,7 +44,7 @@ void TestWidgetGallery::testInitialState()
     // Gallery should be created with all pages
     QTabWidget *tabWidget = gallery.findChild<QTabWidget*>();
     QVERIFY(tabWidget != nullptr);
-    QCOMPARE(tabWidget->count(), 5); // Buttons, Inputs, Views, Containers, Dialogs
+    QCOMPARE(tabWidget->count(), 8); // Buttons, Inputs, Views, Containers, Dialogs, Display, Main Window, Advanced
 }
 
 void TestWidgetGallery::testSetWidgetsEnabled()
@@ -387,4 +390,161 @@ void TestWidgetGallery::testInputReadOnlyStateToggle()
                            .arg(readOnlyState ? "true" : "false")
                            .arg(textEdit->isReadOnly() ? "true" : "false")));
     }
+}
+
+
+/**
+ * Property 1: Enabled State Propagation
+ * 
+ * For any widget on any new gallery page (DisplayPage, MainWindowPage, AdvancedPage),
+ * when the enabled toggle is changed, that widget's enabled state should match the toggle state.
+ */
+void TestWidgetGallery::testNewPagesEnabledStatePropagation_data()
+{
+    QTest::addColumn<bool>("enabledState");
+    QTest::addColumn<int>("iteration");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100 random test cases for property-based testing
+    for (int i = 0; i < 100; ++i) {
+        bool enabled = rng->generate() % 2 == 0;
+        QTest::newRow(qPrintable(QString("new_pages_enabled_%1_%2")
+                                .arg(i).arg(enabled ? "true" : "false"))) 
+            << enabled << i;
+    }
+    
+    // Edge cases - explicit true/false
+    QTest::newRow("new_pages_explicit_enabled") << true << -1;
+    QTest::newRow("new_pages_explicit_disabled") << false << -2;
+}
+
+void TestWidgetGallery::testNewPagesEnabledStatePropagation()
+{
+    // Feature: widget-gallery-completion, Property 1: Enabled State Propagation
+    
+    QFETCH(bool, enabledState);
+    QFETCH(int, iteration);
+    Q_UNUSED(iteration);
+    
+    WidgetGallery gallery;
+    
+    // Apply the enabled state
+    gallery.setWidgetsEnabled(enabledState);
+    
+    // Helper lambda to check if widget is an internal Qt widget
+    auto isInternalQtWidget = [](QWidget *widget) {
+        QString name = widget->objectName();
+        
+        // Skip widgets with Qt internal object names
+        if (name == "ScrollLeftButton" || name == "ScrollRightButton" ||
+            name == "qt_tabwidget_stackedwidget" || name == "qt_tabwidget_tabbar" ||
+            name.startsWith("qt_")) {
+            return true;
+        }
+        
+        // Check parent hierarchy for QTabBar (scroll buttons are children of QTabBar)
+        QWidget *parent = widget->parentWidget();
+        while (parent) {
+            if (parent->inherits("QTabBar")) {
+                return true;
+            }
+            // Skip scroll bars that are internal to scroll areas, views, or other containers
+            if (widget->inherits("QScrollBar")) {
+                if (parent->inherits("QScrollArea") || parent->inherits("QAbstractScrollArea") ||
+                    parent->inherits("QAbstractItemView") || parent->inherits("QMdiArea") ||
+                    parent->inherits("QGraphicsView") || parent->inherits("QTextEdit") ||
+                    parent->inherits("QPlainTextEdit")) {
+                    return true;
+                }
+            }
+            parent = parent->parentWidget();
+        }
+        
+        // Check if this is a QToolButton that's a direct child of QTabBar
+        if (widget->inherits("QToolButton")) {
+            QWidget *directParent = widget->parentWidget();
+            if (directParent && directParent->inherits("QTabBar")) {
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    // Find the new pages
+    DisplayPage *displayPage = gallery.findChild<DisplayPage*>();
+    MainWindowPage *mainWindowPage = gallery.findChild<MainWindowPage*>();
+    AdvancedPage *advancedPage = gallery.findChild<AdvancedPage*>();
+    
+    QVERIFY2(displayPage != nullptr, "DisplayPage should exist in gallery");
+    QVERIFY2(mainWindowPage != nullptr, "MainWindowPage should exist in gallery");
+    QVERIFY2(advancedPage != nullptr, "AdvancedPage should exist in gallery");
+    
+    // Collect widgets from each new page
+    QList<QWidget*> newPageWidgets;
+    
+    // Get widgets from DisplayPage
+    QList<QWidget*> displayWidgets = displayPage->findChildren<QWidget*>();
+    for (QWidget *widget : displayWidgets) {
+        if (!isInternalQtWidget(widget) && !widget->inherits("QLayout")) {
+            newPageWidgets.append(widget);
+        }
+    }
+    
+    // Get widgets from MainWindowPage
+    QList<QWidget*> mainWindowWidgets = mainWindowPage->findChildren<QWidget*>();
+    for (QWidget *widget : mainWindowWidgets) {
+        if (!isInternalQtWidget(widget) && !widget->inherits("QLayout")) {
+            newPageWidgets.append(widget);
+        }
+    }
+    
+    // Get widgets from AdvancedPage
+    QList<QWidget*> advancedWidgets = advancedPage->findChildren<QWidget*>();
+    for (QWidget *widget : advancedWidgets) {
+        if (!isInternalQtWidget(widget) && !widget->inherits("QLayout")) {
+            newPageWidgets.append(widget);
+        }
+    }
+    
+    // Verify we found widgets on the new pages
+    QVERIFY2(!newPageWidgets.isEmpty(), "Should have found widgets on new gallery pages");
+    
+    // Verify all widgets on new pages have the expected enabled state
+    int checkedCount = 0;
+    for (QWidget *widget : newPageWidgets) {
+        // Skip container widgets that don't directly respond to setEnabled
+        if (widget->inherits("QGroupBox") || widget->inherits("QFrame") ||
+            widget->inherits("QScrollArea") || widget->inherits("QSplitter") ||
+            widget->inherits("QMdiArea") || widget->inherits("QGraphicsView") ||
+            widget->inherits("QDockWidget")) {
+            continue;
+        }
+        
+        // Skip internal scroll bars (they are managed by their parent containers)
+        if (widget->inherits("QScrollBar")) {
+            continue;
+        }
+        
+        // Check interactive widgets
+        if (widget->inherits("QAbstractButton") || widget->inherits("QAbstractSpinBox") ||
+            widget->inherits("QLineEdit") || widget->inherits("QTextEdit") ||
+            widget->inherits("QPlainTextEdit") || widget->inherits("QComboBox") ||
+            widget->inherits("QAbstractSlider") || widget->inherits("QAbstractItemView") ||
+            widget->inherits("QLCDNumber") || widget->inherits("QCalendarWidget") ||
+            widget->inherits("QLabel") || widget->inherits("QMenuBar") ||
+            widget->inherits("QToolBar") || widget->inherits("QStatusBar")) {
+            
+            QVERIFY2(widget->isEnabled() == enabledState,
+                     qPrintable(QString("Widget '%1' (class: %2) on new page enabled state should be %3, but is %4")
+                               .arg(widget->objectName().isEmpty() ? "unnamed" : widget->objectName())
+                               .arg(widget->metaObject()->className())
+                               .arg(enabledState ? "true" : "false")
+                               .arg(widget->isEnabled() ? "true" : "false")));
+            checkedCount++;
+        }
+    }
+    
+    QVERIFY2(checkedCount > 0, "Should have checked at least one widget on new pages");
 }

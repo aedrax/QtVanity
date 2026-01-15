@@ -10,6 +10,9 @@ class InputsPage;
 class ViewsPage;
 class ContainersPage;
 class DialogsPage;
+class DisplayPage;
+class MainWindowPage;
+class AdvancedPage;
 
 /**
  * @brief Container widget organizing all demonstration widgets into categorized tabs.
@@ -20,6 +23,9 @@ class DialogsPage;
  * - Views: QListView, QTreeView, QTableView
  * - Containers: QGroupBox, QTabWidget, QStackedWidget, QScrollArea, QFrame
  * - Dialogs: QMessageBox triggers, QFileDialog, QColorDialog, QProgressBar
+ * - Display: QLabel, QLCDNumber, QCalendarWidget
+ * - Main Window: QToolBar, QStatusBar, QMenuBar, QDockWidget, QSplitter
+ * - Advanced: QMdiArea, QListView, QTreeView, QTableView, QColumnView, QGraphicsView
  * 
  * Features:
  * - Toggle controls for enabled/disabled states
@@ -90,6 +96,9 @@ private:
     ViewsPage *m_viewsPage;
     ContainersPage *m_containersPage;
     DialogsPage *m_dialogsPage;
+    DisplayPage *m_displayPage;
+    MainWindowPage *m_mainWindowPage;
+    AdvancedPage *m_advancedPage;
 };
 
 #endif // WIDGETGALLERY_H
