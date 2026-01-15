@@ -88,6 +88,33 @@ public:
      */
     QString templatesPath() const;
 
+    /**
+     * @brief Returns a list of available QStyle names.
+     * @return List of style names from QStyleFactory::keys().
+     */
+    QStringList availableStyles() const;
+
+    /**
+     * @brief Returns the name of the currently active QStyle.
+     * @return The current style name.
+     */
+    QString currentStyle() const;
+
+    /**
+     * @brief Returns the name of the platform default QStyle.
+     * @return The default style name.
+     */
+    QString defaultStyle() const;
+
+    /**
+     * @brief Sets the application's QStyle.
+     * @param styleName The name of the style to apply.
+     * 
+     * If the style name is invalid, emits styleChangeError.
+     * After applying the new style, reapplies the current QSS.
+     */
+    void setStyle(const QString &styleName);
+
 signals:
     /**
      * @brief Emitted when a stylesheet is successfully applied.
@@ -111,9 +138,23 @@ signals:
      */
     void saveError(const QString &error);
 
+    /**
+     * @brief Emitted when the QStyle is successfully changed.
+     * @param styleName The name of the new style.
+     */
+    void styleChanged(const QString &styleName);
+
+    /**
+     * @brief Emitted when a QStyle change fails.
+     * @param error The error message.
+     */
+    void styleChangeError(const QString &error);
+
 private:
     QString m_templatesPath;
     QString m_currentStyleSheet;
+    QString m_currentStyle;
+    QString m_defaultStyle;
 };
 
 #endif // STYLEMANAGER_H

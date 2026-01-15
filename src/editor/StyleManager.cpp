@@ -6,10 +6,23 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <QStyleFactory>
+#include <QStyle>
 
 StyleManager::StyleManager(QObject *parent)
     : QObject(parent)
 {
+    // Detect the platform default style at startup
+    QStyle *appStyle = QApplication::style();
+    if (appStyle) {
+        m_defaultStyle = appStyle->objectName();
+        m_currentStyle = m_defaultStyle;
+    } else {
+        // Fallback to Fusion as cross-platform default
+        m_defaultStyle = QStringLiteral("Fusion");
+        m_currentStyle = m_defaultStyle;
+    }
+
     // Default templates path: look in standard locations
     // First try the application directory, then standard data locations
     QString appDir = QCoreApplication::applicationDirPath();
@@ -150,4 +163,60 @@ void StyleManager::setTemplatesPath(const QString &path)
 QString StyleManager::templatesPath() const
 {
     return m_templatesPath;
+}
+
+QStringList StyleManager::availableStyles() const
+{
+    return QStyleFactory::keys();
+}
+
+QString StyleManager::currentStyle() const
+{
+    return m_currentStyle;
+}
+
+QString StyleManager::defaultStyle() const
+{
+    return m_defaultStyle;
+}
+
+void StyleManager::setStyle(const QString &styleName)
+{
+    // Check if the style is available
+    QStringList available = QStyleFactory::keys();
+    bool found = false;
+    QString normalizedName;
+    
+    // QStyleFactory::keys() returns style names, but create() is case-insensitive
+    // Find the exact name from the available list for consistency
+    for (const QString &name : available) {
+        if (name.compare(styleName, Qt::CaseInsensitive) == 0) {
+            found = true;
+            normalizedName = name;
+            break;
+        }
+    }
+    
+    if (!found) {
+        emit styleChangeError(tr("Style '%1' is not available").arg(styleName));
+        return;
+    }
+    
+    // Create the new style
+    QStyle *newStyle = QStyleFactory::create(normalizedName);
+    if (!newStyle) {
+        emit styleChangeError(tr("Failed to create style '%1'").arg(normalizedName));
+        return;
+    }
+    
+    // Apply the new style to the application
+    QApplication::setStyle(newStyle);
+    m_currentStyle = normalizedName;
+    
+    // Reapply the current QSS to make sure it works with the new base style
+    if (!m_currentStyleSheet.isEmpty()) {
+        qApp->setStyleSheet(m_currentStyleSheet);
+    }
+    
+    emit styleChanged(m_currentStyle);
 }

@@ -4,6 +4,7 @@
 #include <QTextEdit>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -16,6 +17,7 @@ QssEditor::QssEditor(QWidget *parent)
     , m_applyButton(nullptr)
     , m_toggleButton(nullptr)
     , m_autoApplyCheckbox(nullptr)
+    , m_styleCombo(nullptr)
     , m_autoApplyTimer(nullptr)
     , m_hasUnsavedChanges(false)
     , m_customStyleActive(true)
@@ -72,10 +74,15 @@ void QssEditor::setupUi()
     m_toggleButton = new QPushButton(tr("Custom"), this);
     m_toggleButton->setToolTip(tr("Toggle between custom QSS and default Qt style (Ctrl+T)"));
 
+    // Create Style selector combo box
+    m_styleCombo = new QComboBox(this);
+    m_styleCombo->setToolTip(tr("Select the base QStyle for the application"));
+
     // Add widgets to button layout
     buttonLayout->addWidget(m_applyButton);
     buttonLayout->addWidget(m_autoApplyCheckbox);
     buttonLayout->addWidget(m_toggleButton);
+    buttonLayout->addWidget(m_styleCombo);
     buttonLayout->addStretch();
 
     // Add widgets to main layout
@@ -108,6 +115,18 @@ void QssEditor::setupConnections()
     // Connect Toggle button
     connect(m_toggleButton, &QPushButton::clicked,
             this, &QssEditor::toggleStyleMode);
+
+    // Connect Style selector combo box
+    connect(m_styleCombo, &QComboBox::currentTextChanged,
+            this, [this](const QString &text) {
+                // Strip "(Default)" suffix if present
+                QString styleName = text;
+                const QString defaultSuffix = QStringLiteral(" (Default)");
+                if (styleName.endsWith(defaultSuffix)) {
+                    styleName.chop(defaultSuffix.length());
+                }
+                emit styleChangeRequested(styleName);
+            });
 }
 
 QString QssEditor::styleSheet() const
@@ -269,5 +288,91 @@ void QssEditor::onAutoApplyToggled(bool checked)
     } else {
         // Stop any pending auto-apply
         m_autoApplyTimer->stop();
+    }
+}
+
+void QssEditor::setAvailableStyles(const QStringList &styles)
+{
+    // Block signals to avoid emitting styleChangeRequested during population
+    m_styleCombo->blockSignals(true);
+    
+    m_styleCombo->clear();
+    
+    for (const QString &style : styles) {
+        // Add with "(Default)" suffix if this is the default style
+        if (!m_defaultStyleName.isEmpty() && 
+            style.compare(m_defaultStyleName, Qt::CaseInsensitive) == 0) {
+            m_styleCombo->addItem(style + QStringLiteral(" (Default)"));
+        } else {
+            m_styleCombo->addItem(style);
+        }
+    }
+    
+    m_styleCombo->blockSignals(false);
+}
+
+void QssEditor::setCurrentStyle(const QString &styleName)
+{
+    // Block signals to avoid emitting styleChangeRequested
+    m_styleCombo->blockSignals(true);
+    
+    // Try to find the style with or without "(Default)" suffix
+    int index = -1;
+    for (int i = 0; i < m_styleCombo->count(); ++i) {
+        QString itemText = m_styleCombo->itemText(i);
+        QString itemStyle = itemText;
+        const QString defaultSuffix = QStringLiteral(" (Default)");
+        if (itemStyle.endsWith(defaultSuffix)) {
+            itemStyle.chop(defaultSuffix.length());
+        }
+        
+        if (itemStyle.compare(styleName, Qt::CaseInsensitive) == 0) {
+            index = i;
+            break;
+        }
+    }
+    
+    if (index >= 0) {
+        m_styleCombo->setCurrentIndex(index);
+    }
+    
+    m_styleCombo->blockSignals(false);
+}
+
+QString QssEditor::currentStyle() const
+{
+    QString text = m_styleCombo->currentText();
+    const QString defaultSuffix = QStringLiteral(" (Default)");
+    if (text.endsWith(defaultSuffix)) {
+        text.chop(defaultSuffix.length());
+    }
+    return text;
+}
+
+void QssEditor::setDefaultStyleMarker(const QString &styleName)
+{
+    m_defaultStyleName = styleName;
+    
+    // Update the combo box items to reflect the new default marker
+    // We need to re-populate if items already exist
+    if (m_styleCombo->count() > 0) {
+        QStringList currentStyles;
+        for (int i = 0; i < m_styleCombo->count(); ++i) {
+            QString itemText = m_styleCombo->itemText(i);
+            const QString defaultSuffix = QStringLiteral(" (Default)");
+            if (itemText.endsWith(defaultSuffix)) {
+                itemText.chop(defaultSuffix.length());
+            }
+            currentStyles.append(itemText);
+        }
+        
+        // Remember current selection
+        QString currentSelection = currentStyle();
+        
+        // Re-populate with updated default marker
+        setAvailableStyles(currentStyles);
+        
+        // Restore selection
+        setCurrentStyle(currentSelection);
     }
 }

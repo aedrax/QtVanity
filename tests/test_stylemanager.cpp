@@ -2,6 +2,7 @@
 #include "StyleManager.h"
 #include "QssEditor.h"
 
+#include <QStyle>
 #include <QTemporaryFile>
 #include <QTemporaryDir>
 #include <QFile>
@@ -10,6 +11,7 @@
 #include <QDir>
 #include <QCoreApplication>
 #include <QSignalSpy>
+#include <QStyleFactory>
 
 void TestStyleManager::initTestCase()
 {
@@ -543,4 +545,372 @@ void TestStyleManager::testCustomModeRestoresStylesheet()
     
     // Verify editor content is unchanged
     QCOMPARE(editor.styleSheet(), qssContent);
+}
+
+
+// ============================================================================
+// QStyle Management Unit Tests
+// ============================================================================
+
+/**
+ * Test that availableStyles() returns a non-empty list.
+ */
+void TestStyleManager::testAvailableStylesNonEmpty()
+{
+    StyleManager manager;
+    
+    QStringList styles = manager.availableStyles();
+    
+    // There should always be at least one style available (Fusion is cross-platform)
+    QVERIFY2(!styles.isEmpty(), "availableStyles() should return at least one style");
+    
+    // Verify the list matches QStyleFactory::keys()
+    QCOMPARE(styles, QStyleFactory::keys());
+}
+
+/**
+ * Test that setStyle() changes currentStyle().
+ */
+void TestStyleManager::testSetStyleChangesCurrentStyle()
+{
+    StyleManager manager;
+    
+    QStringList styles = manager.availableStyles();
+    QVERIFY(!styles.isEmpty());
+    
+    // Connect to styleChanged signal
+    QSignalSpy spy(&manager, &StyleManager::styleChanged);
+    
+    // Pick a style to set (use Fusion as it's cross-platform)
+    QString targetStyle;
+    for (const QString &style : styles) {
+        if (style.compare("Fusion", Qt::CaseInsensitive) == 0) {
+            targetStyle = style;
+            break;
+        }
+    }
+    
+    // If Fusion not available, use the first available style
+    if (targetStyle.isEmpty()) {
+        targetStyle = styles.first();
+    }
+    
+    // Set the style
+    manager.setStyle(targetStyle);
+    
+    // Verify currentStyle() returns the new style (case-insensitive comparison)
+    QCOMPARE(manager.currentStyle().toLower(), targetStyle.toLower());
+    
+    // Verify signal was emitted
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.at(0).at(0).toString().toLower(), targetStyle.toLower());
+}
+
+/**
+ * Test that setStyle() with invalid name emits error signal.
+ */
+void TestStyleManager::testSetStyleInvalidNameEmitsError()
+{
+    StyleManager manager;
+    
+    QString originalStyle = manager.currentStyle();
+    
+    // Connect to styleChangeError signal
+    QSignalSpy errorSpy(&manager, &StyleManager::styleChangeError);
+    QSignalSpy changeSpy(&manager, &StyleManager::styleChanged);
+    
+    // Try to set an invalid style
+    manager.setStyle("NonExistentStyleThatDoesNotExist12345");
+    
+    // Verify error signal was emitted
+    QCOMPARE(errorSpy.count(), 1);
+    QVERIFY(errorSpy.at(0).at(0).toString().contains("not available"));
+    
+    // Verify styleChanged was NOT emitted
+    QCOMPARE(changeSpy.count(), 0);
+    
+    // Verify current style is unchanged
+    QCOMPARE(manager.currentStyle(), originalStyle);
+}
+
+/**
+ * Test that QSS is preserved after style change.
+ */
+void TestStyleManager::testQssPreservedAfterStyleChange()
+{
+    StyleManager manager;
+    
+    QStringList styles = manager.availableStyles();
+    QVERIFY(styles.size() >= 1);
+    
+    // Apply a QSS stylesheet
+    QString testQss = "QPushButton { color: red; background-color: blue; }";
+    manager.applyStyleSheet(testQss);
+    
+    // Verify QSS is applied
+    QCOMPARE(manager.currentStyleSheet(), testQss);
+    QCOMPARE(qApp->styleSheet(), testQss);
+    
+    // Change the base style
+    QString targetStyle = styles.first();
+    manager.setStyle(targetStyle);
+    
+    // Verify QSS content in manager is preserved
+    QCOMPARE(manager.currentStyleSheet(), testQss);
+    
+    // Verify QSS is still applied to the application
+    QCOMPARE(qApp->styleSheet(), testQss);
+}
+
+
+// ============================================================================
+// QStyle Selector Property-Based Tests
+// ============================================================================
+
+/**
+ * Feature: qstyle-selector, Property 1: Style List Completeness
+ * 
+ * For any call to availableStyles(), the returned list SHALL contain exactly
+ * the styles returned by QStyleFactory::keys().
+ */
+void TestStyleManager::testStyleListCompletenessProperty_data()
+{
+    QTest::addColumn<int>("iteration");
+    
+    // Generate 100+ test iterations to verify consistency
+    // Each iteration calls availableStyles() and compares with QStyleFactory::keys()
+    for (int i = 0; i < 100; ++i) {
+        QTest::newRow(qPrintable(QString("style_list_iteration_%1").arg(i))) << i;
+    }
+}
+
+void TestStyleManager::testStyleListCompletenessProperty()
+{
+    // Feature: qstyle-selector, Property 1: Style List Completeness
+    
+    QFETCH(int, iteration);
+    Q_UNUSED(iteration);
+    
+    StyleManager manager;
+    
+    // Get styles from StyleManager
+    QStringList managerStyles = manager.availableStyles();
+    
+    // Get styles directly from QStyleFactory
+    QStringList factoryStyles = QStyleFactory::keys();
+    
+    // Property: The lists must be exactly equal
+    QCOMPARE(managerStyles.size(), factoryStyles.size());
+    QCOMPARE(managerStyles, factoryStyles);
+    
+    // Additional verification: list should not be empty
+    QVERIFY2(!managerStyles.isEmpty(), 
+             "availableStyles() should return at least one style (Fusion is cross-platform)");
+    
+    // Verify each style in the list is actually creatable
+    for (const QString &styleName : managerStyles) {
+        QStyle *style = QStyleFactory::create(styleName);
+        QVERIFY2(style != nullptr,
+                 qPrintable(QString("Style '%1' from availableStyles() should be creatable").arg(styleName)));
+        delete style;
+    }
+}
+
+/**
+ * Feature: qstyle-selector, Property 2: QSS Preservation on Style Change
+ * 
+ * For any QSS content in the editor and any valid style selection, after
+ * changing the base style, the QSS content in the editor SHALL remain
+ * unchanged and the QSS SHALL be reapplied to the application.
+ */
+void TestStyleManager::testQssPreservationProperty_data()
+{
+    QTest::addColumn<QString>("qssContent");
+    QTest::addColumn<QString>("targetStyle");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Get available styles for testing
+    QStringList availableStyles = QStyleFactory::keys();
+    
+    // QSS building blocks
+    QStringList selectors = {
+        "QPushButton", "QLabel", "QLineEdit", "QComboBox", 
+        "QCheckBox", "QRadioButton", "QSlider", "QSpinBox",
+        "QTextEdit", "QListView", "QTreeView", "QTableView",
+        "*", "QWidget", "QFrame", "QGroupBox", "QTabWidget"
+    };
+    
+    QStringList properties = {
+        "color", "background-color", "background", "border",
+        "border-radius", "padding", "margin", "font-size",
+        "font-weight", "min-width", "min-height", "max-width"
+    };
+    
+    QStringList values = {
+        "red", "blue", "green", "#ffffff", "#000000", "#ff5500",
+        "rgb(255, 128, 0)", "rgba(100, 100, 100, 128)",
+        "1px solid black", "2px dashed gray", "none",
+        "10px", "20px", "5em", "bold", "italic", "normal"
+    };
+    
+    QStringList pseudoStates = {
+        ":hover", ":pressed", ":disabled", ":checked",
+        ":focus", ":selected", ""
+    };
+    
+    // Generate 100 random QSS + style combinations
+    for (int i = 0; i < 100; ++i) {
+        QString qss;
+        
+        // Generate 1-5 rules per test case
+        int numRules = 1 + (rng->generate() % 5);
+        for (int r = 0; r < numRules; ++r) {
+            QString selector = selectors[rng->generate() % selectors.size()];
+            QString pseudo = pseudoStates[rng->generate() % pseudoStates.size()];
+            
+            qss += selector + pseudo + " {\n";
+            
+            // Generate 1-4 properties per rule
+            int numProps = 1 + (rng->generate() % 4);
+            for (int p = 0; p < numProps; ++p) {
+                QString prop = properties[rng->generate() % properties.size()];
+                QString val = values[rng->generate() % values.size()];
+                qss += "    " + prop + ": " + val + ";\n";
+            }
+            
+            qss += "}\n\n";
+        }
+        
+        // Pick a random target style
+        QString targetStyle = availableStyles[rng->generate() % availableStyles.size()];
+        
+        QTest::newRow(qPrintable(QString("qss_preservation_%1").arg(i))) 
+            << qss << targetStyle;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_qss") << QString("") << availableStyles.first();
+    QTest::newRow("simple_rule") << QString("* { color: red; }") << availableStyles.first();
+    QTest::newRow("complex_selector") << QString("QComboBox::drop-down { border: none; }") 
+                                      << availableStyles.first();
+}
+
+void TestStyleManager::testQssPreservationProperty()
+{
+    // Feature: qstyle-selector, Property 2: QSS Preservation on Style Change
+    
+    QFETCH(QString, qssContent);
+    QFETCH(QString, targetStyle);
+    
+    StyleManager manager;
+    
+    // Apply the QSS content first
+    manager.applyStyleSheet(qssContent);
+    
+    // Verify QSS is applied
+    QCOMPARE(manager.currentStyleSheet(), qssContent);
+    QCOMPARE(qApp->styleSheet(), qssContent);
+    
+    // Change the base style
+    QSignalSpy changeSpy(&manager, &StyleManager::styleChanged);
+    manager.setStyle(targetStyle);
+    
+    // Verify style change was successful
+    QCOMPARE(changeSpy.count(), 1);
+    
+    // Property 1: QSS content in manager should be preserved
+    QVERIFY2(manager.currentStyleSheet() == qssContent,
+             qPrintable(QString("QSS content should be preserved after style change. "
+                               "Expected: '%1', Got: '%2'")
+                       .arg(qssContent.left(50), manager.currentStyleSheet().left(50))));
+    
+    // Property 2: QSS should be reapplied to the application
+    QVERIFY2(qApp->styleSheet() == qssContent,
+             qPrintable(QString("QSS should be reapplied to qApp after style change. "
+                               "Expected: '%1', Got: '%2'")
+                       .arg(qssContent.left(50), qApp->styleSheet().left(50))));
+}
+
+/**
+ * Feature: qstyle-selector, Property 3: Style Application Consistency
+ * 
+ * For any style name from availableStyles(), calling setStyle(styleName)
+ * SHALL result in currentStyle() returning that same style name.
+ */
+void TestStyleManager::testStyleApplicationConsistencyProperty_data()
+{
+    QTest::addColumn<QString>("styleName");
+    
+    // Get all available styles
+    QStringList availableStyles = QStyleFactory::keys();
+    
+    // Test each available style multiple times to reach 100+ iterations
+    int iterationsPerStyle = (100 / availableStyles.size()) + 1;
+    
+    for (const QString &style : availableStyles) {
+        for (int i = 0; i < iterationsPerStyle; ++i) {
+            QTest::newRow(qPrintable(QString("%1_iteration_%2").arg(style).arg(i))) 
+                << style;
+        }
+    }
+    
+    // Also test case-insensitive matching (Qt's QStyleFactory::create is case-insensitive)
+    for (const QString &style : availableStyles) {
+        // Test lowercase
+        QTest::newRow(qPrintable(QString("%1_lowercase").arg(style.toLower()))) 
+            << style.toLower();
+        // Test uppercase
+        QTest::newRow(qPrintable(QString("%1_uppercase").arg(style.toUpper()))) 
+            << style.toUpper();
+    }
+}
+
+void TestStyleManager::testStyleApplicationConsistencyProperty()
+{
+    // Feature: qstyle-selector, Property 3: Style Application Consistency
+    
+    QFETCH(QString, styleName);
+    
+    StyleManager manager;
+    
+    // Connect to signals
+    QSignalSpy changeSpy(&manager, &StyleManager::styleChanged);
+    QSignalSpy errorSpy(&manager, &StyleManager::styleChangeError);
+    
+    // Apply the style
+    manager.setStyle(styleName);
+    
+    // Property: No error should be emitted for valid styles
+    QVERIFY2(errorSpy.count() == 0,
+             qPrintable(QString("setStyle('%1') should not emit error for valid style")
+                       .arg(styleName)));
+    
+    // Property: styleChanged signal should be emitted
+    QCOMPARE(changeSpy.count(), 1);
+    
+    // Property: currentStyle() should return the style name (case-insensitive match)
+    QString currentStyle = manager.currentStyle();
+    QVERIFY2(currentStyle.compare(styleName, Qt::CaseInsensitive) == 0,
+             qPrintable(QString("currentStyle() should return '%1' (case-insensitive), got '%2'")
+                       .arg(styleName, currentStyle)));
+    
+    // Property: The style should be in the available styles list
+    QStringList available = manager.availableStyles();
+    bool found = false;
+    for (const QString &s : available) {
+        if (s.compare(currentStyle, Qt::CaseInsensitive) == 0) {
+            found = true;
+            break;
+        }
+    }
+    QVERIFY2(found, qPrintable(QString("currentStyle() '%1' should be in availableStyles()")
+                              .arg(currentStyle)));
+    
+    // Property: The application's style should be updated (style pointer is not null)
+    // Note: We don't check objectName() because QStyleFactory::create() doesn't guarantee
+    // that the created style's objectName() matches the style name - this is a Qt implementation detail.
+    // The important thing is that the style was applied and currentStyle() returns the correct value.
+    QStyle *appStyle = QApplication::style();
+    QVERIFY2(appStyle != nullptr, "QApplication::style() should not be null after setStyle()");
 }

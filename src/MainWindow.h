@@ -80,6 +80,7 @@ private slots:
     void onStyleModeChanged(bool customActive);
     void onLoadError(const QString &error);
     void onSaveError(const QString &error);
+    void onStyleChangeError(const QString &error);
     void onUnsavedChangesChanged(bool hasChanges);
     void onAbout();
 

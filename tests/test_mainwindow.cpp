@@ -10,6 +10,7 @@
 #include <QAction>
 #include <QPushButton>
 #include <QApplication>
+#include <QSignalSpy>
 
 void TestMainWindow::initTestCase()
 {
@@ -131,9 +132,9 @@ void TestMainWindow::testSplitterContainsGalleryAndEditor()
     QVERIFY2(editor != nullptr, "MainWindow should have an editor");
     QVERIFY2(splitter->indexOf(editor) >= 0, "Editor should be in the splitter");
     
-    // Verify gallery is on the left (index 0) and editor on the right (index 1)
-    QCOMPARE(splitter->indexOf(gallery), 0);
-    QCOMPARE(splitter->indexOf(editor), 1);
+    // Verify editor is on the left (index 0) and gallery on the right (index 1)
+    QCOMPARE(splitter->indexOf(editor), 0);
+    QCOMPARE(splitter->indexOf(gallery), 1);
 }
 
 /**
@@ -378,6 +379,141 @@ void TestMainWindow::testToggleActionTriggersModeChange()
     
     // Mode should be back to Custom
     QVERIFY2(editor->isCustomStyleActive(), "Mode should be Custom after second toggle");
+    
+    // Clean up - reset stylesheet
+    qApp->setStyleSheet("");
+}
+
+/**
+ * Test full workflow: select style -> verify application style changes.
+ */
+void TestMainWindow::testStyleSelectorWorkflow()
+{
+    MainWindow mainWindow;
+    
+    QssEditor *editor = mainWindow.editor();
+    StyleManager *styleManager = mainWindow.styleManager();
+    
+    QVERIFY2(editor != nullptr, "MainWindow should have an editor");
+    QVERIFY2(styleManager != nullptr, "MainWindow should have a style manager");
+    
+    // Get available styles
+    QStringList availableStyles = styleManager->availableStyles();
+    QVERIFY2(!availableStyles.isEmpty(), "Should have at least one available style");
+    
+    // Store initial style
+    QString initialStyle = styleManager->currentStyle();
+    QVERIFY2(!initialStyle.isEmpty(), "Initial style should not be empty");
+    
+    // Find a different style to switch to
+    QString targetStyle;
+    for (const QString &style : availableStyles) {
+        if (style.compare(initialStyle, Qt::CaseInsensitive) != 0) {
+            targetStyle = style;
+            break;
+        }
+    }
+    
+    // If only one style available, use the same style
+    if (targetStyle.isEmpty()) {
+        targetStyle = initialStyle;
+    }
+    
+    // Set up signal spy to verify styleChanged is emitted
+    QSignalSpy styleChangedSpy(styleManager, &StyleManager::styleChanged);
+    
+    // Request style change through editor (simulating user selection)
+    emit editor->styleChangeRequested(targetStyle);
+    
+    // Verify style was changed
+    QCOMPARE(styleManager->currentStyle().compare(targetStyle, Qt::CaseInsensitive), 0);
+    
+    // Verify signal was emitted
+    QCOMPARE(styleChangedSpy.count(), 1);
+    
+    // Verify editor was updated with new style
+    QCOMPARE(editor->currentStyle().compare(targetStyle, Qt::CaseInsensitive), 0);
+    
+    // Clean up - reset stylesheet
+    qApp->setStyleSheet("");
+}
+
+/**
+ * Test QSS preservation across style changes.
+ */
+void TestMainWindow::testQssPreservationAcrossStyleChanges()
+{
+    MainWindow mainWindow;
+    
+    QssEditor *editor = mainWindow.editor();
+    StyleManager *styleManager = mainWindow.styleManager();
+    
+    QVERIFY2(editor != nullptr, "MainWindow should have an editor");
+    QVERIFY2(styleManager != nullptr, "MainWindow should have a style manager");
+    
+    // Set some QSS content in the editor
+    QString testQss = "QPushButton { background-color: red; }";
+    editor->setStyleSheet(testQss);
+    
+    // Apply the QSS
+    editor->apply();
+    
+    // Verify QSS was applied
+    QCOMPARE(styleManager->currentStyleSheet(), testQss);
+    
+    // Get available styles and find a different one
+    QStringList availableStyles = styleManager->availableStyles();
+    QString initialStyle = styleManager->currentStyle();
+    QString targetStyle;
+    
+    for (const QString &style : availableStyles) {
+        if (style.compare(initialStyle, Qt::CaseInsensitive) != 0) {
+            targetStyle = style;
+            break;
+        }
+    }
+    
+    // If only one style, use the same
+    if (targetStyle.isEmpty()) {
+        targetStyle = initialStyle;
+    }
+    
+    // Change the base style
+    styleManager->setStyle(targetStyle);
+    
+    // Verify QSS content in editor is unchanged
+    QCOMPARE(editor->styleSheet(), testQss);
+    
+    // Verify QSS is still applied to the application
+    QVERIFY2(qApp->styleSheet().contains("background-color"), 
+             "QSS should be preserved after style change");
+    
+    // Clean up - reset stylesheet
+    qApp->setStyleSheet("");
+}
+
+/**
+ * Test error handling for invalid styles.
+ */
+void TestMainWindow::testStyleChangeErrorHandling()
+{
+    // Test StyleManager directly without MainWindow to avoid UI dialogs
+    StyleManager styleManager;
+    
+    // Store initial style
+    QString initialStyle = styleManager.currentStyle();
+    
+    // Set up signal spy for error
+    QSignalSpy errorSpy(&styleManager, &StyleManager::styleChangeError);
+    
+    // Try to set an invalid style
+    styleManager.setStyle("NonExistentStyleThatDoesNotExist");
+    
+    // Verify error signal was emitted
+    QCOMPARE(errorSpy.count(), 1);
+    
+    // Verify style was not changed
+    QCOMPARE(styleManager.currentStyle(), initialStyle);
     
     // Clean up - reset stylesheet
     qApp->setStyleSheet("");

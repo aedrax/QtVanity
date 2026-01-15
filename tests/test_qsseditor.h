@@ -38,6 +38,11 @@ private slots:
     
     void testApplySwitchesToCustomMode();
     void testApplySwitchesToCustomMode_data();
+    
+    // Style selector tests
+    void testStyleComboPopulated();
+    void testStyleSelectionEmitsSignal();
+    void testDefaultStyleMarkerDisplayed();
 };
 
 #endif // TEST_QSSEDITOR_H

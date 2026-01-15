@@ -201,6 +201,19 @@ void MainWindow::setupConnections()
     // Connect editor unsaved changes signal
     connect(m_editor, &QssEditor::unsavedChangesChanged,
             this, &MainWindow::onUnsavedChangesChanged);
+
+    // Connect QStyle selector signals
+    connect(m_editor, &QssEditor::styleChangeRequested,
+            m_styleManager, &StyleManager::setStyle);
+    connect(m_styleManager, &StyleManager::styleChanged,
+            m_editor, &QssEditor::setCurrentStyle);
+    connect(m_styleManager, &StyleManager::styleChangeError,
+            this, &MainWindow::onStyleChangeError);
+
+    // Initialize style selector with available styles
+    m_editor->setDefaultStyleMarker(m_styleManager->defaultStyle());
+    m_editor->setAvailableStyles(m_styleManager->availableStyles());
+    m_editor->setCurrentStyle(m_styleManager->currentStyle());
 }
 
 void MainWindow::updateWindowTitle()
@@ -374,6 +387,15 @@ void MainWindow::onSaveError(const QString &error)
         this,
         tr("Save Error"),
         tr("Failed to save stylesheet:\n%1").arg(error)
+    );
+}
+
+void MainWindow::onStyleChangeError(const QString &error)
+{
+    QMessageBox::warning(
+        this,
+        tr("Style Change Error"),
+        tr("Failed to change style:\n%1").arg(error)
     );
 }
 

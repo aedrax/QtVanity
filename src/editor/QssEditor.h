@@ -3,10 +3,12 @@
 
 #include <QWidget>
 #include <QString>
+#include <QStringList>
 
 class QTextEdit;
 class QPushButton;
 class QCheckBox;
+class QComboBox;
 class QTimer;
 class QssSyntaxHighlighter;
 
@@ -111,6 +113,32 @@ public:
      */
     void toggleStyleMode();
 
+    /**
+     * @brief Sets the available QStyles for the style selector.
+     * @param styles List of style names from QStyleFactory::keys().
+     */
+    void setAvailableStyles(const QStringList &styles);
+
+    /**
+     * @brief Sets the currently selected style in the selector.
+     * @param styleName The style name to select.
+     */
+    void setCurrentStyle(const QString &styleName);
+
+    /**
+     * @brief Returns the currently selected style name.
+     * @return The selected style name (without any markers).
+     */
+    QString currentStyle() const;
+
+    /**
+     * @brief Marks a style as the platform default in the selector.
+     * @param styleName The style name to mark as default.
+     * 
+     * The default style will be displayed with "(Default)" suffix.
+     */
+    void setDefaultStyleMarker(const QString &styleName);
+
 signals:
     /**
      * @brief Emitted when the user requests style application.
@@ -140,6 +168,12 @@ signals:
      */
     void defaultStyleRequested();
 
+    /**
+     * @brief Emitted when the user requests a QStyle change.
+     * @param styleName The requested style name.
+     */
+    void styleChangeRequested(const QString &styleName);
+
 public slots:
     /**
      * @brief Triggers style application.
@@ -163,11 +197,13 @@ private:
     QPushButton *m_applyButton;
     QPushButton *m_toggleButton;
     QCheckBox *m_autoApplyCheckbox;
+    QComboBox *m_styleCombo;
     QTimer *m_autoApplyTimer;
     
     bool m_hasUnsavedChanges;
     bool m_customStyleActive;
     int m_autoApplyDelay;
+    QString m_defaultStyleName;
     
     // For cursor position preservation
     bool m_isApplying;

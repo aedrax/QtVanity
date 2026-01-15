@@ -25,6 +25,11 @@ private slots:
     void testToggleStyleActionExistsInEditMenu();
     void testToggleStyleKeyboardShortcut();
     void testToggleActionTriggersModeChange();
+    
+    // QStyle selector integration tests
+    void testStyleSelectorWorkflow();
+    void testQssPreservationAcrossStyleChanges();
+    void testStyleChangeErrorHandling();
 };
 
 #endif // TEST_MAINWINDOW_H
