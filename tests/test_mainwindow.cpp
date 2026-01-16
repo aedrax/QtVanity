@@ -3,6 +3,7 @@
 #include "QssEditor.h"
 #include "StyleManager.h"
 #include "ThemeManager.h"
+#include "VariablePanel.h"
 #include "WidgetGallery.h"
 
 #include <QSplitter>
@@ -113,7 +114,7 @@ void TestMainWindow::testStyleApplicationUpdatesWidgets()
 }
 
 /**
- * Test that the splitter contains both WidgetGallery and QssEditor.
+ * Test that the splitter contains WidgetGallery, QssEditor, and VariablePanel.
  */
 void TestMainWindow::testSplitterContainsGalleryAndEditor()
 {
@@ -122,8 +123,8 @@ void TestMainWindow::testSplitterContainsGalleryAndEditor()
     QSplitter *splitter = mainWindow.splitter();
     QVERIFY2(splitter != nullptr, "MainWindow should have a splitter");
     
-    // Verify splitter has exactly 2 widgets
-    QCOMPARE(splitter->count(), 2);
+    // Verify splitter has exactly 3 widgets (editor, gallery, variable panel)
+    QCOMPARE(splitter->count(), 3);
     
     // Verify gallery exists and is in the splitter
     WidgetGallery *gallery = mainWindow.gallery();
@@ -135,9 +136,15 @@ void TestMainWindow::testSplitterContainsGalleryAndEditor()
     QVERIFY2(editor != nullptr, "MainWindow should have an editor");
     QVERIFY2(splitter->indexOf(editor) >= 0, "Editor should be in the splitter");
     
-    // Verify editor is on the left (index 0) and gallery on the right (index 1)
+    // Verify variable panel exists and is in the splitter
+    VariablePanel *variablePanel = mainWindow.variablePanel();
+    QVERIFY2(variablePanel != nullptr, "MainWindow should have a variable panel");
+    QVERIFY2(splitter->indexOf(variablePanel) >= 0, "Variable panel should be in the splitter");
+    
+    // Verify order: editor (0), gallery (1), variable panel (2)
     QCOMPARE(splitter->indexOf(editor), 0);
     QCOMPARE(splitter->indexOf(gallery), 1);
+    QCOMPARE(splitter->indexOf(variablePanel), 2);
 }
 
 /**
@@ -163,17 +170,32 @@ void TestMainWindow::testFileMenuActions()
     // Check for expected actions
     QList<QAction*> actions = fileMenu->actions();
     
-    bool hasLoadStyle = false;
-    bool hasSaveStyle = false;
+    bool hasNewProject = false;
+    bool hasOpenProject = false;
+    bool hasSaveProject = false;
+    bool hasSaveProjectAs = false;
+    bool hasExportQss = false;
+    bool hasImportQss = false;
+    bool hasSaveRawQss = false;
     bool hasExit = false;
     bool hasTemplatesMenu = false;
     
     for (QAction *action : actions) {
         QString text = action->text().remove('&').remove("...");
-        if (text.contains("Load Style")) {
-            hasLoadStyle = true;
-        } else if (text.contains("Save Style")) {
-            hasSaveStyle = true;
+        if (text.contains("New Project")) {
+            hasNewProject = true;
+        } else if (text.contains("Open Project")) {
+            hasOpenProject = true;
+        } else if (text.contains("Save Project As")) {
+            hasSaveProjectAs = true;
+        } else if (text.contains("Save Project") && !text.contains("As")) {
+            hasSaveProject = true;
+        } else if (text.contains("Export QSS")) {
+            hasExportQss = true;
+        } else if (text.contains("Import QSS")) {
+            hasImportQss = true;
+        } else if (text.contains("Save Raw QSS")) {
+            hasSaveRawQss = true;
         } else if (text.contains("Exit") || text.contains("Quit")) {
             hasExit = true;
         } else if (text.contains("Template")) {
@@ -182,8 +204,13 @@ void TestMainWindow::testFileMenuActions()
         }
     }
     
-    QVERIFY2(hasLoadStyle, "File menu should have Load Style action");
-    QVERIFY2(hasSaveStyle, "File menu should have Save Style action");
+    QVERIFY2(hasNewProject, "File menu should have New Project action");
+    QVERIFY2(hasOpenProject, "File menu should have Open Project action");
+    QVERIFY2(hasSaveProject, "File menu should have Save Project action");
+    QVERIFY2(hasSaveProjectAs, "File menu should have Save Project As action");
+    QVERIFY2(hasExportQss, "File menu should have Export QSS action");
+    QVERIFY2(hasImportQss, "File menu should have Import QSS action");
+    QVERIFY2(hasSaveRawQss, "File menu should have Save Raw QSS action");
     QVERIFY2(hasExit, "File menu should have Exit action");
     QVERIFY2(hasTemplatesMenu, "File menu should have Templates submenu");
 }

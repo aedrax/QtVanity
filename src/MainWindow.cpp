@@ -3,6 +3,8 @@
 #include "editor/QssEditor.h"
 #include "editor/StyleManager.h"
 #include "editor/ThemeManager.h"
+#include "editor/VariableManager.h"
+#include "editor/VariablePanel.h"
 #include "gallery/WidgetGallery.h"
 
 #include <QSplitter>
@@ -11,10 +13,13 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QApplication>
 #include <QStatusBar>
+#include <QTextCursor>
+#include <QTextEdit>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -23,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_editor(nullptr)
     , m_styleManager(nullptr)
     , m_themeManager(nullptr)
+    , m_variableManager(nullptr)
+    , m_variablePanel(nullptr)
     , m_fileMenu(nullptr)
     , m_editMenu(nullptr)
     , m_viewMenu(nullptr)
@@ -40,12 +47,21 @@ MainWindow::MainWindow(QWidget *parent)
     , m_themeLightAction(nullptr)
     , m_themeSystemAction(nullptr)
     , m_themeActionGroup(nullptr)
+    , m_newProjectAction(nullptr)
+    , m_openProjectAction(nullptr)
+    , m_saveProjectAction(nullptr)
+    , m_saveProjectAsAction(nullptr)
+    , m_exportQssAction(nullptr)
+    , m_projectModified(false)
 {
     // Create style manager first
     m_styleManager = new StyleManager(this);
     
     // Create theme manager
     m_themeManager = new ThemeManager(m_styleManager, this);
+
+    // Create variable manager
+    m_variableManager = new VariableManager(this);
 
     // Setup UI components
     setupCentralWidget();
@@ -69,18 +85,23 @@ void MainWindow::setupCentralWidget()
     // Create splitter for split-pane layout
     m_splitter = new QSplitter(Qt::Horizontal, this);
 
-    // Create QSS editor (left panel)
+    // Create variable panel (left panel)
+    m_variablePanel = new VariablePanel(m_splitter);
+    m_variablePanel->setVariableManager(m_variableManager);
+
+    // Create QSS editor (center panel)
     m_editor = new QssEditor(m_splitter);
 
     // Create widget gallery (right panel)
     m_gallery = new WidgetGallery(m_splitter);
 
     // Add widgets to splitter
+    m_splitter->addWidget(m_variablePanel);
     m_splitter->addWidget(m_editor);
     m_splitter->addWidget(m_gallery);
 
-    // Set initial splitter sizes (40% editor, 60% gallery)
-    m_splitter->setSizes({400, 600});
+    // Set initial splitter sizes (20% variable panel, 35% editor, 45% gallery)
+    m_splitter->setSizes({200, 350, 450});
 
     // Set splitter as central widget
     setCentralWidget(m_splitter);
@@ -98,17 +119,54 @@ void MainWindow::setupFileMenu()
 {
     m_fileMenu = menuBar()->addMenu(tr("&File"));
 
-    // Load Style action
-    m_loadAction = new QAction(tr("&Load Style..."), this);
-    m_loadAction->setShortcut(QKeySequence::Open);
-    m_loadAction->setStatusTip(tr("Load a QSS stylesheet from file"));
+    // New Project action
+    m_newProjectAction = new QAction(tr("&New Project"), this);
+    m_newProjectAction->setShortcut(QKeySequence::New);
+    m_newProjectAction->setStatusTip(tr("Create a new project with empty variables and template"));
+    connect(m_newProjectAction, &QAction::triggered, this, &MainWindow::onNewProject);
+    m_fileMenu->addAction(m_newProjectAction);
+
+    // Open Project action
+    m_openProjectAction = new QAction(tr("&Open Project..."), this);
+    m_openProjectAction->setShortcut(QKeySequence::Open);
+    m_openProjectAction->setStatusTip(tr("Open a QtVanity project file (.qvp)"));
+    connect(m_openProjectAction, &QAction::triggered, this, &MainWindow::onOpenProject);
+    m_fileMenu->addAction(m_openProjectAction);
+
+    // Save Project action
+    m_saveProjectAction = new QAction(tr("&Save Project"), this);
+    m_saveProjectAction->setShortcut(QKeySequence::Save);
+    m_saveProjectAction->setStatusTip(tr("Save the current project"));
+    connect(m_saveProjectAction, &QAction::triggered, this, &MainWindow::onSaveProject);
+    m_fileMenu->addAction(m_saveProjectAction);
+
+    // Save Project As action
+    m_saveProjectAsAction = new QAction(tr("Save Project &As..."), this);
+    m_saveProjectAsAction->setShortcut(QKeySequence::SaveAs);
+    m_saveProjectAsAction->setStatusTip(tr("Save the current project to a new file"));
+    connect(m_saveProjectAsAction, &QAction::triggered, this, &MainWindow::onSaveProjectAs);
+    m_fileMenu->addAction(m_saveProjectAsAction);
+
+    m_fileMenu->addSeparator();
+
+    // Export QSS action
+    m_exportQssAction = new QAction(tr("&Export QSS..."), this);
+    m_exportQssAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_E));
+    m_exportQssAction->setStatusTip(tr("Export the resolved stylesheet to a .qss file"));
+    connect(m_exportQssAction, &QAction::triggered, this, &MainWindow::onExportQss);
+    m_fileMenu->addAction(m_exportQssAction);
+
+    m_fileMenu->addSeparator();
+
+    // Load Style action (for importing plain .qss files)
+    m_loadAction = new QAction(tr("&Import QSS..."), this);
+    m_loadAction->setStatusTip(tr("Import a QSS stylesheet as template (no variables)"));
     connect(m_loadAction, &QAction::triggered, this, &MainWindow::onLoadStyle);
     m_fileMenu->addAction(m_loadAction);
 
-    // Save Style action
-    m_saveAction = new QAction(tr("&Save Style..."), this);
-    m_saveAction->setShortcut(QKeySequence::Save);
-    m_saveAction->setStatusTip(tr("Save the current stylesheet to file"));
+    // Save Style action (legacy - save raw QSS)
+    m_saveAction = new QAction(tr("Save &Raw QSS..."), this);
+    m_saveAction->setStatusTip(tr("Save the raw stylesheet (with variable references) to file"));
     connect(m_saveAction, &QAction::triggered, this, &MainWindow::onSaveStyle);
     m_fileMenu->addAction(m_saveAction);
 
@@ -227,9 +285,12 @@ void MainWindow::setupTemplatesSubmenu(QMenu *parentMenu)
 
 void MainWindow::setupConnections()
 {
-    // Connect editor apply request to style manager
+    // Connect editor apply request to style manager (with variable substitution)
     connect(m_editor, &QssEditor::applyRequested,
-            m_styleManager, &StyleManager::applyStyleSheet);
+            this, [this](const QString &qss) {
+                QString resolvedQss = m_variableManager->substitute(qss);
+                m_styleManager->applyStyleSheet(resolvedQss);
+            });
 
     // Connect editor default style request to style manager
     connect(m_editor, &QssEditor::defaultStyleRequested,
@@ -269,18 +330,58 @@ void MainWindow::setupConnections()
     // Connect theme manager signals
     connect(m_themeManager, &ThemeManager::themeModeChanged,
             this, [this](ThemeManager::ThemeMode) { onThemeModeChanged(); });
+
+    // Connect variable manager signals for live preview
+    connect(m_variableManager, &VariableManager::variableChanged,
+            this, &MainWindow::onVariableChanged);
+    connect(m_variableManager, &VariableManager::variableRemoved,
+            this, &MainWindow::onVariableRemoved);
+    connect(m_variableManager, &VariableManager::variablesCleared,
+            this, &MainWindow::onVariablesCleared);
+
+    // Connect variable manager project signals
+    connect(m_variableManager, &VariableManager::projectLoaded,
+            this, &MainWindow::onProjectLoaded);
+    connect(m_variableManager, &VariableManager::projectSaved,
+            this, &MainWindow::onProjectSaved);
+    connect(m_variableManager, &VariableManager::loadError,
+            this, &MainWindow::onProjectLoadError);
+    connect(m_variableManager, &VariableManager::saveError,
+            this, &MainWindow::onProjectSaveError);
+
+    // Connect editor content changes for live preview with variables
+    connect(m_editor, &QssEditor::contentsChanged,
+            this, [this]() {
+                setProjectModified(true);
+                onRegenerateStyle();
+            });
+
+    // Connect variable insertion from panel to editor
+    // The signal emits the formatted reference (e.g., "${name}"), so we insert it directly
+    connect(m_variablePanel, &VariablePanel::variableInsertRequested,
+            this, [this](const QString &reference) {
+                // Insert the reference directly at cursor position
+                QTextCursor cursor = m_editor->textEdit()->textCursor();
+                cursor.insertText(reference);
+                m_editor->textEdit()->setFocus();
+            });
 }
 
 void MainWindow::updateWindowTitle()
 {
     QString title = QString("QtVanity - Qt %1").arg(qVersion());
     
-    if (!m_currentFilePath.isEmpty()) {
+    // Show project name if we have one
+    if (!m_currentProjectPath.isEmpty()) {
+        QFileInfo fileInfo(m_currentProjectPath);
+        title = QString("%1 - %2").arg(fileInfo.fileName(), title);
+    } else if (!m_currentFilePath.isEmpty()) {
         QFileInfo fileInfo(m_currentFilePath);
         title = QString("%1 - %2").arg(fileInfo.fileName(), title);
     }
     
-    if (m_editor && m_editor->hasUnsavedChanges()) {
+    // Show modified indicator
+    if (m_projectModified || (m_editor && m_editor->hasUnsavedChanges())) {
         title = QString("*%1").arg(title);
     }
     
@@ -313,9 +414,57 @@ bool MainWindow::maybeSave()
     }
 }
 
+bool MainWindow::maybeSaveProject()
+{
+    if (!m_projectModified && (!m_editor || !m_editor->hasUnsavedChanges())) {
+        return true;
+    }
+
+    QMessageBox::StandardButton result = QMessageBox::warning(
+        this,
+        tr("Unsaved Project Changes"),
+        tr("The project has been modified.\n"
+           "Do you want to save your changes?"),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel
+    );
+
+    switch (result) {
+    case QMessageBox::Save:
+        onSaveProject();
+        // Return true if save succeeded (project is no longer modified)
+        return !m_projectModified && (!m_editor || !m_editor->hasUnsavedChanges());
+    case QMessageBox::Discard:
+        return true;
+    case QMessageBox::Cancel:
+    default:
+        return false;
+    }
+}
+
+void MainWindow::setProjectModified(bool modified)
+{
+    if (m_projectModified != modified) {
+        m_projectModified = modified;
+        updateWindowTitle();
+    }
+}
+
+void MainWindow::clearProject()
+{
+    m_variableManager->clearVariables();
+    m_editor->setStyleSheet(QString());
+    m_currentProjectPath.clear();
+    m_currentFilePath.clear();
+    m_projectModified = false;
+    if (m_editor) {
+        m_editor->markAsSaved();
+    }
+    updateWindowTitle();
+}
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (maybeSave()) {
+    if (maybeSaveProject()) {
         event->accept();
     } else {
         event->ignore();
@@ -324,14 +473,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::onLoadStyle()
 {
-    // Check for unsaved changes first
-    if (!maybeSave()) {
+    // Check for unsaved project changes first
+    if (!maybeSaveProject()) {
         return;
     }
 
     QString filePath = QFileDialog::getOpenFileName(
         this,
-        tr("Load Style"),
+        tr("Import QSS"),
         QString(),
         tr("Qt Style Sheets (*.qss);;All Files (*)")
     );
@@ -342,8 +491,13 @@ void MainWindow::onLoadStyle()
 
     QString content = m_styleManager->loadFromFile(filePath);
     if (!content.isNull()) {
+        // Clear variables when importing plain QSS
+        m_variableManager->clearVariables();
         m_editor->setStyleSheet(content);
         m_currentFilePath = filePath;
+        m_currentProjectPath.clear();
+        m_projectModified = false;
+        m_editor->markAsSaved();
         updateWindowTitle();
     }
 }
@@ -389,15 +543,20 @@ void MainWindow::onToggleStyle()
 
 void MainWindow::onLoadTemplate(const QString &templateName)
 {
-    // Check for unsaved changes first
-    if (!maybeSave()) {
+    // Check for unsaved project changes first
+    if (!maybeSaveProject()) {
         return;
     }
 
     QString content = m_styleManager->loadTemplate(templateName);
     if (!content.isEmpty()) {
+        // Clear variables when loading a template
+        m_variableManager->clearVariables();
         m_editor->setStyleSheet(content);
-        m_currentFilePath.clear(); // Template is not a saved file
+        m_currentFilePath.clear();
+        m_currentProjectPath.clear();
+        m_projectModified = false;
+        m_editor->markAsSaved();
         updateWindowTitle();
         
         // Optionally apply the template immediately
@@ -493,6 +652,172 @@ void MainWindow::onThemeModeChanged()
     updateThemeActions();
 }
 
+void MainWindow::onRegenerateStyle()
+{
+    // Only regenerate if custom style mode is active
+    if (m_editor && m_editor->isCustomStyleActive()) {
+        QString qssTemplate = m_editor->styleSheet();
+        QString resolvedQss = m_variableManager->substitute(qssTemplate);
+        m_styleManager->applyStyleSheet(resolvedQss);
+    }
+}
+
+void MainWindow::onVariableChanged(const QString &name, const QString &value)
+{
+    Q_UNUSED(name)
+    Q_UNUSED(value)
+    setProjectModified(true);
+    onRegenerateStyle();
+}
+
+void MainWindow::onVariableRemoved(const QString &name)
+{
+    Q_UNUSED(name)
+    setProjectModified(true);
+    onRegenerateStyle();
+}
+
+void MainWindow::onVariablesCleared()
+{
+    // Don't set modified here - this is called during clearProject() and loadProject()
+    onRegenerateStyle();
+}
+
+void MainWindow::onNewProject()
+{
+    // Check for unsaved project changes first
+    if (!maybeSaveProject()) {
+        return;
+    }
+
+    clearProject();
+    statusBar()->showMessage(tr("New project created"), 2000);
+}
+
+void MainWindow::onOpenProject()
+{
+    // Check for unsaved project changes first
+    if (!maybeSaveProject()) {
+        return;
+    }
+
+    QString filePath = QFileDialog::getOpenFileName(
+        this,
+        tr("Open Project"),
+        QString(),
+        tr("QtVanity Projects (*.qvp);;All Files (*)")
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    QString qssTemplate;
+    if (m_variableManager->loadProject(filePath, qssTemplate)) {
+        m_editor->setStyleSheet(qssTemplate);
+        m_currentProjectPath = filePath;
+        m_currentFilePath.clear();
+        m_projectModified = false;
+        m_editor->markAsSaved();
+        updateWindowTitle();
+        
+        // Apply the loaded style
+        onRegenerateStyle();
+    }
+}
+
+void MainWindow::onSaveProject()
+{
+    if (m_currentProjectPath.isEmpty()) {
+        onSaveProjectAs();
+        return;
+    }
+
+    if (m_variableManager->saveProject(m_currentProjectPath, m_editor->styleSheet())) {
+        m_projectModified = false;
+        m_editor->markAsSaved();
+        updateWindowTitle();
+    }
+}
+
+void MainWindow::onSaveProjectAs()
+{
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        tr("Save Project As"),
+        QString(),
+        tr("QtVanity Projects (*.qvp);;All Files (*)")
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    // Check .qvp extension
+    if (!filePath.endsWith(QStringLiteral(".qvp"), Qt::CaseInsensitive)) {
+        filePath += QStringLiteral(".qvp");
+    }
+
+    if (m_variableManager->saveProject(filePath, m_editor->styleSheet())) {
+        m_currentProjectPath = filePath;
+        m_currentFilePath.clear();
+        m_projectModified = false;
+        m_editor->markAsSaved();
+        updateWindowTitle();
+    }
+}
+
+void MainWindow::onExportQss()
+{
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        tr("Export QSS"),
+        QString(),
+        tr("Qt Style Sheets (*.qss);;All Files (*)")
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    // Check .qss extension
+    if (!filePath.endsWith(QStringLiteral(".qss"), Qt::CaseInsensitive)) {
+        filePath += QStringLiteral(".qss");
+    }
+
+    if (m_variableManager->exportResolvedQss(filePath, m_editor->styleSheet())) {
+        statusBar()->showMessage(tr("QSS exported to %1").arg(filePath), 3000);
+    }
+}
+
+void MainWindow::onProjectLoaded()
+{
+    statusBar()->showMessage(tr("Project loaded"), 2000);
+}
+
+void MainWindow::onProjectSaved()
+{
+    statusBar()->showMessage(tr("Project saved"), 2000);
+}
+
+void MainWindow::onProjectLoadError(const QString &error)
+{
+    QMessageBox::critical(
+        this,
+        tr("Project Load Error"),
+        tr("Failed to load project:\n%1").arg(error)
+    );
+}
+
+void MainWindow::onProjectSaveError(const QString &error)
+{
+    QMessageBox::critical(
+        this,
+        tr("Project Save Error"),
+        tr("Failed to save project:\n%1").arg(error)
+    );
+}
+
 void MainWindow::updateThemeActions()
 {
     if (!m_themeManager) {
@@ -538,4 +863,14 @@ StyleManager* MainWindow::styleManager() const
 ThemeManager* MainWindow::themeManager() const
 {
     return m_themeManager;
+}
+
+VariableManager* MainWindow::variableManager() const
+{
+    return m_variableManager;
+}
+
+VariablePanel* MainWindow::variablePanel() const
+{
+    return m_variablePanel;
 }

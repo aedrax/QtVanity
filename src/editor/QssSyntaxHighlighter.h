@@ -60,6 +60,11 @@ public:
      */
     QTextCharFormat commentFormat() const { return m_commentFormat; }
 
+    /**
+     * @brief Returns the format used for variable references.
+     */
+    QTextCharFormat variableFormat() const { return m_variableFormat; }
+
 protected:
     /**
      * @brief Highlights a single block of text.
@@ -91,6 +96,7 @@ private:
     QTextCharFormat m_commentFormat;
     QTextCharFormat m_stringFormat;
     QTextCharFormat m_numberFormat;
+    QTextCharFormat m_variableFormat;
 
     // Multi-line comment handling
     QRegularExpression m_commentStartExpression;

@@ -40,6 +40,10 @@ void QssSyntaxHighlighter::setupFormats()
 
     // Number format - numbers with units (dark blue)
     m_numberFormat.setForeground(QColor(0, 0, 128));
+
+    // Variable reference format - ${variable_name} (magenta/purple)
+    m_variableFormat.setForeground(QColor(199, 21, 133));  // Medium violet red
+    m_variableFormat.setFontWeight(QFont::Bold);
 }
 
 void QssSyntaxHighlighter::setupRules()
@@ -226,6 +230,12 @@ void QssSyntaxHighlighter::setupRules()
     // Strings in quotes
     rule.pattern = QRegularExpression(QStringLiteral("\"[^\"]*\"|'[^']*'"));
     rule.format = m_stringFormat;
+    m_rules.append(rule);
+
+    // Variable references - ${variable_name}
+    // Pattern: \$\{[a-zA-Z_][a-zA-Z0-9_-]*\}
+    rule.pattern = QRegularExpression(QStringLiteral("\\$\\{[a-zA-Z_][a-zA-Z0-9_-]*\\}"));
+    rule.format = m_variableFormat;
     m_rules.append(rule);
 }
 

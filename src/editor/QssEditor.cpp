@@ -20,7 +20,7 @@ QssEditor::QssEditor(QWidget *parent)
     , m_styleCombo(nullptr)
     , m_autoApplyTimer(nullptr)
     , m_hasUnsavedChanges(false)
-    , m_customStyleActive(true)
+    , m_customStyleActive(false)
     , m_autoApplyDelay(DEFAULT_AUTO_APPLY_DELAY_MS)
     , m_isApplying(false)
 {
@@ -71,7 +71,7 @@ void QssEditor::setupUi()
     m_autoApplyCheckbox->setChecked(false);
 
     // Create Toggle button for switching between Custom and Default styles
-    m_toggleButton = new QPushButton(tr("Custom"), this);
+    m_toggleButton = new QPushButton(tr("Default"), this);
     m_toggleButton->setToolTip(tr("Toggle between custom QSS and default Qt style (Ctrl+T)"));
 
     // Create Style selector combo box
@@ -375,4 +375,21 @@ void QssEditor::setDefaultStyleMarker(const QString &styleName)
         // Restore selection
         setCurrentStyle(currentSelection);
     }
+}
+
+void QssEditor::insertVariableReference(const QString &name)
+{
+    if (name.isEmpty()) {
+        return;
+    }
+    
+    // Format the variable reference as ${name}
+    QString reference = QStringLiteral("${%1}").arg(name);
+    
+    // Insert at current cursor position
+    QTextCursor cursor = m_textEdit->textCursor();
+    cursor.insertText(reference);
+    
+    // Verify the text edit has focus after insertion
+    m_textEdit->setFocus();
 }

@@ -12,6 +12,8 @@ class WidgetGallery;
 class QssEditor;
 class StyleManager;
 class ThemeManager;
+class VariableManager;
+class VariablePanel;
 
 /**
  * @brief Main application window for QtVanity.
@@ -70,6 +72,18 @@ public:
      */
     ThemeManager* themeManager() const;
 
+    /**
+     * @brief Returns the variable manager.
+     * @return Pointer to the VariableManager.
+     */
+    VariableManager* variableManager() const;
+
+    /**
+     * @brief Returns the variable panel.
+     * @return Pointer to the VariablePanel.
+     */
+    VariablePanel* variablePanel() const;
+
 protected:
     /**
      * @brief Handles close event with unsaved changes check.
@@ -95,6 +109,21 @@ private slots:
     void onThemeLight();
     void onThemeSystem();
     void onThemeModeChanged();
+    void onRegenerateStyle();
+    void onVariableChanged(const QString &name, const QString &value);
+    void onVariableRemoved(const QString &name);
+    void onVariablesCleared();
+    
+    // Project file actions
+    void onNewProject();
+    void onOpenProject();
+    void onSaveProject();
+    void onSaveProjectAs();
+    void onExportQss();
+    void onProjectLoaded();
+    void onProjectSaved();
+    void onProjectLoadError(const QString &error);
+    void onProjectSaveError(const QString &error);
 
 private:
     void setupCentralWidget();
@@ -108,12 +137,17 @@ private:
     void updateWindowTitle();
     void updateThemeActions();
     bool maybeSave();
+    bool maybeSaveProject();
+    void setProjectModified(bool modified);
+    void clearProject();
 
     QSplitter *m_splitter;
     WidgetGallery *m_gallery;
     QssEditor *m_editor;
     StyleManager *m_styleManager;
     ThemeManager *m_themeManager;
+    VariableManager *m_variableManager;
+    VariablePanel *m_variablePanel;
 
     // Menus
     QMenu *m_fileMenu;
@@ -135,8 +169,17 @@ private:
     QAction *m_themeLightAction;
     QAction *m_themeSystemAction;
     QActionGroup *m_themeActionGroup;
+    
+    // Project file actions
+    QAction *m_newProjectAction;
+    QAction *m_openProjectAction;
+    QAction *m_saveProjectAction;
+    QAction *m_saveProjectAsAction;
+    QAction *m_exportQssAction;
 
     QString m_currentFilePath;
+    QString m_currentProjectPath;
+    bool m_projectModified;
 };
 
 #endif // MAINWINDOW_H

@@ -30,6 +30,10 @@ set(SOURCES
     src/editor/StyleManager.h
     src/editor/ThemeManager.cpp
     src/editor/ThemeManager.h
+    src/editor/VariableManager.cpp
+    src/editor/VariableManager.h
+    src/editor/VariablePanel.cpp
+    src/editor/VariablePanel.h
     src/editor/QssSyntaxHighlighter.cpp
     src/editor/QssSyntaxHighlighter.h
     src/editor/QssEditor.cpp
@@ -752,6 +756,10 @@ if(BUILD_TESTING)
         src/editor/StyleManager.h
         src/editor/ThemeManager.cpp
         src/editor/ThemeManager.h
+        src/editor/VariableManager.cpp
+        src/editor/VariableManager.h
+        src/editor/VariablePanel.cpp
+        src/editor/VariablePanel.h
         src/editor/QssSyntaxHighlighter.cpp
         src/editor/QssSyntaxHighlighter.h
         src/editor/QssEditor.cpp
@@ -817,6 +825,8 @@ if(BUILD_TESTING)
         tests/test_dialogspage.h
         tests/test_mainwindow.cpp
         tests/test_mainwindow.h
+        tests/test_variablemanager.cpp
+        tests/test_variablemanager.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE
