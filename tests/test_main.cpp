@@ -3,6 +3,7 @@
 
 // Include all test classes
 #include "test_stylemanager.h"
+#include "test_thememanager.h"
 #include "test_qsssyntaxhighlighter.h"
 #include "test_qsseditor.h"
 #include "test_widgetgallery.h"
@@ -23,6 +24,12 @@ int main(int argc, char *argv[])
     // Run StyleManager tests
     {
         TestStyleManager test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run ThemeManager tests
+    {
+        TestThemeManager test;
         status |= QTest::qExec(&test, argc, argv);
     }
     

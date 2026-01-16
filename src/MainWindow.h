@@ -7,9 +7,11 @@
 class QSplitter;
 class QMenu;
 class QAction;
+class QActionGroup;
 class WidgetGallery;
 class QssEditor;
 class StyleManager;
+class ThemeManager;
 
 /**
  * @brief Main application window for QtVanity.
@@ -62,6 +64,12 @@ public:
      */
     StyleManager* styleManager() const;
 
+    /**
+     * @brief Returns the theme manager.
+     * @return Pointer to the ThemeManager.
+     */
+    ThemeManager* themeManager() const;
+
 protected:
     /**
      * @brief Handles close event with unsaved changes check.
@@ -83,28 +91,37 @@ private slots:
     void onStyleChangeError(const QString &error);
     void onUnsavedChangesChanged(bool hasChanges);
     void onAbout();
+    void onThemeDark();
+    void onThemeLight();
+    void onThemeSystem();
+    void onThemeModeChanged();
 
 private:
     void setupCentralWidget();
     void setupMenuBar();
     void setupFileMenu();
     void setupEditMenu();
+    void setupViewMenu();
     void setupHelpMenu();
     void setupTemplatesSubmenu(QMenu *parentMenu);
     void setupConnections();
     void updateWindowTitle();
+    void updateThemeActions();
     bool maybeSave();
 
     QSplitter *m_splitter;
     WidgetGallery *m_gallery;
     QssEditor *m_editor;
     StyleManager *m_styleManager;
+    ThemeManager *m_themeManager;
 
     // Menus
     QMenu *m_fileMenu;
     QMenu *m_editMenu;
+    QMenu *m_viewMenu;
     QMenu *m_helpMenu;
     QMenu *m_templatesMenu;
+    QMenu *m_themeMenu;
 
     // Actions
     QAction *m_loadAction;
@@ -114,6 +131,10 @@ private:
     QAction *m_toggleStyleAction;
     QAction *m_aboutAction;
     QAction *m_aboutQtAction;
+    QAction *m_themeDarkAction;
+    QAction *m_themeLightAction;
+    QAction *m_themeSystemAction;
+    QActionGroup *m_themeActionGroup;
 
     QString m_currentFilePath;
 };

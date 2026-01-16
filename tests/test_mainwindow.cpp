@@ -2,15 +2,18 @@
 #include "MainWindow.h"
 #include "QssEditor.h"
 #include "StyleManager.h"
+#include "ThemeManager.h"
 #include "WidgetGallery.h"
 
 #include <QSplitter>
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
+#include <QActionGroup>
 #include <QPushButton>
 #include <QApplication>
 #include <QSignalSpy>
+#include <QSettings>
 
 void TestMainWindow::initTestCase()
 {
@@ -517,4 +520,257 @@ void TestMainWindow::testStyleChangeErrorHandling()
     
     // Clean up - reset stylesheet
     qApp->setStyleSheet("");
+}
+
+
+/**
+ * Test that View menu contains Theme submenu with Dark, Light, System actions.
+ */
+void TestMainWindow::testViewMenuContainsThemeSubmenu()
+{
+    MainWindow mainWindow;
+    
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *viewMenu = nullptr;
+    
+    // Find View menu
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "View") {
+            viewMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(viewMenu != nullptr, "View menu should exist");
+    
+    // Find Theme submenu
+    QMenu *themeMenu = nullptr;
+    for (QAction *action : viewMenu->actions()) {
+        if (action->text().remove('&') == "Theme") {
+            themeMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(themeMenu != nullptr, "Theme submenu should exist");
+    
+    // Check for Dark, Light, System actions
+    bool hasDark = false;
+    bool hasLight = false;
+    bool hasSystem = false;
+    
+    for (QAction *action : themeMenu->actions()) {
+        QString text = action->text().remove('&');
+        if (text == "Dark") {
+            hasDark = true;
+            QVERIFY2(action->isCheckable(), "Dark action should be checkable");
+        } else if (text == "Light") {
+            hasLight = true;
+            QVERIFY2(action->isCheckable(), "Light action should be checkable");
+        } else if (text == "System") {
+            hasSystem = true;
+            QVERIFY2(action->isCheckable(), "System action should be checkable");
+        }
+    }
+    
+    QVERIFY2(hasDark, "Theme menu should have Dark action");
+    QVERIFY2(hasLight, "Theme menu should have Light action");
+    QVERIFY2(hasSystem, "Theme menu should have System action");
+}
+
+/**
+ * Test that theme actions are mutually exclusive.
+ */
+void TestMainWindow::testThemeActionsAreMutuallyExclusive()
+{
+    MainWindow mainWindow;
+    
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *viewMenu = nullptr;
+    
+    // Find View menu
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "View") {
+            viewMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(viewMenu != nullptr, "View menu should exist");
+    
+    // Find Theme submenu
+    QMenu *themeMenu = nullptr;
+    for (QAction *action : viewMenu->actions()) {
+        if (action->text().remove('&') == "Theme") {
+            themeMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(themeMenu != nullptr, "Theme submenu should exist");
+    
+    // Get theme actions
+    QAction *darkAction = nullptr;
+    QAction *lightAction = nullptr;
+    QAction *systemAction = nullptr;
+    
+    for (QAction *action : themeMenu->actions()) {
+        QString text = action->text().remove('&');
+        if (text == "Dark") darkAction = action;
+        else if (text == "Light") lightAction = action;
+        else if (text == "System") systemAction = action;
+    }
+    
+    QVERIFY2(darkAction != nullptr, "Dark action should exist");
+    QVERIFY2(lightAction != nullptr, "Light action should exist");
+    QVERIFY2(systemAction != nullptr, "System action should exist");
+    
+    // Verify they belong to the same action group (mutual exclusivity)
+    QActionGroup *group = darkAction->actionGroup();
+    QVERIFY2(group != nullptr, "Dark action should belong to an action group");
+    QVERIFY2(group->isExclusive(), "Action group should be exclusive");
+    QCOMPARE(lightAction->actionGroup(), group);
+    QCOMPARE(systemAction->actionGroup(), group);
+    
+    // Test mutual exclusivity by triggering actions
+    darkAction->trigger();
+    QVERIFY2(darkAction->isChecked(), "Dark should be checked after trigger");
+    QVERIFY2(!lightAction->isChecked(), "Light should not be checked");
+    QVERIFY2(!systemAction->isChecked(), "System should not be checked");
+    
+    lightAction->trigger();
+    QVERIFY2(!darkAction->isChecked(), "Dark should not be checked");
+    QVERIFY2(lightAction->isChecked(), "Light should be checked after trigger");
+    QVERIFY2(!systemAction->isChecked(), "System should not be checked");
+}
+
+/**
+ * Test that theme action connections work correctly.
+ */
+void TestMainWindow::testThemeActionConnectionsWork()
+{
+    MainWindow mainWindow;
+    
+    ThemeManager *themeManager = mainWindow.themeManager();
+    QVERIFY2(themeManager != nullptr, "MainWindow should have a theme manager");
+    
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *viewMenu = nullptr;
+    
+    // Find View menu
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "View") {
+            viewMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(viewMenu != nullptr, "View menu should exist");
+    
+    // Find Theme submenu
+    QMenu *themeMenu = nullptr;
+    for (QAction *action : viewMenu->actions()) {
+        if (action->text().remove('&') == "Theme") {
+            themeMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(themeMenu != nullptr, "Theme submenu should exist");
+    
+    // Get theme actions
+    QAction *darkAction = nullptr;
+    QAction *lightAction = nullptr;
+    QAction *systemAction = nullptr;
+    
+    for (QAction *action : themeMenu->actions()) {
+        QString text = action->text().remove('&');
+        if (text == "Dark") darkAction = action;
+        else if (text == "Light") lightAction = action;
+        else if (text == "System") systemAction = action;
+    }
+    
+    // Set up signal spy
+    QSignalSpy modeSpy(themeManager, &ThemeManager::themeModeChanged);
+    
+    // Trigger Dark action and verify ThemeManager is updated
+    darkAction->trigger();
+    QCOMPARE(themeManager->currentMode(), ThemeManager::ThemeMode::Dark);
+    QVERIFY2(modeSpy.count() >= 1, "themeModeChanged should be emitted");
+    
+    modeSpy.clear();
+    
+    // Trigger Light action
+    lightAction->trigger();
+    QCOMPARE(themeManager->currentMode(), ThemeManager::ThemeMode::Light);
+    QVERIFY2(modeSpy.count() >= 1, "themeModeChanged should be emitted");
+    
+    modeSpy.clear();
+    
+    // Trigger System action
+    systemAction->trigger();
+    QCOMPARE(themeManager->currentMode(), ThemeManager::ThemeMode::System);
+    QVERIFY2(modeSpy.count() >= 1, "themeModeChanged should be emitted");
+}
+
+/**
+ * Test that initial theme state matches saved preference.
+ */
+void TestMainWindow::testInitialThemeStateMatchesSavedPreference()
+{
+    // First, set a known preference
+    {
+        QSettings settings;
+        settings.setValue("appearance/themeMode", static_cast<int>(ThemeManager::ThemeMode::Light));
+        settings.sync();
+    }
+    
+    // Create MainWindow - it should load the saved preference
+    MainWindow mainWindow;
+    
+    ThemeManager *themeManager = mainWindow.themeManager();
+    QVERIFY2(themeManager != nullptr, "MainWindow should have a theme manager");
+    
+    // Verify ThemeManager loaded the preference
+    QCOMPARE(themeManager->currentMode(), ThemeManager::ThemeMode::Light);
+    
+    // Find the theme actions and verify checked state
+    QMenuBar *menuBar = mainWindow.menuBar();
+    QMenu *viewMenu = nullptr;
+    
+    for (QAction *action : menuBar->actions()) {
+        if (action->text().remove('&') == "View") {
+            viewMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(viewMenu != nullptr, "View menu should exist");
+    
+    QMenu *themeMenu = nullptr;
+    for (QAction *action : viewMenu->actions()) {
+        if (action->text().remove('&') == "Theme") {
+            themeMenu = action->menu();
+            break;
+        }
+    }
+    
+    QVERIFY2(themeMenu != nullptr, "Theme submenu should exist");
+    
+    // Verify Light action is checked
+    for (QAction *action : themeMenu->actions()) {
+        QString text = action->text().remove('&');
+        if (text == "Light") {
+            QVERIFY2(action->isChecked(), "Light action should be checked based on saved preference");
+        } else if (text == "Dark" || text == "System") {
+            QVERIFY2(!action->isChecked(), QString("%1 action should not be checked").arg(text).toUtf8().constData());
+        }
+    }
+    
+    // Clean up - reset to System mode (default)
+    {
+        QSettings settings;
+        settings.setValue("appearance/themeMode", static_cast<int>(ThemeManager::ThemeMode::System));
+        settings.sync();
+    }
 }

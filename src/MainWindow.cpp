@@ -2,12 +2,14 @@
 
 #include "editor/QssEditor.h"
 #include "editor/StyleManager.h"
+#include "editor/ThemeManager.h"
 #include "gallery/WidgetGallery.h"
 
 #include <QSplitter>
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
+#include <QActionGroup>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -20,10 +22,13 @@ MainWindow::MainWindow(QWidget *parent)
     , m_gallery(nullptr)
     , m_editor(nullptr)
     , m_styleManager(nullptr)
+    , m_themeManager(nullptr)
     , m_fileMenu(nullptr)
     , m_editMenu(nullptr)
+    , m_viewMenu(nullptr)
     , m_helpMenu(nullptr)
     , m_templatesMenu(nullptr)
+    , m_themeMenu(nullptr)
     , m_loadAction(nullptr)
     , m_saveAction(nullptr)
     , m_exitAction(nullptr)
@@ -31,9 +36,16 @@ MainWindow::MainWindow(QWidget *parent)
     , m_toggleStyleAction(nullptr)
     , m_aboutAction(nullptr)
     , m_aboutQtAction(nullptr)
+    , m_themeDarkAction(nullptr)
+    , m_themeLightAction(nullptr)
+    , m_themeSystemAction(nullptr)
+    , m_themeActionGroup(nullptr)
 {
     // Create style manager first
     m_styleManager = new StyleManager(this);
+    
+    // Create theme manager
+    m_themeManager = new ThemeManager(m_styleManager, this);
 
     // Setup UI components
     setupCentralWidget();
@@ -78,6 +90,7 @@ void MainWindow::setupMenuBar()
 {
     setupFileMenu();
     setupEditMenu();
+    setupViewMenu();
     setupHelpMenu();
 }
 
@@ -131,6 +144,44 @@ void MainWindow::setupEditMenu()
     m_toggleStyleAction->setStatusTip(tr("Toggle between custom QSS and default Qt styling (Ctrl+T)"));
     connect(m_toggleStyleAction, &QAction::triggered, this, &MainWindow::onToggleStyle);
     m_editMenu->addAction(m_toggleStyleAction);
+}
+
+void MainWindow::setupViewMenu()
+{
+    m_viewMenu = menuBar()->addMenu(tr("&View"));
+
+    // Theme submenu
+    m_themeMenu = m_viewMenu->addMenu(tr("&Theme"));
+    m_themeMenu->setStatusTip(tr("Select application theme"));
+
+    // Create theme actions
+    m_themeDarkAction = new QAction(tr("&Dark"), this);
+    m_themeDarkAction->setCheckable(true);
+    m_themeDarkAction->setStatusTip(tr("Use dark theme"));
+    connect(m_themeDarkAction, &QAction::triggered, this, &MainWindow::onThemeDark);
+    m_themeMenu->addAction(m_themeDarkAction);
+
+    m_themeLightAction = new QAction(tr("&Light"), this);
+    m_themeLightAction->setCheckable(true);
+    m_themeLightAction->setStatusTip(tr("Use light theme"));
+    connect(m_themeLightAction, &QAction::triggered, this, &MainWindow::onThemeLight);
+    m_themeMenu->addAction(m_themeLightAction);
+
+    m_themeSystemAction = new QAction(tr("&System"), this);
+    m_themeSystemAction->setCheckable(true);
+    m_themeSystemAction->setStatusTip(tr("Follow system theme"));
+    connect(m_themeSystemAction, &QAction::triggered, this, &MainWindow::onThemeSystem);
+    m_themeMenu->addAction(m_themeSystemAction);
+
+    // Make actions mutually exclusive using QActionGroup
+    m_themeActionGroup = new QActionGroup(this);
+    m_themeActionGroup->addAction(m_themeDarkAction);
+    m_themeActionGroup->addAction(m_themeLightAction);
+    m_themeActionGroup->addAction(m_themeSystemAction);
+    m_themeActionGroup->setExclusive(true);
+
+    // Initialize action states from current theme mode
+    updateThemeActions();
 }
 
 void MainWindow::setupHelpMenu()
@@ -214,6 +265,10 @@ void MainWindow::setupConnections()
     m_editor->setDefaultStyleMarker(m_styleManager->defaultStyle());
     m_editor->setAvailableStyles(m_styleManager->availableStyles());
     m_editor->setCurrentStyle(m_styleManager->currentStyle());
+
+    // Connect theme manager signals
+    connect(m_themeManager, &ThemeManager::themeModeChanged,
+            this, [this](ThemeManager::ThemeMode) { onThemeModeChanged(); });
 }
 
 void MainWindow::updateWindowTitle()
@@ -418,6 +473,48 @@ void MainWindow::onAbout()
     );
 }
 
+void MainWindow::onThemeDark()
+{
+    m_themeManager->setThemeMode(ThemeManager::ThemeMode::Dark);
+}
+
+void MainWindow::onThemeLight()
+{
+    m_themeManager->setThemeMode(ThemeManager::ThemeMode::Light);
+}
+
+void MainWindow::onThemeSystem()
+{
+    m_themeManager->setThemeMode(ThemeManager::ThemeMode::System);
+}
+
+void MainWindow::onThemeModeChanged()
+{
+    updateThemeActions();
+}
+
+void MainWindow::updateThemeActions()
+{
+    if (!m_themeManager) {
+        return;
+    }
+
+    ThemeManager::ThemeMode mode = m_themeManager->currentMode();
+    
+    // Block signals to prevent recursive calls
+    m_themeDarkAction->blockSignals(true);
+    m_themeLightAction->blockSignals(true);
+    m_themeSystemAction->blockSignals(true);
+
+    m_themeDarkAction->setChecked(mode == ThemeManager::ThemeMode::Dark);
+    m_themeLightAction->setChecked(mode == ThemeManager::ThemeMode::Light);
+    m_themeSystemAction->setChecked(mode == ThemeManager::ThemeMode::System);
+
+    m_themeDarkAction->blockSignals(false);
+    m_themeLightAction->blockSignals(false);
+    m_themeSystemAction->blockSignals(false);
+}
+
 QSplitter* MainWindow::splitter() const
 {
     return m_splitter;
@@ -436,4 +533,9 @@ QssEditor* MainWindow::editor() const
 StyleManager* MainWindow::styleManager() const
 {
     return m_styleManager;
+}
+
+ThemeManager* MainWindow::themeManager() const
+{
+    return m_themeManager;
 }

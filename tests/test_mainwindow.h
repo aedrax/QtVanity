@@ -30,6 +30,12 @@ private slots:
     void testStyleSelectorWorkflow();
     void testQssPreservationAcrossStyleChanges();
     void testStyleChangeErrorHandling();
+    
+    // Theme integration tests
+    void testViewMenuContainsThemeSubmenu();
+    void testThemeActionsAreMutuallyExclusive();
+    void testThemeActionConnectionsWork();
+    void testInitialThemeStateMatchesSavedPreference();
 };
 
 #endif // TEST_MAINWINDOW_H
