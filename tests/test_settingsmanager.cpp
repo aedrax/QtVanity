@@ -1,0 +1,496 @@
+#include "test_settingsmanager.h"
+#include "SettingsManager.h"
+
+#include <QSettings>
+#include <QRandomGenerator>
+#include <QCoreApplication>
+#include <QByteArray>
+#include <QStyleFactory>
+
+void TestSettingsManager::initTestCase()
+{
+    // Set up application name for QSettings
+    QCoreApplication::setOrganizationName(QStringLiteral("QtVanityTest"));
+    QCoreApplication::setApplicationName(QStringLiteral("SettingsManagerTest"));
+}
+
+void TestSettingsManager::cleanupTestCase()
+{
+    // Clean up QSettings
+    QSettings settings;
+    settings.clear();
+}
+
+void TestSettingsManager::init()
+{
+    // Clear settings before each test using the same organization/app name as SettingsManager
+    QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+    settings.remove(QStringLiteral("window/geometry"));
+    settings.remove(QStringLiteral("window/splitterState"));
+    settings.remove(QStringLiteral("appearance/baseStyle"));
+    settings.remove(QStringLiteral("recentProjects"));
+}
+
+void TestSettingsManager::cleanup()
+{
+    // Clean up after each test using the same organization/app name as SettingsManager
+    QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+    settings.remove(QStringLiteral("window/geometry"));
+    settings.remove(QStringLiteral("window/splitterState"));
+    settings.remove(QStringLiteral("appearance/baseStyle"));
+    settings.remove(QStringLiteral("recentProjects"));
+}
+
+/**
+ * Unit test: Default values when no settings exist
+ * 
+ * Tests that SettingsManager returns appropriate default values when
+ * no settings have been saved yet.
+ */
+void TestSettingsManager::testDefaultValuesWhenNoSettingsExist()
+{
+    // Check that settings are cleared
+    {
+        QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+        settings.clear();
+    }
+    
+    SettingsManager settingsManager;
+    
+    // Test window geometry defaults
+    QVERIFY2(!settingsManager.hasWindowGeometry(),
+             "hasWindowGeometry() should return false when no geometry saved");
+    QVERIFY2(settingsManager.loadWindowGeometry().isEmpty(),
+             "loadWindowGeometry() should return empty QByteArray when no geometry saved");
+    
+    // Test splitter state defaults
+    QVERIFY2(!settingsManager.hasSplitterState(),
+             "hasSplitterState() should return false when no state saved");
+    QVERIFY2(settingsManager.loadSplitterState().isEmpty(),
+             "loadSplitterState() should return empty QByteArray when no state saved");
+    
+    // Test base style defaults
+    QVERIFY2(!settingsManager.hasBaseStyle(),
+             "hasBaseStyle() should return false when no style saved");
+    QVERIFY2(settingsManager.loadBaseStyle().isEmpty(),
+             "loadBaseStyle() should return empty string when no style saved");
+    
+    // Test recent projects defaults
+    QVERIFY2(settingsManager.recentProjects().isEmpty(),
+             "recentProjects() should return empty list when no projects saved");
+}
+
+/**
+ * Unit test: Invalid style name handling
+ * 
+ * Tests that SettingsManager correctly handles invalid or unavailable style names.
+ * The caller (MainWindow) is responsible for falling back to platform default.
+ */
+void TestSettingsManager::testInvalidStyleNameHandling()
+{
+    SettingsManager settingsManager;
+    
+    // Save an invalid/non-existent style name
+    QString invalidStyle = QStringLiteral("NonExistentStyleThatDoesNotExist12345");
+    settingsManager.saveBaseStyle(invalidStyle);
+    
+    // SettingsManager should store and return the value as-is
+    // (validation is the caller's responsibility)
+    QVERIFY2(settingsManager.hasBaseStyle(),
+             "hasBaseStyle() should return true after saving any style name");
+    
+    QString loadedStyle = settingsManager.loadBaseStyle();
+    QVERIFY2(loadedStyle == invalidStyle,
+             qPrintable(QString("loadBaseStyle() should return saved value '%1', got '%2'")
+                       .arg(invalidStyle).arg(loadedStyle)));
+    
+    // Verify the style is not in available styles (confirming it's invalid)
+    QStringList availableStyles = QStyleFactory::keys();
+    QVERIFY2(!availableStyles.contains(invalidStyle, Qt::CaseInsensitive),
+             "Test style should not be in available styles list");
+    
+    // Test empty style name
+    settingsManager.saveBaseStyle(QString());
+    QVERIFY2(settingsManager.loadBaseStyle().isEmpty(),
+             "loadBaseStyle() should return empty string when empty style saved");
+}
+
+/**
+ * Unit test: Recent projects cap enforcement
+ * 
+ * Tests that the recent projects list is properly capped at MaxRecentProjects (10).
+ */
+void TestSettingsManager::testRecentProjectsCapEnforcement()
+{
+    SettingsManager settingsManager;
+    
+    // Add more than MaxRecentProjects (10) projects
+    const int numProjectsToAdd = 15;
+    for (int i = 0; i < numProjectsToAdd; ++i) {
+        settingsManager.addRecentProject(QString("/path/to/project_%1.qvp").arg(i));
+    }
+    
+    QStringList projects = settingsManager.recentProjects();
+    
+    // Verify cap is enforced
+    QVERIFY2(projects.size() == SettingsManager::MaxRecentProjects,
+             qPrintable(QString("Recent projects should be capped at %1, got %2")
+                       .arg(SettingsManager::MaxRecentProjects).arg(projects.size())));
+    
+    // Verify most recent project is first (project_14 was added last)
+    QVERIFY2(projects.first() == QStringLiteral("/path/to/project_14.qvp"),
+             qPrintable(QString("Most recent project should be first, got '%1'")
+                       .arg(projects.first())));
+    
+    // Verify oldest projects were removed (project_0 through project_4)
+    for (int i = 0; i < 5; ++i) {
+        QString oldProject = QString("/path/to/project_%1.qvp").arg(i);
+        QVERIFY2(!projects.contains(oldProject),
+                 qPrintable(QString("Old project '%1' should have been removed").arg(oldProject)));
+    }
+    
+    // Verify newest projects are retained (project_5 through project_14)
+    for (int i = 5; i < numProjectsToAdd; ++i) {
+        QString newProject = QString("/path/to/project_%1.qvp").arg(i);
+        QVERIFY2(projects.contains(newProject),
+                 qPrintable(QString("New project '%1' should be in list").arg(newProject)));
+    }
+}
+
+/**
+ * Unit test: Clear recent projects
+ * 
+ * Tests that clearRecentProjects() properly empties the list and emits signal.
+ */
+void TestSettingsManager::testClearRecentProjects()
+{
+    SettingsManager settingsManager;
+    
+    // Add some projects
+    settingsManager.addRecentProject(QStringLiteral("/path/to/project1.qvp"));
+    settingsManager.addRecentProject(QStringLiteral("/path/to/project2.qvp"));
+    settingsManager.addRecentProject(QStringLiteral("/path/to/project3.qvp"));
+    
+    // Verify projects were added
+    QVERIFY2(settingsManager.recentProjects().size() == 3,
+             "Should have 3 recent projects before clearing");
+    
+    // Set up signal spy to verify signal emission
+    QSignalSpy spy(&settingsManager, &SettingsManager::recentProjectsChanged);
+    
+    // Clear recent projects
+    settingsManager.clearRecentProjects();
+    
+    // Verify list is empty
+    QVERIFY2(settingsManager.recentProjects().isEmpty(),
+             "Recent projects list should be empty after clearing");
+    
+    // Verify signal was emitted
+    QVERIFY2(spy.count() == 1,
+             qPrintable(QString("recentProjectsChanged signal should be emitted once, got %1")
+                       .arg(spy.count())));
+    
+    // Verify clearing an already empty list still works
+    settingsManager.clearRecentProjects();
+    QVERIFY2(settingsManager.recentProjects().isEmpty(),
+             "Recent projects list should remain empty after clearing again");
+}
+
+/**
+ * Feature: settings-persistence, Property 2: Base Style Round-Trip
+ * 
+ * For any valid style name from the available styles list, saving the base style
+ * and then loading it should return the same style name.
+ */
+void TestSettingsManager::testBaseStyleRoundTrip_data()
+{
+    QTest::addColumn<QString>("styleName");
+    
+    // Get all available styles from QStyleFactory
+    QStringList availableStyles = QStyleFactory::keys();
+    
+    // Generate test cases for each available style (run multiple times for PBT coverage)
+    // This verifies we test all available styles on the current platform
+    for (int iteration = 0; iteration < 100; ++iteration) {
+        for (const QString &style : availableStyles) {
+            QTest::newRow(qPrintable(QString("style_%1_iter_%2").arg(style).arg(iteration))) << style;
+        }
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_style") << QString();
+}
+
+void TestSettingsManager::testBaseStyleRoundTrip()
+{
+    // Feature: settings-persistence, Property 2: Base Style Round-Trip
+    
+    QFETCH(QString, styleName);
+    
+    // Create first SettingsManager and save the base style
+    {
+        SettingsManager settingsManager;
+        settingsManager.saveBaseStyle(styleName);
+        
+        // Verify hasBaseStyle returns true after saving (unless empty)
+        if (!styleName.isEmpty()) {
+            QVERIFY2(settingsManager.hasBaseStyle(),
+                     "hasBaseStyle() should return true after saving non-empty style");
+        }
+    }
+    
+    // Create a new SettingsManager instance - it should load the saved style
+    {
+        SettingsManager settingsManager;
+        QString loadedStyle = settingsManager.loadBaseStyle();
+        
+        // Property: The loaded style should equal the saved style
+        QVERIFY2(loadedStyle == styleName,
+                 qPrintable(QString("Round-trip failed: saved '%1', loaded '%2'")
+                           .arg(styleName)
+                           .arg(loadedStyle)));
+    }
+}
+
+/**
+ * Feature: settings-persistence, Property 3: Splitter State Round-Trip
+ * 
+ * For any valid splitter state (list of panel widths), saving the state
+ * and then loading it should return an equivalent state.
+ */
+void TestSettingsManager::testSplitterStateRoundTrip_data()
+{
+    QTest::addColumn<QByteArray>("splitterState");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100+ test cases with random splitter state data
+    for (int i = 0; i < 100; ++i) {
+        // Generate random splitter state byte array (simulating QSplitter::saveState() output)
+        // Real splitter state has a specific format, but for round-trip testing,
+        // any byte array should work since we're testing storage/retrieval
+        int size = rng->bounded(20, 100);  // Typical splitter state size range
+        QByteArray state;
+        state.resize(size);
+        for (int j = 0; j < size; ++j) {
+            state[j] = static_cast<char>(rng->bounded(256));
+        }
+        
+        QTest::newRow(qPrintable(QString("splitter_state_iteration_%1").arg(i))) << state;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_state") << QByteArray();
+    QTest::newRow("single_byte") << QByteArray(1, 'S');
+    QTest::newRow("large_state") << QByteArray(500, 'Y');
+}
+
+void TestSettingsManager::testSplitterStateRoundTrip()
+{
+    // Feature: settings-persistence, Property 3: Splitter State Round-Trip
+    
+    QFETCH(QByteArray, splitterState);
+    
+    // Create first SettingsManager and save the splitter state
+    {
+        SettingsManager settingsManager;
+        settingsManager.saveSplitterState(splitterState);
+        
+        // Verify hasSplitterState returns true after saving (unless empty)
+        if (!splitterState.isEmpty()) {
+            QVERIFY2(settingsManager.hasSplitterState(),
+                     "hasSplitterState() should return true after saving non-empty state");
+        }
+    }
+    
+    // Create a new SettingsManager instance - it should load the saved state
+    {
+        SettingsManager settingsManager;
+        QByteArray loadedState = settingsManager.loadSplitterState();
+        
+        // Property: The loaded state should equal the saved state
+        QVERIFY2(loadedState == splitterState,
+                 qPrintable(QString("Round-trip failed: saved %1 bytes, loaded %2 bytes")
+                           .arg(splitterState.size())
+                           .arg(loadedState.size())));
+    }
+}
+
+/**
+ * Feature: settings-persistence, Property 4: Window Geometry Round-Trip
+ * 
+ * For any valid window geometry, saving the geometry and then loading it
+ * should return the same geometry bytes.
+ */
+void TestSettingsManager::testWindowGeometryRoundTrip_data()
+{
+    QTest::addColumn<QByteArray>("geometry");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100+ test cases with random geometry data
+    for (int i = 0; i < 100; ++i) {
+        // Generate random geometry byte array (simulating QWidget::saveGeometry() output)
+        // Real geometry data has a specific format, but for round-trip testing,
+        // any byte array should work since we're testing storage/retrieval
+        int size = rng->bounded(50, 200);  // Typical geometry size range
+        QByteArray geometry;
+        geometry.resize(size);
+        for (int j = 0; j < size; ++j) {
+            geometry[j] = static_cast<char>(rng->bounded(256));
+        }
+        
+        QTest::newRow(qPrintable(QString("geometry_iteration_%1").arg(i))) << geometry;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_geometry") << QByteArray();
+    QTest::newRow("single_byte") << QByteArray(1, 'A');
+    QTest::newRow("large_geometry") << QByteArray(1000, 'X');
+}
+
+void TestSettingsManager::testWindowGeometryRoundTrip()
+{
+    // Feature: settings-persistence, Property 4: Window Geometry Round-Trip
+    
+    QFETCH(QByteArray, geometry);
+    
+    // Create first SettingsManager and save the geometry
+    {
+        SettingsManager settingsManager;
+        settingsManager.saveWindowGeometry(geometry);
+        
+        // Verify hasWindowGeometry returns true after saving (unless empty)
+        if (!geometry.isEmpty()) {
+            QVERIFY2(settingsManager.hasWindowGeometry(),
+                     "hasWindowGeometry() should return true after saving non-empty geometry");
+        }
+    }
+    
+    // Create a new SettingsManager instance - it should load the saved geometry
+    {
+        SettingsManager settingsManager;
+        QByteArray loadedGeometry = settingsManager.loadWindowGeometry();
+        
+        // Property: The loaded geometry should equal the saved geometry
+        QVERIFY2(loadedGeometry == geometry,
+                 qPrintable(QString("Round-trip failed: saved %1 bytes, loaded %2 bytes")
+                           .arg(geometry.size())
+                           .arg(loadedGeometry.size())));
+    }
+}
+
+
+/**
+ * Feature: settings-persistence, Property 5: Recent Projects List Ordering and Cap
+ * 
+ * For any sequence of project additions, the recent projects list should:
+ * - Contain at most MaxRecentProjects (10) entries
+ * - Have the most recently added project at the front
+ * - Not contain duplicates (adding an existing project moves it to front)
+ */
+void TestSettingsManager::testRecentProjectsOrderingAndCap_data()
+{
+    QTest::addColumn<QStringList>("projectsToAdd");
+    QTest::addColumn<QString>("expectedFirst");
+    QTest::addColumn<int>("expectedMaxSize");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100+ test cases with random project sequences
+    for (int i = 0; i < 100; ++i) {
+        QStringList projects;
+        int numProjects = rng->bounded(1, 20);  // Add 1-19 projects
+        
+        for (int j = 0; j < numProjects; ++j) {
+            // Generate random project path
+            QString path = QString("/path/to/project_%1_%2.qvp")
+                          .arg(i)
+                          .arg(rng->bounded(1000));
+            projects.append(path);
+        }
+        
+        // The last added project should be first in the list
+        QString expectedFirst = projects.last();
+        
+        // Calculate expected size: count unique projects (in order of last occurrence), capped at 10
+        QStringList uniqueProjects;
+        for (int k = projects.size() - 1; k >= 0; --k) {
+            if (!uniqueProjects.contains(projects[k])) {
+                uniqueProjects.prepend(projects[k]);
+            }
+        }
+        int expectedMaxSize = qMin(uniqueProjects.size(), SettingsManager::MaxRecentProjects);
+        
+        QTest::newRow(qPrintable(QString("random_sequence_%1").arg(i))) 
+            << projects << expectedFirst << expectedMaxSize;
+    }
+    
+    // Test duplicate handling - adding same project moves it to front
+    QStringList duplicateTest = {"/a.qvp", "/b.qvp", "/c.qvp", "/a.qvp"};
+    QTest::newRow("duplicate_moves_to_front") << duplicateTest << QString("/a.qvp") << 3;
+    
+    // Test cap enforcement - adding more than 10 projects
+    QStringList manyProjects;
+    for (int i = 0; i < 15; ++i) {
+        manyProjects.append(QString("/project_%1.qvp").arg(i));
+    }
+    QTest::newRow("cap_at_10") << manyProjects << QString("/project_14.qvp") << 10;
+    
+    // Edge case: single project
+    QTest::newRow("single_project") << QStringList{"/single.qvp"} << QString("/single.qvp") << 1;
+    
+    // Edge case: empty path (should still be added)
+    QTest::newRow("empty_path") << QStringList{""} << QString("") << 1;
+}
+
+void TestSettingsManager::testRecentProjectsOrderingAndCap()
+{
+    // Feature: settings-persistence, Property 5: Recent Projects List Ordering and Cap
+    
+    QFETCH(QStringList, projectsToAdd);
+    QFETCH(QString, expectedFirst);
+    QFETCH(int, expectedMaxSize);
+    
+    // Clear any existing recent projects first using the correct settings
+    {
+        QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+        settings.remove(QStringLiteral("recentProjects"));
+    }
+    
+    SettingsManager settingsManager;
+    
+    // Add all projects in sequence
+    for (const QString &project : projectsToAdd) {
+        settingsManager.addRecentProject(project);
+    }
+    
+    QStringList recentProjects = settingsManager.recentProjects();
+    
+    // Property 1: List size should not exceed MaxRecentProjects (10)
+    QVERIFY2(recentProjects.size() <= SettingsManager::MaxRecentProjects,
+             qPrintable(QString("List size %1 exceeds max %2")
+                       .arg(recentProjects.size())
+                       .arg(SettingsManager::MaxRecentProjects)));
+    
+    // Property 2: Most recently added project should be at front
+    if (!recentProjects.isEmpty()) {
+        QVERIFY2(recentProjects.first() == expectedFirst,
+                 qPrintable(QString("Expected first '%1', got '%2'")
+                           .arg(expectedFirst)
+                           .arg(recentProjects.first())));
+    }
+    
+    // Property 3: No duplicates in the list
+    QSet<QString> uniqueSet(recentProjects.begin(), recentProjects.end());
+    QVERIFY2(uniqueSet.size() == recentProjects.size(),
+             qPrintable(QString("List contains duplicates: %1 unique vs %2 total")
+                       .arg(uniqueSet.size())
+                       .arg(recentProjects.size())));
+    
+    // Property 4: Size should match expected (accounting for duplicates and cap)
+    QVERIFY2(recentProjects.size() == expectedMaxSize,
+             qPrintable(QString("Expected size %1, got %2")
+                       .arg(expectedMaxSize)
+                       .arg(recentProjects.size())));
+}

@@ -14,6 +14,7 @@ class StyleManager;
 class ThemeManager;
 class VariableManager;
 class VariablePanel;
+class SettingsManager;
 
 /**
  * @brief Main application window for QtVanity.
@@ -84,6 +85,12 @@ public:
      */
     VariablePanel* variablePanel() const;
 
+    /**
+     * @brief Returns the settings manager.
+     * @return Pointer to the SettingsManager.
+     */
+    SettingsManager* settingsManager() const;
+
 protected:
     /**
      * @brief Handles close event with unsaved changes check.
@@ -124,6 +131,10 @@ private slots:
     void onProjectSaved();
     void onProjectLoadError(const QString &error);
     void onProjectSaveError(const QString &error);
+    
+    // Recent projects
+    void onOpenRecentProject(const QString &filePath);
+    void onClearRecentProjects();
 
 private:
     void setupCentralWidget();
@@ -133,6 +144,8 @@ private:
     void setupViewMenu();
     void setupHelpMenu();
     void setupTemplatesSubmenu(QMenu *parentMenu);
+    void setupRecentProjectsMenu();
+    void updateRecentProjectsMenu();
     void setupConnections();
     void updateWindowTitle();
     void updateThemeActions();
@@ -148,6 +161,7 @@ private:
     ThemeManager *m_themeManager;
     VariableManager *m_variableManager;
     VariablePanel *m_variablePanel;
+    SettingsManager *m_settingsManager;
 
     // Menus
     QMenu *m_fileMenu;
@@ -156,6 +170,7 @@ private:
     QMenu *m_helpMenu;
     QMenu *m_templatesMenu;
     QMenu *m_themeMenu;
+    QMenu *m_recentProjectsMenu;
 
     // Actions
     QAction *m_loadAction;
@@ -176,6 +191,7 @@ private:
     QAction *m_saveProjectAction;
     QAction *m_saveProjectAsAction;
     QAction *m_exportQssAction;
+    QAction *m_clearRecentAction;
 
     QString m_currentFilePath;
     QString m_currentProjectPath;

@@ -40,6 +40,8 @@ set(SOURCES
     src/editor/QssEditor.h
     src/editor/ColorSwatchOverlay.cpp
     src/editor/ColorSwatchOverlay.h
+    src/editor/SettingsManager.cpp
+    src/editor/SettingsManager.h
     src/gallery/GalleryPage.cpp
     src/gallery/GalleryPage.h
     src/gallery/ButtonsPage.cpp
@@ -768,6 +770,8 @@ if(BUILD_TESTING)
         src/editor/QssEditor.h
         src/editor/ColorSwatchOverlay.cpp
         src/editor/ColorSwatchOverlay.h
+        src/editor/SettingsManager.cpp
+        src/editor/SettingsManager.h
         src/gallery/GalleryPage.cpp
         src/gallery/GalleryPage.h
         src/gallery/ButtonsPage.cpp
@@ -831,6 +835,8 @@ if(BUILD_TESTING)
         tests/test_mainwindow.h
         tests/test_variablemanager.cpp
         tests/test_variablemanager.h
+        tests/test_settingsmanager.cpp
+        tests/test_settingsmanager.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE

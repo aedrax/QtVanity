@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "editor/QssEditor.h"
+#include "editor/SettingsManager.h"
 #include "editor/StyleManager.h"
 #include "editor/ThemeManager.h"
 #include "editor/VariableManager.h"
@@ -30,12 +31,14 @@ MainWindow::MainWindow(QWidget *parent)
     , m_themeManager(nullptr)
     , m_variableManager(nullptr)
     , m_variablePanel(nullptr)
+    , m_settingsManager(nullptr)
     , m_fileMenu(nullptr)
     , m_editMenu(nullptr)
     , m_viewMenu(nullptr)
     , m_helpMenu(nullptr)
     , m_templatesMenu(nullptr)
     , m_themeMenu(nullptr)
+    , m_recentProjectsMenu(nullptr)
     , m_loadAction(nullptr)
     , m_saveAction(nullptr)
     , m_exitAction(nullptr)
@@ -52,10 +55,32 @@ MainWindow::MainWindow(QWidget *parent)
     , m_saveProjectAction(nullptr)
     , m_saveProjectAsAction(nullptr)
     , m_exportQssAction(nullptr)
+    , m_clearRecentAction(nullptr)
     , m_projectModified(false)
 {
-    // Create style manager first
+    // Create settings manager first
+    m_settingsManager = new SettingsManager(this);
+
+    // Create style manager
     m_styleManager = new StyleManager(this);
+    
+    // Restore saved base style before theme application
+    if (m_settingsManager->hasBaseStyle()) {
+        QString savedStyle = m_settingsManager->loadBaseStyle();
+        // Validate style exists in available styles (case-insensitive)
+        QStringList availableStyles = m_styleManager->availableStyles();
+        bool styleValid = false;
+        for (const QString &style : availableStyles) {
+            if (style.compare(savedStyle, Qt::CaseInsensitive) == 0) {
+                styleValid = true;
+                break;
+            }
+        }
+        if (styleValid) {
+            m_styleManager->setStyle(savedStyle);
+        }
+        // If invalid, StyleManager keeps platform default
+    }
     
     // Create theme manager
     m_themeManager = new ThemeManager(m_styleManager, this);
@@ -71,6 +96,11 @@ MainWindow::MainWindow(QWidget *parent)
     // Set window properties
     setWindowTitle(QString("QtVanity - Qt %1").arg(qVersion()));
     resize(1200, 800);
+
+    // Restore saved window geometry if available
+    if (m_settingsManager->hasWindowGeometry()) {
+        restoreGeometry(m_settingsManager->loadWindowGeometry());
+    }
 
     updateWindowTitle();
 }
@@ -100,8 +130,13 @@ void MainWindow::setupCentralWidget()
     m_splitter->addWidget(m_editor);
     m_splitter->addWidget(m_gallery);
 
-    // Set initial splitter sizes (20% variable panel, 35% editor, 45% gallery)
-    m_splitter->setSizes({200, 350, 450});
+    // Restore saved splitter state or use default sizes
+    if (m_settingsManager->hasSplitterState()) {
+        m_splitter->restoreState(m_settingsManager->loadSplitterState());
+    } else {
+        // Set initial splitter sizes (20% variable panel, 35% editor, 45% gallery)
+        m_splitter->setSizes({200, 350, 450});
+    }
 
     // Set splitter as central widget
     setCentralWidget(m_splitter);
@@ -132,6 +167,9 @@ void MainWindow::setupFileMenu()
     m_openProjectAction->setStatusTip(tr("Open a QtVanity project file (.qvp)"));
     connect(m_openProjectAction, &QAction::triggered, this, &MainWindow::onOpenProject);
     m_fileMenu->addAction(m_openProjectAction);
+
+    // Recent Projects submenu
+    setupRecentProjectsMenu();
 
     // Save Project action
     m_saveProjectAction = new QAction(tr("&Save Project"), this);
@@ -283,6 +321,49 @@ void MainWindow::setupTemplatesSubmenu(QMenu *parentMenu)
     }
 }
 
+void MainWindow::setupRecentProjectsMenu()
+{
+    m_recentProjectsMenu = m_fileMenu->addMenu(tr("Recent &Projects"));
+    m_recentProjectsMenu->setStatusTip(tr("Open a recently used project"));
+
+    // Populate the menu
+    updateRecentProjectsMenu();
+
+    // Connect to settings manager signal for updates
+    connect(m_settingsManager, &SettingsManager::recentProjectsChanged,
+            this, &MainWindow::updateRecentProjectsMenu);
+}
+
+void MainWindow::updateRecentProjectsMenu()
+{
+    m_recentProjectsMenu->clear();
+
+    QStringList projects = m_settingsManager->recentProjects();
+
+    if (projects.isEmpty()) {
+        // Show disabled placeholder when list is empty
+        QAction *noRecent = m_recentProjectsMenu->addAction(tr("(No recent projects)"));
+        noRecent->setEnabled(false);
+    } else {
+        // Add action for each recent project
+        for (const QString &filePath : projects) {
+            QFileInfo fileInfo(filePath);
+            QAction *action = m_recentProjectsMenu->addAction(fileInfo.fileName());
+            action->setToolTip(filePath);  // Full path as tooltip
+            action->setStatusTip(filePath);
+            connect(action, &QAction::triggered, this, [this, filePath]() {
+                onOpenRecentProject(filePath);
+            });
+        }
+    }
+
+    // Add separator and Clear action
+    m_recentProjectsMenu->addSeparator();
+    m_clearRecentAction = m_recentProjectsMenu->addAction(tr("Clear Recent Projects"));
+    m_clearRecentAction->setEnabled(!projects.isEmpty());
+    connect(m_clearRecentAction, &QAction::triggered, this, &MainWindow::onClearRecentProjects);
+}
+
 void MainWindow::setupConnections()
 {
     // Connect editor apply request to style manager (with variable substitution)
@@ -321,6 +402,12 @@ void MainWindow::setupConnections()
             m_editor, &QssEditor::setCurrentStyle);
     connect(m_styleManager, &StyleManager::styleChangeError,
             this, &MainWindow::onStyleChangeError);
+    
+    // Save base style when it changes
+    connect(m_styleManager, &StyleManager::styleChanged,
+            this, [this](const QString &styleName) {
+                m_settingsManager->saveBaseStyle(styleName);
+            });
 
     // Initialize style selector with available styles
     m_editor->setDefaultStyleMarker(m_styleManager->defaultStyle());
@@ -465,6 +552,9 @@ void MainWindow::clearProject()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (maybeSaveProject()) {
+        // Save window geometry and splitter state before closing
+        m_settingsManager->saveWindowGeometry(saveGeometry());
+        m_settingsManager->saveSplitterState(m_splitter->saveState());
         event->accept();
     } else {
         event->ignore();
@@ -721,6 +811,9 @@ void MainWindow::onOpenProject()
         m_editor->markAsSaved();
         updateWindowTitle();
         
+        // Add to recent projects after successful load
+        m_settingsManager->addRecentProject(filePath);
+        
         // Apply the loaded style
         onRegenerateStyle();
     }
@@ -737,6 +830,9 @@ void MainWindow::onSaveProject()
         m_projectModified = false;
         m_editor->markAsSaved();
         updateWindowTitle();
+        
+        // Add to recent projects after successful save
+        m_settingsManager->addRecentProject(m_currentProjectPath);
     }
 }
 
@@ -764,6 +860,9 @@ void MainWindow::onSaveProjectAs()
         m_projectModified = false;
         m_editor->markAsSaved();
         updateWindowTitle();
+        
+        // Add to recent projects after successful save
+        m_settingsManager->addRecentProject(filePath);
     }
 }
 
@@ -816,6 +915,47 @@ void MainWindow::onProjectSaveError(const QString &error)
         tr("Project Save Error"),
         tr("Failed to save project:\n%1").arg(error)
     );
+}
+
+void MainWindow::onOpenRecentProject(const QString &filePath)
+{
+    // Check if file exists
+    if (!QFileInfo::exists(filePath)) {
+        QMessageBox::warning(
+            this,
+            tr("File Not Found"),
+            tr("The project file no longer exists:\n%1").arg(filePath)
+        );
+        // Remove from recent projects list
+        m_settingsManager->removeRecentProject(filePath);
+        return;
+    }
+
+    // Check for unsaved project changes first
+    if (!maybeSaveProject()) {
+        return;
+    }
+
+    QString qssTemplate;
+    if (m_variableManager->loadProject(filePath, qssTemplate)) {
+        m_editor->setStyleSheet(qssTemplate);
+        m_currentProjectPath = filePath;
+        m_currentFilePath.clear();
+        m_projectModified = false;
+        m_editor->markAsSaved();
+        updateWindowTitle();
+        
+        // Add to recent projects (moves to front if already exists)
+        m_settingsManager->addRecentProject(filePath);
+        
+        // Apply the loaded style
+        onRegenerateStyle();
+    }
+}
+
+void MainWindow::onClearRecentProjects()
+{
+    m_settingsManager->clearRecentProjects();
 }
 
 void MainWindow::updateThemeActions()
@@ -873,4 +1013,9 @@ VariableManager* MainWindow::variableManager() const
 VariablePanel* MainWindow::variablePanel() const
 {
     return m_variablePanel;
+}
+
+SettingsManager* MainWindow::settingsManager() const
+{
+    return m_settingsManager;
 }

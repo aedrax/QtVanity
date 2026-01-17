@@ -15,6 +15,7 @@
 #include "test_dialogspage.h"
 #include "test_mainwindow.h"
 #include "test_variablemanager.h"
+#include "test_settingsmanager.h"
 
 int main(int argc, char *argv[])
 {
@@ -97,6 +98,12 @@ int main(int argc, char *argv[])
     // Run VariableManager tests
     {
         TestVariableManager test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run SettingsManager tests
+    {
+        TestSettingsManager test;
         status |= QTest::qExec(&test, argc, argv);
     }
     
