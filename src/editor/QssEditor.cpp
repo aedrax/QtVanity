@@ -1,5 +1,6 @@
 #include "QssEditor.h"
 #include "QssSyntaxHighlighter.h"
+#include "ColorSwatchOverlay.h"
 
 #include <QTextEdit>
 #include <QPushButton>
@@ -14,6 +15,7 @@ QssEditor::QssEditor(QWidget *parent)
     : QWidget(parent)
     , m_textEdit(nullptr)
     , m_highlighter(nullptr)
+    , m_colorSwatchOverlay(nullptr)
     , m_applyButton(nullptr)
     , m_toggleButton(nullptr)
     , m_autoApplyCheckbox(nullptr)
@@ -54,6 +56,10 @@ void QssEditor::setupUi()
 
     // Attach syntax highlighter
     m_highlighter = new QssSyntaxHighlighter(m_textEdit->document());
+
+    // Create color swatch overlay for inline color picking
+    m_colorSwatchOverlay = new ColorSwatchOverlay(m_textEdit, m_textEdit->viewport());
+    m_colorSwatchOverlay->show();
 
     // Create button layout
     QHBoxLayout *buttonLayout = new QHBoxLayout();
@@ -400,4 +406,16 @@ void QssEditor::setDarkColorScheme(bool dark)
         m_highlighter->setColorScheme(dark ? QssSyntaxHighlighter::DarkScheme 
                                            : QssSyntaxHighlighter::LightScheme);
     }
+}
+
+void QssEditor::setColorSwatchesEnabled(bool enabled)
+{
+    if (m_colorSwatchOverlay) {
+        m_colorSwatchOverlay->setEnabled(enabled);
+    }
+}
+
+bool QssEditor::colorSwatchesEnabled() const
+{
+    return m_colorSwatchOverlay ? m_colorSwatchOverlay->isOverlayEnabled() : false;
 }

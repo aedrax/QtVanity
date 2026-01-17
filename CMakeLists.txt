@@ -38,6 +38,8 @@ set(SOURCES
     src/editor/QssSyntaxHighlighter.h
     src/editor/QssEditor.cpp
     src/editor/QssEditor.h
+    src/editor/ColorSwatchOverlay.cpp
+    src/editor/ColorSwatchOverlay.h
     src/gallery/GalleryPage.cpp
     src/gallery/GalleryPage.h
     src/gallery/ButtonsPage.cpp
@@ -764,6 +766,8 @@ if(BUILD_TESTING)
         src/editor/QssSyntaxHighlighter.h
         src/editor/QssEditor.cpp
         src/editor/QssEditor.h
+        src/editor/ColorSwatchOverlay.cpp
+        src/editor/ColorSwatchOverlay.h
         src/gallery/GalleryPage.cpp
         src/gallery/GalleryPage.h
         src/gallery/ButtonsPage.cpp

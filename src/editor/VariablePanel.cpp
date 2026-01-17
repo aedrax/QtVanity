@@ -59,7 +59,12 @@ void VariablePanel::setupUi()
     m_variableTable->horizontalHeader()->setSectionResizeMode(COL_COLOR, QHeaderView::Fixed);
     m_variableTable->horizontalHeader()->resizeSection(COL_NAME, 80);
     m_variableTable->horizontalHeader()->resizeSection(COL_VALUE, 80);
-    m_variableTable->horizontalHeader()->resizeSection(COL_COLOR, 40);
+    
+    // Calculate minimum width for Color column based on header text
+    QFontMetrics fm(m_variableTable->horizontalHeader()->font());
+    int colorHeaderWidth = fm.horizontalAdvance(tr("Color")) + 16; // Add padding for header margins
+    int minColorWidth = qMax(40, colorHeaderWidth);
+    m_variableTable->horizontalHeader()->resizeSection(COL_COLOR, minColorWidth);
     m_variableTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_variableTable->setSelectionMode(QAbstractItemView::SingleSelection);
     m_variableTable->verticalHeader()->setVisible(false);

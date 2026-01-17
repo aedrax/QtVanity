@@ -11,6 +11,7 @@ class QCheckBox;
 class QComboBox;
 class QTimer;
 class QssSyntaxHighlighter;
+class ColorSwatchOverlay;
 
 /**
  * @brief QSS code editor widget with syntax highlighting and auto-apply.
@@ -154,6 +155,17 @@ public:
      */
     void setDarkColorScheme(bool dark);
 
+    /**
+     * @brief Enables or disables color swatch overlay.
+     * @param enabled true to show clickable color swatches.
+     */
+    void setColorSwatchesEnabled(bool enabled);
+
+    /**
+     * @brief Returns whether color swatches are enabled.
+     */
+    bool colorSwatchesEnabled() const;
+
 signals:
     /**
      * @brief Emitted when the user requests style application.
@@ -209,6 +221,7 @@ private:
 
     QTextEdit *m_textEdit;
     QssSyntaxHighlighter *m_highlighter;
+    ColorSwatchOverlay *m_colorSwatchOverlay;
     QPushButton *m_applyButton;
     QPushButton *m_toggleButton;
     QCheckBox *m_autoApplyCheckbox;
