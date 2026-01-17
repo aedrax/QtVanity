@@ -148,6 +148,12 @@ public:
      */
     void insertVariableReference(const QString &name);
 
+    /**
+     * @brief Sets the syntax highlighter color scheme.
+     * @param dark true for dark background colors, false for light.
+     */
+    void setDarkColorScheme(bool dark);
+
 signals:
     /**
      * @brief Emitted when the user requests style application.

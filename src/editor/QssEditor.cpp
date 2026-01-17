@@ -393,3 +393,11 @@ void QssEditor::insertVariableReference(const QString &name)
     // Verify the text edit has focus after insertion
     m_textEdit->setFocus();
 }
+
+void QssEditor::setDarkColorScheme(bool dark)
+{
+    if (m_highlighter) {
+        m_highlighter->setColorScheme(dark ? QssSyntaxHighlighter::DarkScheme 
+                                           : QssSyntaxHighlighter::LightScheme);
+    }
+}

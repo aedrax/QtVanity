@@ -2,6 +2,7 @@
 
 QssSyntaxHighlighter::QssSyntaxHighlighter(QTextDocument *parent)
     : QSyntaxHighlighter(parent)
+    , m_colorScheme(DarkScheme)
 {
     setupFormats();
     setupRules();
@@ -11,13 +12,66 @@ QssSyntaxHighlighter::QssSyntaxHighlighter(QTextDocument *parent)
     m_commentEndExpression = QRegularExpression(QStringLiteral("\\*/"));
 }
 
+void QssSyntaxHighlighter::setColorScheme(ColorScheme scheme)
+{
+    if (m_colorScheme != scheme) {
+        m_colorScheme = scheme;
+        setupFormats();
+        rehighlight();
+    }
+}
+
 void QssSyntaxHighlighter::setupFormats()
 {
-    // Selector format - widget type names (blue, bold)
+    if (m_colorScheme == DarkScheme) {
+        setupDarkFormats();
+    } else {
+        setupLightFormats();
+    }
+}
+
+void QssSyntaxHighlighter::setupDarkFormats()
+{
+    // Selector format - widget type names (bright sky blue, bold)
+    m_selectorFormat.setForeground(QColor(86, 156, 214));  // VS Code blue
+    m_selectorFormat.setFontWeight(QFont::Bold);
+
+    // Property format - CSS-like properties (light cyan)
+    m_propertyFormat.setForeground(QColor(156, 220, 254));
+
+    // Value format - property values (soft green)
+    m_valueFormat.setForeground(QColor(181, 206, 168));  // Soft sage green
+
+    // Pseudo-state format - :hover, :pressed, etc. (soft purple/lavender)
+    m_pseudoStateFormat.setForeground(QColor(197, 134, 192));  // Soft magenta
+    m_pseudoStateFormat.setFontWeight(QFont::Bold);
+
+    // Sub-control format - ::indicator, ::handle, etc. (teal/cyan)
+    m_subControlFormat.setForeground(QColor(78, 201, 176));  // Teal
+    m_subControlFormat.setFontWeight(QFont::Bold);
+
+    // Comment format - /* ... */ (muted gray, italic)
+    m_commentFormat.setForeground(QColor(106, 153, 85));  // Soft olive green
+    m_commentFormat.setFontItalic(true);
+
+    // String format - "strings" and url() (warm orange)
+    m_stringFormat.setForeground(QColor(206, 145, 120));  // Soft peach/coral
+
+    // Number format - numbers with units (light green)
+    m_numberFormat.setForeground(QColor(184, 215, 163));  // Pale lime
+
+    // Variable reference format - ${variable_name} (bright pink/magenta)
+    m_variableFormat.setForeground(QColor(220, 130, 180));  // Soft pink
+    m_variableFormat.setFontWeight(QFont::Bold);
+}
+
+void QssSyntaxHighlighter::setupLightFormats()
+{
+    // Selector format - widget type names (deep blue, bold)
     m_selectorFormat.setForeground(QColor(0, 0, 180));
     m_selectorFormat.setFontWeight(QFont::Bold);
 
-    // Property format - CSS-like properties (dark red)
+    // Property format - CSS-like properties (dark magenta/maroon)
     m_propertyFormat.setForeground(QColor(127, 0, 85));
 
     // Value format - property values (dark green)
@@ -27,22 +81,22 @@ void QssSyntaxHighlighter::setupFormats()
     m_pseudoStateFormat.setForeground(QColor(128, 0, 128));
     m_pseudoStateFormat.setFontWeight(QFont::Bold);
 
-    // Sub-control format - ::indicator, ::handle, etc. (dark cyan)
+    // Sub-control format - ::indicator, ::handle, etc. (dark cyan/teal)
     m_subControlFormat.setForeground(QColor(0, 128, 128));
     m_subControlFormat.setFontWeight(QFont::Bold);
 
     // Comment format - /* ... */ (gray, italic)
-    m_commentFormat.setForeground(QColor(128, 128, 128));
+    m_commentFormat.setForeground(QColor(96, 96, 96));
     m_commentFormat.setFontItalic(true);
 
-    // String format - "strings" and url() (dark orange)
-    m_stringFormat.setForeground(QColor(206, 92, 0));
+    // String format - "strings" and url() (dark orange/brown)
+    m_stringFormat.setForeground(QColor(163, 21, 21));
 
     // Number format - numbers with units (dark blue)
-    m_numberFormat.setForeground(QColor(0, 0, 128));
+    m_numberFormat.setForeground(QColor(9, 134, 88));
 
-    // Variable reference format - ${variable_name} (magenta/purple)
-    m_variableFormat.setForeground(QColor(199, 21, 133));  // Medium violet red
+    // Variable reference format - ${variable_name} (magenta)
+    m_variableFormat.setForeground(QColor(199, 21, 133));
     m_variableFormat.setFontWeight(QFont::Bold);
 }
 
@@ -62,7 +116,7 @@ void QssSyntaxHighlighter::setupRules()
         "::up-arrow|::up-button"
     );
     rule.pattern = QRegularExpression(subControls);
-    rule.format = m_subControlFormat;
+    rule.format = &m_subControlFormat;
     m_rules.append(rule);
 
     // Pseudo-states (must be before selectors)
@@ -80,7 +134,7 @@ void QssSyntaxHighlighter::setupRules()
     // Match pseudo-states - allow when followed by :: (sub-control) but not single : (another pseudo-state)
     // (?!:[^:]) means "not followed by a colon that isn't followed by another colon"
     rule.pattern = QRegularExpression(QStringLiteral("(?<!:)(") + pseudoStates + QStringLiteral(")(?!:[^:])"));
-    rule.format = m_pseudoStateFormat;
+    rule.format = &m_pseudoStateFormat;
     m_rules.append(rule);
 
     // Selectors - Qt widget type names
@@ -103,22 +157,22 @@ void QssSyntaxHighlighter::setupRules()
         "\\bQCalendarWidget\\b|\\bQFontComboBox\\b|\\bQMdiArea\\b|\\bQMdiSubWindow\\b"
     );
     rule.pattern = QRegularExpression(selectors);
-    rule.format = m_selectorFormat;
+    rule.format = &m_selectorFormat;
     m_rules.append(rule);
 
     // Universal selector
     rule.pattern = QRegularExpression(QStringLiteral("(?<![\\w#.])\\*(?![\\w])"));
-    rule.format = m_selectorFormat;
+    rule.format = &m_selectorFormat;
     m_rules.append(rule);
 
     // ID selector (#objectName)
     rule.pattern = QRegularExpression(QStringLiteral("#[a-zA-Z_][a-zA-Z0-9_]*"));
-    rule.format = m_selectorFormat;
+    rule.format = &m_selectorFormat;
     m_rules.append(rule);
 
     // Class selector (.className)
     rule.pattern = QRegularExpression(QStringLiteral("\\.[A-Z][a-zA-Z0-9]*"));
-    rule.format = m_selectorFormat;
+    rule.format = &m_selectorFormat;
     m_rules.append(rule);
 
     // Property names (inside braces, before colon)
@@ -155,32 +209,32 @@ void QssSyntaxHighlighter::setupRules()
         "-qt-background-role|-qt-style-features)\\s*:"
     );
     rule.pattern = QRegularExpression(properties);
-    rule.format = m_propertyFormat;
+    rule.format = &m_propertyFormat;
     m_rules.append(rule);
 
     // Color values - hex colors
     rule.pattern = QRegularExpression(QStringLiteral("#[0-9a-fA-F]{3,8}\\b"));
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Color values - rgb(), rgba(), hsv(), hsva(), hsl(), hsla()
     rule.pattern = QRegularExpression(QStringLiteral("\\b(rgb|rgba|hsv|hsva|hsl|hsla)\\s*\\([^)]*\\)"));
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Gradient values - qlineargradient, qradialgradient, qconicalgradient
     rule.pattern = QRegularExpression(QStringLiteral("\\b(qlineargradient|qradialgradient|qconicalgradient)\\s*\\([^)]*\\)"));
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // URL values
     rule.pattern = QRegularExpression(QStringLiteral("\\burl\\s*\\([^)]*\\)"));
-    rule.format = m_stringFormat;
+    rule.format = &m_stringFormat;
     m_rules.append(rule);
 
     // Palette values
     rule.pattern = QRegularExpression(QStringLiteral("\\bpalette\\s*\\([^)]*\\)"));
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Named colors (common CSS color names)
@@ -191,7 +245,7 @@ void QssSyntaxHighlighter::setupRules()
         "orange|pink|purple|brown|navy|teal|olive|maroon|aqua|fuchsia|lime|silver)\\b"
     );
     rule.pattern = QRegularExpression(namedColors, QRegularExpression::CaseInsensitiveOption);
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Border style values
@@ -200,7 +254,7 @@ void QssSyntaxHighlighter::setupRules()
         "dot-dash|dot-dot-dash)\\b"
     );
     rule.pattern = QRegularExpression(borderStyles);
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Font weight/style values
@@ -208,7 +262,7 @@ void QssSyntaxHighlighter::setupRules()
         "\\b(normal|bold|italic|oblique|underline|overline|line-through)\\b"
     );
     rule.pattern = QRegularExpression(fontValues);
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Position/alignment values
@@ -219,23 +273,23 @@ void QssSyntaxHighlighter::setupRules()
         "scroll|fixed)\\b"
     );
     rule.pattern = QRegularExpression(positionValues);
-    rule.format = m_valueFormat;
+    rule.format = &m_valueFormat;
     m_rules.append(rule);
 
     // Numbers with units
     rule.pattern = QRegularExpression(QStringLiteral("-?\\d+(\\.\\d+)?\\s*(px|pt|em|ex|%)?\\b"));
-    rule.format = m_numberFormat;
+    rule.format = &m_numberFormat;
     m_rules.append(rule);
 
     // Strings in quotes
     rule.pattern = QRegularExpression(QStringLiteral("\"[^\"]*\"|'[^']*'"));
-    rule.format = m_stringFormat;
+    rule.format = &m_stringFormat;
     m_rules.append(rule);
 
     // Variable references - ${variable_name}
     // Pattern: \$\{[a-zA-Z_][a-zA-Z0-9_-]*\}
     rule.pattern = QRegularExpression(QStringLiteral("\\$\\{[a-zA-Z_][a-zA-Z0-9_-]*\\}"));
-    rule.format = m_variableFormat;
+    rule.format = &m_variableFormat;
     m_rules.append(rule);
 }
 
@@ -246,7 +300,7 @@ void QssSyntaxHighlighter::highlightBlock(const QString &text)
         QRegularExpressionMatchIterator matchIterator = rule.pattern.globalMatch(text);
         while (matchIterator.hasNext()) {
             QRegularExpressionMatch match = matchIterator.next();
-            setFormat(match.capturedStart(), match.capturedLength(), rule.format);
+            setFormat(match.capturedStart(), match.capturedLength(), *rule.format);
         }
     }
 

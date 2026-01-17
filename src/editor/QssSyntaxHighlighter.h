@@ -17,6 +17,8 @@
  * - Sub-controls (::indicator, ::handle, ::drop-down, etc.)
  * - Comments (block comments)
  * 
+ * Supports both light and dark color schemes.
+ * 
  * Reference: qss-docs.md for complete QSS syntax specification.
  */
 class QssSyntaxHighlighter : public QSyntaxHighlighter
@@ -25,10 +27,29 @@ class QssSyntaxHighlighter : public QSyntaxHighlighter
 
 public:
     /**
+     * @brief Color scheme for syntax highlighting.
+     */
+    enum ColorScheme {
+        LightScheme,  ///< Colors optimized for light backgrounds
+        DarkScheme    ///< Colors optimized for dark backgrounds
+    };
+
+    /**
      * @brief Constructs a QssSyntaxHighlighter.
      * @param parent The QTextDocument to highlight.
      */
     explicit QssSyntaxHighlighter(QTextDocument *parent = nullptr);
+
+    /**
+     * @brief Sets the color scheme for syntax highlighting.
+     * @param scheme The color scheme to use.
+     */
+    void setColorScheme(ColorScheme scheme);
+
+    /**
+     * @brief Returns the current color scheme.
+     */
+    ColorScheme colorScheme() const { return m_colorScheme; }
 
     /**
      * @brief Returns the format used for selectors.
@@ -78,13 +99,16 @@ private:
      */
     struct HighlightingRule {
         QRegularExpression pattern;
-        QTextCharFormat format;
+        QTextCharFormat *format;  // Pointer to allow format updates
     };
 
     void setupFormats();
+    void setupDarkFormats();
+    void setupLightFormats();
     void setupRules();
     void highlightMultilineComments(const QString &text);
 
+    ColorScheme m_colorScheme;
     QVector<HighlightingRule> m_rules;
 
     // Text formats for different syntax elements

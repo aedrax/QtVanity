@@ -19,6 +19,7 @@ private slots:
     void testSubControlHighlighting();
     void testCommentHighlighting();
     void testMultilineCommentHighlighting();
+    void testColorSchemeSwitch();
     
     // Property-based tests
     void testSyntaxHighlightingCoverage();

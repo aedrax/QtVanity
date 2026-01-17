@@ -327,3 +327,31 @@ void TestQssSyntaxHighlighter::testSyntaxHighlightingCoverage()
     QVERIFY2(pseudoStateColor != commentColor, "Pseudo-state and comment colors should be different");
     QVERIFY2(subControlColor != commentColor, "Sub-control and comment colors should be different");
 }
+
+void TestQssSyntaxHighlighter::testColorSchemeSwitch()
+{
+    QTextDocument doc;
+    QssSyntaxHighlighter highlighter(&doc);
+    doc.setPlainText("QPushButton { color: red; }");
+    
+    // Default is dark scheme
+    QCOMPARE(highlighter.colorScheme(), QssSyntaxHighlighter::DarkScheme);
+    QColor darkSelectorColor = highlighter.selectorFormat().foreground().color();
+    
+    // Switch to light scheme
+    highlighter.setColorScheme(QssSyntaxHighlighter::LightScheme);
+    QCOMPARE(highlighter.colorScheme(), QssSyntaxHighlighter::LightScheme);
+    QColor lightSelectorColor = highlighter.selectorFormat().foreground().color();
+    
+    // Colors should be different between schemes
+    QVERIFY2(darkSelectorColor != lightSelectorColor, 
+        "Dark and light scheme selector colors should be different");
+    
+    // Switch back to dark scheme
+    highlighter.setColorScheme(QssSyntaxHighlighter::DarkScheme);
+    QCOMPARE(highlighter.colorScheme(), QssSyntaxHighlighter::DarkScheme);
+    QColor darkSelectorColorAgain = highlighter.selectorFormat().foreground().color();
+    
+    // Should be same as original dark color
+    QCOMPARE(darkSelectorColor, darkSelectorColorAgain);
+}
