@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QFrame>
 #include <QStyle>
 
 DisplayPage::DisplayPage(QWidget *parent)
@@ -30,6 +31,11 @@ void DisplayPage::setWidgetsEnabled(bool enabled)
 void DisplayPage::setupWidgets()
 {
     setupLabels();
+    setupTextVariants();
+    setupBadges();
+    setupAvatarAndSkeleton();
+    setupCardsAndAlerts();
+    setupSeparators();
     setupLCDNumbers();
     setupCalendar();
 }
@@ -114,6 +120,215 @@ void DisplayPage::setupLabels()
     
     row4->addStretch();
     groupLayout->addLayout(row4);
+}
+
+void DisplayPage::setupTextVariants()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Text Variants (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QHBoxLayout *row = new QHBoxLayout();
+    row->setSpacing(16);
+    
+    // Large text
+    QLabel *largeLabel = new QLabel(tr("Large Text"), group);
+    largeLabel->setProperty("large", "true");
+    row->addWidget(largeLabel);
+    m_widgets.append(largeLabel);
+    
+    // Normal text (for comparison)
+    QLabel *normalLabel = new QLabel(tr("Normal Text"), group);
+    row->addWidget(normalLabel);
+    m_widgets.append(normalLabel);
+    
+    // Small text
+    QLabel *smallLabel = new QLabel(tr("Small Text"), group);
+    smallLabel->setProperty("small", "true");
+    row->addWidget(smallLabel);
+    m_widgets.append(smallLabel);
+    
+    // Muted text
+    QLabel *mutedLabel = new QLabel(tr("Muted Text"), group);
+    mutedLabel->setProperty("muted", "true");
+    row->addWidget(mutedLabel);
+    m_widgets.append(mutedLabel);
+    
+    row->addStretch();
+    groupLayout->addLayout(row);
+}
+
+void DisplayPage::setupBadges()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Badges (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QHBoxLayout *row = new QHBoxLayout();
+    row->setSpacing(12);
+    
+    // Default badge
+    QLabel *defaultBadge = new QLabel(tr("Badge"), group);
+    defaultBadge->setProperty("badge", "true");
+    row->addWidget(defaultBadge);
+    m_widgets.append(defaultBadge);
+    
+    // Secondary badge
+    QLabel *secondaryBadge = new QLabel(tr("Secondary"), group);
+    secondaryBadge->setProperty("badge", "secondary");
+    row->addWidget(secondaryBadge);
+    m_widgets.append(secondaryBadge);
+    
+    // Destructive badge
+    QLabel *destructiveBadge = new QLabel(tr("Destructive"), group);
+    destructiveBadge->setProperty("badge", "destructive");
+    row->addWidget(destructiveBadge);
+    m_widgets.append(destructiveBadge);
+    
+    // Outline badge
+    QLabel *outlineBadge = new QLabel(tr("Outline"), group);
+    outlineBadge->setProperty("badge", "outline");
+    row->addWidget(outlineBadge);
+    m_widgets.append(outlineBadge);
+    
+    row->addStretch();
+    groupLayout->addLayout(row);
+}
+
+void DisplayPage::setupAvatarAndSkeleton()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Avatar & Skeleton (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QHBoxLayout *row = new QHBoxLayout();
+    row->setSpacing(24);
+    
+    // Avatar
+    QVBoxLayout *avatarCol = new QVBoxLayout();
+    QLabel *avatarTitle = new QLabel(tr("Avatar:"), group);
+    QLabel *avatar = new QLabel(tr("AB"), group);
+    avatar->setProperty("avatar", "true");
+    avatar->setAlignment(Qt::AlignCenter);
+    avatarCol->addWidget(avatarTitle);
+    avatarCol->addWidget(avatar);
+    row->addLayout(avatarCol);
+    m_widgets.append(avatarTitle);
+    m_widgets.append(avatar);
+    
+    // Skeleton loading placeholders
+    QVBoxLayout *skeletonCol = new QVBoxLayout();
+    QLabel *skeletonTitle = new QLabel(tr("Skeleton Loading:"), group);
+    skeletonCol->addWidget(skeletonTitle);
+    m_widgets.append(skeletonTitle);
+    
+    QWidget *skeletonLine1 = new QWidget(group);
+    skeletonLine1->setProperty("skeleton", "true");
+    skeletonLine1->setFixedSize(200, 20);
+    skeletonCol->addWidget(skeletonLine1);
+    m_widgets.append(skeletonLine1);
+    
+    QWidget *skeletonLine2 = new QWidget(group);
+    skeletonLine2->setProperty("skeleton", "true");
+    skeletonLine2->setFixedSize(150, 20);
+    skeletonCol->addWidget(skeletonLine2);
+    m_widgets.append(skeletonLine2);
+    
+    QWidget *skeletonLine3 = new QWidget(group);
+    skeletonLine3->setProperty("skeleton", "true");
+    skeletonLine3->setFixedSize(180, 20);
+    skeletonCol->addWidget(skeletonLine3);
+    m_widgets.append(skeletonLine3);
+    
+    row->addLayout(skeletonCol);
+    row->addStretch();
+    groupLayout->addLayout(row);
+}
+
+void DisplayPage::setupCardsAndAlerts()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Cards & Alerts (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QHBoxLayout *row = new QHBoxLayout();
+    row->setSpacing(16);
+    
+    // Card
+    QFrame *card = new QFrame(group);
+    card->setProperty("card", "true");
+    QVBoxLayout *cardLayout = new QVBoxLayout(card);
+    QLabel *cardTitle = new QLabel(tr("Card Title"), card);
+    cardTitle->setProperty("large", "true");
+    QLabel *cardContent = new QLabel(tr("This is a card component with\nsome content inside."), card);
+    cardContent->setProperty("muted", "true");
+    cardLayout->addWidget(cardTitle);
+    cardLayout->addWidget(cardContent);
+    card->setMinimumWidth(200);
+    row->addWidget(card);
+    m_widgets.append(card);
+    
+    // Alert
+    QFrame *alert = new QFrame(group);
+    alert->setProperty("alert", "true");
+    QVBoxLayout *alertLayout = new QVBoxLayout(alert);
+    QLabel *alertTitle = new QLabel(tr("Heads up!"), alert);
+    alertTitle->setProperty("large", "true");
+    QLabel *alertContent = new QLabel(tr("You can add components to your app\nusing the CLI."), alert);
+    alertLayout->addWidget(alertTitle);
+    alertLayout->addWidget(alertContent);
+    alert->setMinimumWidth(200);
+    row->addWidget(alert);
+    m_widgets.append(alert);
+    
+    // Destructive Alert
+    QFrame *destructiveAlert = new QFrame(group);
+    destructiveAlert->setProperty("alert", "destructive");
+    QVBoxLayout *destAlertLayout = new QVBoxLayout(destructiveAlert);
+    QLabel *destAlertTitle = new QLabel(tr("Error"), destructiveAlert);
+    destAlertTitle->setProperty("large", "true");
+    QLabel *destAlertContent = new QLabel(tr("Your session has expired.\nPlease log in again."), destructiveAlert);
+    destAlertLayout->addWidget(destAlertTitle);
+    destAlertLayout->addWidget(destAlertContent);
+    destructiveAlert->setMinimumWidth(200);
+    row->addWidget(destructiveAlert);
+    m_widgets.append(destructiveAlert);
+    
+    row->addStretch();
+    groupLayout->addLayout(row);
+}
+
+void DisplayPage::setupSeparators()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Separators (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    // Horizontal separator
+    QLabel *hSepLabel = new QLabel(tr("Horizontal Separator:"), group);
+    groupLayout->addWidget(hSepLabel);
+    m_widgets.append(hSepLabel);
+    
+    QFrame *hSeparator = new QFrame(group);
+    hSeparator->setProperty("separator", "horizontal");
+    groupLayout->addWidget(hSeparator);
+    m_widgets.append(hSeparator);
+    
+    // Vertical separator demo
+    QHBoxLayout *vSepRow = new QHBoxLayout();
+    vSepRow->setSpacing(16);
+    
+    QLabel *leftLabel = new QLabel(tr("Left Content"), group);
+    vSepRow->addWidget(leftLabel);
+    m_widgets.append(leftLabel);
+    
+    QFrame *vSeparator = new QFrame(group);
+    vSeparator->setProperty("separator", "vertical");
+    vSeparator->setFixedHeight(40);
+    vSepRow->addWidget(vSeparator);
+    m_widgets.append(vSeparator);
+    
+    QLabel *rightLabel = new QLabel(tr("Right Content"), group);
+    vSepRow->addWidget(rightLabel);
+    m_widgets.append(rightLabel);
+    
+    vSepRow->addStretch();
+    groupLayout->addLayout(vSepRow);
 }
 
 void DisplayPage::setupLCDNumbers()

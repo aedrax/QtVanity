@@ -33,9 +33,11 @@ void ButtonsPage::setWidgetsEnabled(bool enabled)
 void ButtonsPage::setupWidgets()
 {
     setupPushButtons();
+    setupButtonVariants();
     setupToolButtons();
     setupRadioButtons();
     setupCheckBoxes();
+    setupSwitches();
     setupCommandLinkButtons();
 }
 
@@ -101,6 +103,80 @@ void ButtonsPage::setupPushButtons()
     menuBtn->setMenu(menu);
     row3->addWidget(menuBtn);
     m_buttons.append(menuBtn);
+    
+    row3->addStretch();
+    groupLayout->addLayout(row3);
+}
+
+void ButtonsPage::setupButtonVariants()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Button Variants (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    // Row 1: Primary variants
+    QHBoxLayout *row1 = new QHBoxLayout();
+    row1->setSpacing(8);
+    
+    QPushButton *defaultBtn = new QPushButton(tr("Default"), group);
+    row1->addWidget(defaultBtn);
+    m_buttons.append(defaultBtn);
+    
+    QPushButton *secondaryBtn = new QPushButton(tr("Secondary"), group);
+    secondaryBtn->setProperty("variant", "secondary");
+    row1->addWidget(secondaryBtn);
+    m_buttons.append(secondaryBtn);
+    
+    QPushButton *destructiveBtn = new QPushButton(tr("Destructive"), group);
+    destructiveBtn->setProperty("variant", "destructive");
+    row1->addWidget(destructiveBtn);
+    m_buttons.append(destructiveBtn);
+    
+    row1->addStretch();
+    groupLayout->addLayout(row1);
+    
+    // Row 2: Outline, Ghost, Link variants
+    QHBoxLayout *row2 = new QHBoxLayout();
+    row2->setSpacing(8);
+    
+    QPushButton *outlineBtn = new QPushButton(tr("Outline"), group);
+    outlineBtn->setProperty("variant", "outline");
+    row2->addWidget(outlineBtn);
+    m_buttons.append(outlineBtn);
+    
+    QPushButton *ghostBtn = new QPushButton(tr("Ghost"), group);
+    ghostBtn->setProperty("variant", "ghost");
+    row2->addWidget(ghostBtn);
+    m_buttons.append(ghostBtn);
+    
+    QPushButton *linkBtn = new QPushButton(tr("Link"), group);
+    linkBtn->setProperty("variant", "link");
+    row2->addWidget(linkBtn);
+    m_buttons.append(linkBtn);
+    
+    row2->addStretch();
+    groupLayout->addLayout(row2);
+    
+    // Row 3: Variants with icons
+    QHBoxLayout *row3 = new QHBoxLayout();
+    row3->setSpacing(8);
+    
+    QPushButton *secondaryIconBtn = new QPushButton(tr("Secondary"), group);
+    secondaryIconBtn->setProperty("variant", "secondary");
+    secondaryIconBtn->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
+    row3->addWidget(secondaryIconBtn);
+    m_buttons.append(secondaryIconBtn);
+    
+    QPushButton *destructiveIconBtn = new QPushButton(tr("Delete"), group);
+    destructiveIconBtn->setProperty("variant", "destructive");
+    destructiveIconBtn->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+    row3->addWidget(destructiveIconBtn);
+    m_buttons.append(destructiveIconBtn);
+    
+    QPushButton *outlineIconBtn = new QPushButton(tr("Settings"), group);
+    outlineIconBtn->setProperty("variant", "outline");
+    outlineIconBtn->setIcon(style()->standardIcon(QStyle::SP_ComputerIcon));
+    row3->addWidget(outlineIconBtn);
+    m_buttons.append(outlineIconBtn);
     
     row3->addStretch();
     groupLayout->addLayout(row3);
@@ -278,6 +354,36 @@ void ButtonsPage::setupCheckBoxes()
     
     row2->addStretch();
     groupLayout->addLayout(row2);
+}
+
+void ButtonsPage::setupSwitches()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Switches (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    // Row 1: Switch-style checkboxes
+    QHBoxLayout *row1 = new QHBoxLayout();
+    row1->setSpacing(16);
+    
+    QCheckBox *switchOff = new QCheckBox(tr("Airplane Mode"), group);
+    switchOff->setProperty("switch", "true");
+    row1->addWidget(switchOff);
+    m_buttons.append(switchOff);
+    
+    QCheckBox *switchOn = new QCheckBox(tr("Wi-Fi"), group);
+    switchOn->setProperty("switch", "true");
+    switchOn->setChecked(true);
+    row1->addWidget(switchOn);
+    m_buttons.append(switchOn);
+    
+    QCheckBox *switchDisabled = new QCheckBox(tr("Bluetooth (disabled)"), group);
+    switchDisabled->setProperty("switch", "true");
+    switchDisabled->setEnabled(false);
+    row1->addWidget(switchDisabled);
+    m_buttons.append(switchDisabled);
+    
+    row1->addStretch();
+    groupLayout->addLayout(row1);
 }
 
 void ButtonsPage::setupCommandLinkButtons()

@@ -55,6 +55,7 @@ void InputsPage::setReadOnly(bool readOnly)
 void InputsPage::setupWidgets()
 {
     setupLineEdits();
+    setupErrorInputs();
     setupTextEdits();
     setupSpinBoxes();
     setupComboBoxes();
@@ -104,6 +105,40 @@ void InputsPage::setupLineEdits()
     form->addRow(tr("Clearable:"), clearableEdit);
     m_widgets.append(clearableEdit);
     m_lineEdits.append(clearableEdit);
+    
+    groupLayout->addLayout(form);
+}
+
+void InputsPage::setupErrorInputs()
+{
+    QGroupBox *group = qobject_cast<QGroupBox*>(createGroup(tr("Error States (shadcn)")));
+    QVBoxLayout *groupLayout = qobject_cast<QVBoxLayout*>(group->layout());
+    
+    QFormLayout *form = new QFormLayout();
+    form->setSpacing(8);
+    
+    // Line edit with error
+    QLineEdit *errorEdit = new QLineEdit(group);
+    errorEdit->setText(tr("Invalid input"));
+    errorEdit->setProperty("error", "true");
+    form->addRow(tr("Error:"), errorEdit);
+    m_widgets.append(errorEdit);
+    m_lineEdits.append(errorEdit);
+    
+    // Spin box with error
+    QSpinBox *errorSpin = new QSpinBox(group);
+    errorSpin->setRange(0, 100);
+    errorSpin->setValue(0);
+    errorSpin->setProperty("error", "true");
+    form->addRow(tr("Invalid number:"), errorSpin);
+    m_widgets.append(errorSpin);
+    
+    // Combo box with error
+    QComboBox *errorCombo = new QComboBox(group);
+    errorCombo->addItems({tr("Select an option..."), tr("Option 1"), tr("Option 2")});
+    errorCombo->setProperty("error", "true");
+    form->addRow(tr("Required field:"), errorCombo);
+    m_widgets.append(errorCombo);
     
     groupLayout->addLayout(form);
 }

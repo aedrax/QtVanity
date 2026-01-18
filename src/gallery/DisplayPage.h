@@ -40,6 +40,11 @@ public:
 private:
     void setupWidgets();
     void setupLabels();
+    void setupTextVariants();
+    void setupBadges();
+    void setupAvatarAndSkeleton();
+    void setupCardsAndAlerts();
+    void setupSeparators();
     void setupLCDNumbers();
     void setupCalendar();
 

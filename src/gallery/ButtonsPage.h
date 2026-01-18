@@ -41,9 +41,11 @@ public:
 private:
     void setupWidgets();
     void setupPushButtons();
+    void setupButtonVariants();
     void setupToolButtons();
     void setupRadioButtons();
     void setupCheckBoxes();
+    void setupSwitches();
     void setupCommandLinkButtons();
 
     QList<QAbstractButton*> m_buttons;

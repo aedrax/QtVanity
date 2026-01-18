@@ -57,6 +57,7 @@ public:
 private:
     void setupWidgets();
     void setupLineEdits();
+    void setupErrorInputs();
     void setupTextEdits();
     void setupSpinBoxes();
     void setupComboBoxes();
