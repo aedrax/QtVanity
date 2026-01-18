@@ -837,6 +837,8 @@ if(BUILD_TESTING)
         tests/test_variablemanager.h
         tests/test_settingsmanager.cpp
         tests/test_settingsmanager.h
+        tests/test_variablepanel.cpp
+        tests/test_variablepanel.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE
