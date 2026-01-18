@@ -42,6 +42,8 @@ set(SOURCES
     src/editor/ColorSwatchOverlay.h
     src/editor/SettingsManager.cpp
     src/editor/SettingsManager.h
+    src/editor/FindReplaceBar.cpp
+    src/editor/FindReplaceBar.h
     src/gallery/GalleryPage.cpp
     src/gallery/GalleryPage.h
     src/gallery/ButtonsPage.cpp
@@ -772,6 +774,8 @@ if(BUILD_TESTING)
         src/editor/ColorSwatchOverlay.h
         src/editor/SettingsManager.cpp
         src/editor/SettingsManager.h
+        src/editor/FindReplaceBar.cpp
+        src/editor/FindReplaceBar.h
         src/gallery/GalleryPage.cpp
         src/gallery/GalleryPage.h
         src/gallery/ButtonsPage.cpp
@@ -839,6 +843,8 @@ if(BUILD_TESTING)
         tests/test_settingsmanager.h
         tests/test_variablepanel.cpp
         tests/test_variablepanel.h
+        tests/test_findreplacebar.cpp
+        tests/test_findreplacebar.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE

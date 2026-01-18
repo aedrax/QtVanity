@@ -17,6 +17,7 @@
 #include "test_variablemanager.h"
 #include "test_settingsmanager.h"
 #include "test_variablepanel.h"
+#include "test_findreplacebar.h"
 
 int main(int argc, char *argv[])
 {
@@ -111,6 +112,12 @@ int main(int argc, char *argv[])
     // Run VariablePanel tests
     {
         TestVariablePanel test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run FindReplaceBar tests
+    {
+        TestFindReplaceBar test;
         status |= QTest::qExec(&test, argc, argv);
     }
     

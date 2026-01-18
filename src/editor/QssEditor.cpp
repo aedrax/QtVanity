@@ -1,6 +1,7 @@
 #include "QssEditor.h"
 #include "QssSyntaxHighlighter.h"
 #include "ColorSwatchOverlay.h"
+#include "FindReplaceBar.h"
 
 #include <QTextEdit>
 #include <QPushButton>
@@ -10,12 +11,14 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QTextCursor>
+#include <QShortcut>
 
 QssEditor::QssEditor(QWidget *parent)
     : QWidget(parent)
     , m_textEdit(nullptr)
     , m_highlighter(nullptr)
     , m_colorSwatchOverlay(nullptr)
+    , m_findReplaceBar(nullptr)
     , m_applyButton(nullptr)
     , m_toggleButton(nullptr)
     , m_autoApplyCheckbox(nullptr)
@@ -28,6 +31,7 @@ QssEditor::QssEditor(QWidget *parent)
 {
     setupUi();
     setupConnections();
+    setupFindReplaceShortcuts();
 }
 
 QssEditor::~QssEditor()
@@ -61,6 +65,9 @@ void QssEditor::setupUi()
     m_colorSwatchOverlay = new ColorSwatchOverlay(m_textEdit, m_textEdit->viewport());
     m_colorSwatchOverlay->show();
 
+    // Create FindReplaceBar (initially hidden)
+    m_findReplaceBar = new FindReplaceBar(m_textEdit, this);
+
     // Create button layout
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->setContentsMargins(0, 0, 0, 0);
@@ -93,6 +100,7 @@ void QssEditor::setupUi()
 
     // Add widgets to main layout
     mainLayout->addWidget(m_textEdit, 1); // Text edit takes all available space
+    mainLayout->addWidget(m_findReplaceBar); // FindReplaceBar between text edit and buttons
     mainLayout->addLayout(buttonLayout);
 
     // Create auto-apply timer
@@ -406,6 +414,9 @@ void QssEditor::setDarkColorScheme(bool dark)
         m_highlighter->setColorScheme(dark ? QssSyntaxHighlighter::DarkScheme 
                                            : QssSyntaxHighlighter::LightScheme);
     }
+    if (m_findReplaceBar) {
+        m_findReplaceBar->setDarkTheme(dark);
+    }
 }
 
 void QssEditor::setColorSwatchesEnabled(bool enabled)
@@ -418,4 +429,83 @@ void QssEditor::setColorSwatchesEnabled(bool enabled)
 bool QssEditor::colorSwatchesEnabled() const
 {
     return m_colorSwatchOverlay ? m_colorSwatchOverlay->isOverlayEnabled() : false;
+}
+
+void QssEditor::showFindBar()
+{
+    if (!m_findReplaceBar) {
+        return;
+    }
+    
+    // Get selected text to initialize search
+    QString selectedText = m_textEdit->textCursor().selectedText();
+    
+    if (!selectedText.isEmpty()) {
+        // Use selected text as search query
+        m_findReplaceBar->setSearchText(selectedText);
+    }
+    // If no selection, preserve previous query (setSearchText not called)
+    
+    m_findReplaceBar->showFindMode();
+}
+
+void QssEditor::showReplaceBar()
+{
+    if (!m_findReplaceBar) {
+        return;
+    }
+    
+    // Get selected text to initialize search
+    QString selectedText = m_textEdit->textCursor().selectedText();
+    
+    if (!selectedText.isEmpty()) {
+        // Use selected text as search query
+        m_findReplaceBar->setSearchText(selectedText);
+    }
+    // If no selection, preserve previous query (setSearchText not called)
+    
+    m_findReplaceBar->showReplaceMode();
+}
+
+void QssEditor::hideFindReplaceBar()
+{
+    if (m_findReplaceBar) {
+        m_findReplaceBar->hide();
+    }
+}
+
+FindReplaceBar* QssEditor::findReplaceBar() const
+{
+    return m_findReplaceBar;
+}
+
+void QssEditor::setupFindReplaceShortcuts()
+{
+    // Ctrl+F - Show find bar
+    QShortcut *findShortcut = new QShortcut(QKeySequence::Find, this);
+    connect(findShortcut, &QShortcut::activated, this, &QssEditor::showFindBar);
+    
+    // Ctrl+H - Show replace bar
+    QShortcut *replaceShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_H), this);
+    connect(replaceShortcut, &QShortcut::activated, this, &QssEditor::showReplaceBar);
+    
+    // F3 - Find next
+    QShortcut *findNextShortcut = new QShortcut(QKeySequence::FindNext, this);
+    connect(findNextShortcut, &QShortcut::activated, this, [this]() {
+        if (m_findReplaceBar && m_findReplaceBar->isVisible()) {
+            m_findReplaceBar->findNext();
+        }
+    });
+    
+    // Shift+F3 - Find previous
+    QShortcut *findPrevShortcut = new QShortcut(QKeySequence::FindPrevious, this);
+    connect(findPrevShortcut, &QShortcut::activated, this, [this]() {
+        if (m_findReplaceBar && m_findReplaceBar->isVisible()) {
+            m_findReplaceBar->findPrevious();
+        }
+    });
+    
+    // Escape - Hide find/replace bar
+    QShortcut *escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(escapeShortcut, &QShortcut::activated, this, &QssEditor::hideFindReplaceBar);
 }

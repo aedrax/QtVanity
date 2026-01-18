@@ -12,6 +12,7 @@ class QComboBox;
 class QTimer;
 class QssSyntaxHighlighter;
 class ColorSwatchOverlay;
+class FindReplaceBar;
 
 /**
  * @brief QSS code editor widget with syntax highlighting and auto-apply.
@@ -166,6 +167,27 @@ public:
      */
     bool colorSwatchesEnabled() const;
 
+    /**
+     * @brief Shows the find bar for text search.
+     */
+    void showFindBar();
+
+    /**
+     * @brief Shows the replace bar for find and replace.
+     */
+    void showReplaceBar();
+
+    /**
+     * @brief Hides the find/replace bar.
+     */
+    void hideFindReplaceBar();
+
+    /**
+     * @brief Returns the FindReplaceBar widget.
+     * @return Pointer to the find/replace bar.
+     */
+    FindReplaceBar* findReplaceBar() const;
+
 signals:
     /**
      * @brief Emitted when the user requests style application.
@@ -218,10 +240,12 @@ private slots:
 private:
     void setupUi();
     void setupConnections();
+    void setupFindReplaceShortcuts();
 
     QTextEdit *m_textEdit;
     QssSyntaxHighlighter *m_highlighter;
     ColorSwatchOverlay *m_colorSwatchOverlay;
+    FindReplaceBar *m_findReplaceBar;
     QPushButton *m_applyButton;
     QPushButton *m_toggleButton;
     QCheckBox *m_autoApplyCheckbox;
