@@ -2,6 +2,9 @@
 
 **QtVanity** is a QSS (Qt Style Sheets) editor and a "kitchen sink" widget demonstration aimed at developers and designers who want to perfect the look and feel of their Qt applications.
 
+<img width="1920" height="1156" alt="image" src="https://github.com/user-attachments/assets/234ec4a0-dd6d-4c3f-b0e1-532a003199f7" />
+
+
 It serves two primary purposes:
 1.  **The Runway (Demo):** A gallery displaying every available Qt Widget in various states (enabled, disabled, focused, checked, etc.), allowing you to see exactly how your styles affect the entire component library.
 2.  **The Mirror (Editor):** A live QSS editor that allows you to write style sheets and see the changes apply instantly to the running application.
