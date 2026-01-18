@@ -34,6 +34,14 @@ public:
     static QString formatVariableReference(const QString &name);
     QString formatColorToHex(const QColor &color) const;
 
+    /**
+     * @brief Refreshes all color swatches in the variable table.
+     * 
+     * Call this after applying a global stylesheet to ensure
+     * the color swatches remain visible.
+     */
+    void refreshColorSwatches();
+
 signals:
     void variableInsertRequested(const QString &reference);
 

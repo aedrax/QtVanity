@@ -443,23 +443,24 @@ void VariablePanel::refreshVariableList()
 
 void VariablePanel::updateColorSwatch(int row, const QString &value)
 {
-    QTableWidgetItem *colorItem = m_variableTable->item(row, COL_COLOR);
-    if (!colorItem) {
-        return;
-    }
-    
     if (VariableManager::isColorValue(value)) {
         QColor color = parseColor(value);
         if (color.isValid()) {
-            colorItem->setBackground(color);
-            colorItem->setText(QString());
+            // Use a QWidget with inline stylesheet to prevent global stylesheet override
+            QWidget *colorWidget = new QWidget();
+            colorWidget->setAutoFillBackground(true);
+            // Use inline stylesheet which has higher specificity than global stylesheet
+            QString styleSheet = QStringLiteral("background-color: %1; border: 1px solid #888;")
+                .arg(color.name(QColor::HexArgb));
+            colorWidget->setStyleSheet(styleSheet);
+            colorWidget->setToolTip(value);
+            m_variableTable->setCellWidget(row, COL_COLOR, colorWidget);
             return;
         }
     }
     
-    // Not a color - clear the swatch
-    colorItem->setBackground(QBrush());
-    colorItem->setText(QString());
+    // Not a color - remove any color widget
+    m_variableTable->removeCellWidget(row, COL_COLOR);
 }
 
 int VariablePanel::findRowByName(const QString &name) const
@@ -517,5 +518,16 @@ QString VariablePanel::formatColorToHex(const QColor &color) const
     } else {
         // Use #RRGGBB format for opaque colors
         return color.name();
+    }
+}
+
+void VariablePanel::refreshColorSwatches()
+{
+    // Refresh all color swatches (exclude the empty row at the end)
+    for (int row = 0; row < m_variableTable->rowCount() - 1; ++row) {
+        QTableWidgetItem *valueItem = m_variableTable->item(row, COL_VALUE);
+        if (valueItem) {
+            updateColorSwatch(row, valueItem->text());
+        }
     }
 }

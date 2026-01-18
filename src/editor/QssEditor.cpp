@@ -64,6 +64,9 @@ void QssEditor::setupUi()
     // Create color swatch overlay for inline color picking
     m_colorSwatchOverlay = new ColorSwatchOverlay(m_textEdit, m_textEdit->viewport());
     m_colorSwatchOverlay->show();
+    
+    // Ensure overlay is excluded from global stylesheet effects
+    m_colorSwatchOverlay->setStyleSheet(QString());
 
     // Create FindReplaceBar (initially hidden)
     m_findReplaceBar = new FindReplaceBar(m_textEdit, this);
@@ -477,6 +480,17 @@ void QssEditor::hideFindReplaceBar()
 FindReplaceBar* QssEditor::findReplaceBar() const
 {
     return m_findReplaceBar;
+}
+
+void QssEditor::refreshColorSwatches()
+{
+    if (m_colorSwatchOverlay) {
+        // Ensure overlay geometry matches viewport after style changes
+        m_colorSwatchOverlay->setGeometry(m_textEdit->viewport()->rect());
+        // Force update of color positions and repaint
+        m_colorSwatchOverlay->updateColors();
+        m_colorSwatchOverlay->update();
+    }
 }
 
 void QssEditor::setupFindReplaceShortcuts()

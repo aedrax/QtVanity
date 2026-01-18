@@ -384,8 +384,16 @@ void MainWindow::setupConnections()
     // Connect style manager signals
     connect(m_styleManager, &StyleManager::styleApplied,
             this, &MainWindow::onStyleApplied);
+    connect(m_styleManager, &StyleManager::styleApplied,
+            m_editor, &QssEditor::refreshColorSwatches);
+    connect(m_styleManager, &StyleManager::styleApplied,
+            m_variablePanel, &VariablePanel::refreshColorSwatches);
     connect(m_styleManager, &StyleManager::styleCleared,
             this, &MainWindow::onStyleCleared);
+    connect(m_styleManager, &StyleManager::styleCleared,
+            m_editor, &QssEditor::refreshColorSwatches);
+    connect(m_styleManager, &StyleManager::styleCleared,
+            m_variablePanel, &VariablePanel::refreshColorSwatches);
     connect(m_styleManager, &StyleManager::loadError,
             this, &MainWindow::onLoadError);
     connect(m_styleManager, &StyleManager::saveError,

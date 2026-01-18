@@ -188,6 +188,14 @@ public:
      */
     FindReplaceBar* findReplaceBar() const;
 
+    /**
+     * @brief Refreshes the color swatch overlay.
+     * 
+     * Call this after applying a global stylesheet to ensure
+     * the color swatches remain visible and properly positioned.
+     */
+    void refreshColorSwatches();
+
 signals:
     /**
      * @brief Emitted when the user requests style application.
