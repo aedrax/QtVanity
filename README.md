@@ -9,10 +9,12 @@ It serves two primary purposes:
 ## Features
 
 * **Real-time Editing:** Type QSS code and see changes apply instantly to the entire application.
-* **Complete Widget Zoo:** Includes specific tabs/pages for all standard widgets (Buttons, Inputs, Views, Containers, Dialogs) to make sure no UI element is left unstyled.
+* **Complete Widget Zoo:** Includes specific tabs/pages for all standard widgets (Buttons, Inputs, Views, Containers, Dialogs, Display, MainWindow, Advanced) to make sure no UI element is left unstyled.
 * **State Simulation:** Easily toggle widgets between enabled/disabled and read-only/editable states to test pseudo-states like `:disabled` or `:hover`.
 * **Dual-Stack Support:** Native support for both **Qt 5 (5.15+)** and **Qt 6**.
 * **Syntax Highlighting:** Full syntax highlighting for QSS selectors, properties, pseudo-states, sub-controls, and comments.
+* **Color Swatch Overlay:** Visual color preview for color values in your stylesheet.
+* **Variable Management:** Define and manage QSS variables for reusable style values.
 
 ## Prerequisites
 
@@ -150,10 +152,29 @@ Generated packages will be placed in the build directory with names like:
 ## Project Structure
 
 - `src/main.cpp`: Entry point detecting version and launching the app.
-- `src/editor/`: Contains the logic for the QSS text editor and syntax highlighter.
-- `src/gallery/`: Contains the "Widget Zoo" classes. Broken down by category (e.g., `InputWidgets`, `ItemViews`, `Layouts`).
-- `styles/`: Predefined QSS templates (e.g., Dark, Light, Solarized) to use as starting points.
-- `resources/`: Default themes and icon assets.
+- `src/MainWindow.cpp/h`: Main application window.
+- `src/editor/`: QSS editor components including:
+  - `QssEditor`: Main text editor widget
+  - `QssSyntaxHighlighter`: Syntax highlighting for QSS
+  - `StyleManager`: Style application management
+  - `ThemeManager`: Theme loading and management
+  - `VariableManager` & `VariablePanel`: QSS variable handling
+  - `SettingsManager`: Application settings persistence
+  - `FindReplaceBar`: Find and replace functionality
+  - `ColorSwatchOverlay`: Color preview overlay
+- `src/gallery/`: Widget demonstration pages by category:
+  - `ButtonsPage`: QPushButton, QToolButton, QRadioButton, QCheckBox
+  - `InputsPage`: QLineEdit, QTextEdit, QSpinBox, QComboBox, QSlider
+  - `ViewsPage`: QListView, QTreeView, QTableView, QColumnView
+  - `ContainersPage`: QGroupBox, QTabWidget, QScrollArea, QSplitter
+  - `DialogsPage`: QMessageBox, QFileDialog, QColorDialog, QFontDialog
+  - `DisplayPage`: QLabel, QProgressBar, QLCDNumber, QCalendarWidget
+  - `MainWindowPage`: QMenuBar, QToolBar, QStatusBar, QDockWidget
+  - `AdvancedPage`: Complex widget configurations
+- `styles/`: Predefined QSS templates (dark.qss, light.qss, solarized.qss).
+- `resources/`: Application icons and platform-specific resources.
+- `tests/`: Qt Test-based unit tests.
+- `cmake/`: Platform-specific deployment helper scripts.
 
 ## Usage
 
