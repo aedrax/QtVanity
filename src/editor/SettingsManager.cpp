@@ -4,6 +4,7 @@ namespace {
     // Settings keys
     const QString KeyWindowGeometry = QStringLiteral("window/geometry");
     const QString KeySplitterState = QStringLiteral("window/splitterState");
+    const QString KeyDockState = QStringLiteral("window/dockState");
     const QString KeyBaseStyle = QStringLiteral("appearance/baseStyle");
     const QString KeyRecentProjects = QStringLiteral("recentProjects");
 }
@@ -46,6 +47,22 @@ QByteArray SettingsManager::loadSplitterState() const
 bool SettingsManager::hasSplitterState() const
 {
     return m_settings.contains(KeySplitterState);
+}
+
+// Dock state
+void SettingsManager::saveDockState(const QByteArray &state)
+{
+    m_settings.setValue(KeyDockState, state);
+}
+
+QByteArray SettingsManager::loadDockState() const
+{
+    return m_settings.value(KeyDockState).toByteArray();
+}
+
+bool SettingsManager::hasDockState() const
+{
+    return m_settings.contains(KeyDockState);
 }
 
 // Base style

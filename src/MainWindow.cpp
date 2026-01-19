@@ -8,7 +8,7 @@
 #include "editor/VariablePanel.h"
 #include "gallery/WidgetGallery.h"
 
-#include <QSplitter>
+#include <QDockWidget>
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
@@ -24,7 +24,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , m_splitter(nullptr)
+    , m_variablePanelDock(nullptr)
+    , m_galleryDock(nullptr)
     , m_gallery(nullptr)
     , m_editor(nullptr)
     , m_styleManager(nullptr)
@@ -56,6 +57,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_saveProjectAsAction(nullptr)
     , m_exportQssAction(nullptr)
     , m_clearRecentAction(nullptr)
+    , m_showVariablePanelAction(nullptr)
+    , m_showGalleryAction(nullptr)
     , m_projectModified(false)
 {
     // Create settings manager first
@@ -93,6 +96,11 @@ MainWindow::MainWindow(QWidget *parent)
     setupMenuBar();
     setupConnections();
 
+    // Restore saved dock state if available (must be after setupCentralWidget and setupMenuBar)
+    if (m_settingsManager->hasDockState()) {
+        restoreState(m_settingsManager->loadDockState());
+    }
+
     // Set window properties
     setWindowTitle(QString("QtVanity - Qt %1").arg(qVersion()));
     resize(1200, 800);
@@ -112,34 +120,28 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupCentralWidget()
 {
-    // Create splitter for split-pane layout
-    m_splitter = new QSplitter(Qt::Horizontal, this);
+    // Create QSS editor as central widget
+    m_editor = new QssEditor(this);
+    setCentralWidget(m_editor);
 
-    // Create variable panel (left panel)
-    m_variablePanel = new VariablePanel(m_splitter);
+    // Create Variable Panel dock widget
+    m_variablePanel = new VariablePanel(this);
     m_variablePanel->setVariableManager(m_variableManager);
+    
+    m_variablePanelDock = new QDockWidget(tr("Variables"), this);
+    m_variablePanelDock->setObjectName("VariablePanelDock");
+    m_variablePanelDock->setWidget(m_variablePanel);
+    m_variablePanelDock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    addDockWidget(Qt::LeftDockWidgetArea, m_variablePanelDock);
 
-    // Create QSS editor (center panel)
-    m_editor = new QssEditor(m_splitter);
-
-    // Create widget gallery (right panel)
-    m_gallery = new WidgetGallery(m_splitter);
-
-    // Add widgets to splitter
-    m_splitter->addWidget(m_variablePanel);
-    m_splitter->addWidget(m_editor);
-    m_splitter->addWidget(m_gallery);
-
-    // Restore saved splitter state or use default sizes
-    if (m_settingsManager->hasSplitterState()) {
-        m_splitter->restoreState(m_settingsManager->loadSplitterState());
-    } else {
-        // Set initial splitter sizes (20% variable panel, 35% editor, 45% gallery)
-        m_splitter->setSizes({200, 350, 450});
-    }
-
-    // Set splitter as central widget
-    setCentralWidget(m_splitter);
+    // Create Widget Gallery dock widget
+    m_gallery = new WidgetGallery(this);
+    
+    m_galleryDock = new QDockWidget(tr("Widget Gallery"), this);
+    m_galleryDock->setObjectName("WidgetGalleryDock");
+    m_galleryDock->setWidget(m_gallery);
+    m_galleryDock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    addDockWidget(Qt::RightDockWidgetArea, m_galleryDock);
 }
 
 void MainWindow::setupMenuBar()
@@ -278,6 +280,17 @@ void MainWindow::setupViewMenu()
 
     // Initialize action states from current theme mode
     updateThemeActions();
+
+    m_viewMenu->addSeparator();
+
+    // Add dock widget toggle actions
+    m_showVariablePanelAction = m_variablePanelDock->toggleViewAction();
+    m_showVariablePanelAction->setText(tr("&Variables Panel"));
+    m_viewMenu->addAction(m_showVariablePanelAction);
+
+    m_showGalleryAction = m_galleryDock->toggleViewAction();
+    m_showGalleryAction->setText(tr("Widget &Gallery"));
+    m_viewMenu->addAction(m_showGalleryAction);
 }
 
 void MainWindow::setupHelpMenu()
@@ -560,9 +573,9 @@ void MainWindow::clearProject()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (maybeSaveProject()) {
-        // Save window geometry and splitter state before closing
+        // Save window geometry and dock state before closing
         m_settingsManager->saveWindowGeometry(saveGeometry());
-        m_settingsManager->saveSplitterState(m_splitter->saveState());
+        m_settingsManager->saveDockState(saveState());
         event->accept();
     } else {
         event->ignore();
@@ -986,11 +999,6 @@ void MainWindow::updateThemeActions()
     m_themeDarkAction->blockSignals(false);
     m_themeLightAction->blockSignals(false);
     m_themeSystemAction->blockSignals(false);
-}
-
-QSplitter* MainWindow::splitter() const
-{
-    return m_splitter;
 }
 
 WidgetGallery* MainWindow::gallery() const

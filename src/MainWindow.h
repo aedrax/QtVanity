@@ -3,8 +3,9 @@
 
 #include <QMainWindow>
 #include <QString>
+#include <QDockWidget>
 
-class QSplitter;
+class QDockWidget;
 class QMenu;
 class QAction;
 class QActionGroup;
@@ -42,12 +43,6 @@ public:
      * @brief Destructor.
      */
     ~MainWindow();
-
-    /**
-     * @brief Returns the splitter widget.
-     * @return Pointer to the QSplitter.
-     */
-    QSplitter* splitter() const;
 
     /**
      * @brief Returns the widget gallery.
@@ -154,7 +149,8 @@ private:
     void setProjectModified(bool modified);
     void clearProject();
 
-    QSplitter *m_splitter;
+    QDockWidget *m_variablePanelDock;
+    QDockWidget *m_galleryDock;
     WidgetGallery *m_gallery;
     QssEditor *m_editor;
     StyleManager *m_styleManager;
@@ -192,6 +188,10 @@ private:
     QAction *m_saveProjectAsAction;
     QAction *m_exportQssAction;
     QAction *m_clearRecentAction;
+    
+    // Dock widget toggle actions
+    QAction *m_showVariablePanelAction;
+    QAction *m_showGalleryAction;
 
     QString m_currentFilePath;
     QString m_currentProjectPath;

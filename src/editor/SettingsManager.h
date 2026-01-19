@@ -71,6 +71,25 @@ public:
      */
     bool hasSplitterState() const;
 
+    // Dock state
+    /**
+     * @brief Saves the dock widget state.
+     * @param state The state data from QMainWindow::saveState().
+     */
+    void saveDockState(const QByteArray &state);
+
+    /**
+     * @brief Loads the saved dock widget state.
+     * @return The saved state data, or empty QByteArray if none exists.
+     */
+    QByteArray loadDockState() const;
+
+    /**
+     * @brief Checks if dock state has been saved.
+     * @return true if saved state exists, false otherwise.
+     */
+    bool hasDockState() const;
+
     // Base style
     /**
      * @brief Saves the base style name.

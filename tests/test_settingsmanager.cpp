@@ -27,6 +27,7 @@ void TestSettingsManager::init()
     QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
     settings.remove(QStringLiteral("window/geometry"));
     settings.remove(QStringLiteral("window/splitterState"));
+    settings.remove(QStringLiteral("window/dockState"));
     settings.remove(QStringLiteral("appearance/baseStyle"));
     settings.remove(QStringLiteral("recentProjects"));
 }
@@ -37,6 +38,7 @@ void TestSettingsManager::cleanup()
     QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
     settings.remove(QStringLiteral("window/geometry"));
     settings.remove(QStringLiteral("window/splitterState"));
+    settings.remove(QStringLiteral("window/dockState"));
     settings.remove(QStringLiteral("appearance/baseStyle"));
     settings.remove(QStringLiteral("recentProjects"));
 }
@@ -68,6 +70,12 @@ void TestSettingsManager::testDefaultValuesWhenNoSettingsExist()
              "hasSplitterState() should return false when no state saved");
     QVERIFY2(settingsManager.loadSplitterState().isEmpty(),
              "loadSplitterState() should return empty QByteArray when no state saved");
+    
+    // Test dock state defaults
+    QVERIFY2(!settingsManager.hasDockState(),
+             "hasDockState() should return false when no state saved");
+    QVERIFY2(settingsManager.loadDockState().isEmpty(),
+             "loadDockState() should return empty QByteArray when no state saved");
     
     // Test base style defaults
     QVERIFY2(!settingsManager.hasBaseStyle(),
@@ -312,6 +320,172 @@ void TestSettingsManager::testSplitterStateRoundTrip()
         QVERIFY2(loadedState == splitterState,
                  qPrintable(QString("Round-trip failed: saved %1 bytes, loaded %2 bytes")
                            .arg(splitterState.size())
+                           .arg(loadedState.size())));
+    }
+}
+
+/**
+ * Unit test: Dock state save stores data correctly
+ * 
+ * Tests that saveDockState() correctly stores dock state data.
+ */
+void TestSettingsManager::testDockStateSaveStoresData()
+{
+    SettingsManager settingsManager;
+    
+    // Create test dock state data (simulating QMainWindow::saveState() output)
+    QByteArray testState("test_dock_state_data_12345");
+    
+    // Save the dock state
+    settingsManager.saveDockState(testState);
+    
+    // Verify the data was stored by loading it back
+    QByteArray loadedState = settingsManager.loadDockState();
+    QVERIFY2(loadedState == testState,
+             qPrintable(QString("saveDockState() did not store data correctly: expected '%1', got '%2'")
+                       .arg(QString::fromLatin1(testState))
+                       .arg(QString::fromLatin1(loadedState))));
+}
+
+/**
+ * Unit test: Dock state load retrieves stored data
+ * 
+ * Tests that loadDockState() correctly retrieves previously saved dock state data.
+ */
+void TestSettingsManager::testDockStateLoadRetrievesData()
+{
+    // Create test dock state data
+    QByteArray testState("dock_state_for_retrieval_test");
+    
+    // Save using one SettingsManager instance
+    {
+        SettingsManager settingsManager;
+        settingsManager.saveDockState(testState);
+    }
+    
+    // Load using a new SettingsManager instance to verify persistence
+    {
+        SettingsManager settingsManager;
+        QByteArray loadedState = settingsManager.loadDockState();
+        
+        QVERIFY2(loadedState == testState,
+                 qPrintable(QString("loadDockState() did not retrieve stored data: expected '%1', got '%2'")
+                           .arg(QString::fromLatin1(testState))
+                           .arg(QString::fromLatin1(loadedState))));
+    }
+}
+
+/**
+ * Unit test: hasDockState returns correct boolean
+ * 
+ * Tests that hasDockState() returns false when no state exists and true after saving.
+ */
+void TestSettingsManager::testHasDockStateReturnsCorrectBoolean()
+{
+    SettingsManager settingsManager;
+    
+    // Initially should return false (no state saved)
+    QVERIFY2(!settingsManager.hasDockState(),
+             "hasDockState() should return false when no dock state has been saved");
+    
+    // Save some dock state
+    QByteArray testState("some_dock_state");
+    settingsManager.saveDockState(testState);
+    
+    // Now should return true
+    QVERIFY2(settingsManager.hasDockState(),
+             "hasDockState() should return true after saving dock state");
+    
+    // Verify with a new instance to ensure persistence
+    {
+        SettingsManager newSettingsManager;
+        QVERIFY2(newSettingsManager.hasDockState(),
+                 "hasDockState() should return true in new instance after saving dock state");
+    }
+}
+
+/**
+ * Unit test: Empty dock state handling
+ * 
+ * Tests that saving and loading empty QByteArray works correctly.
+ */
+void TestSettingsManager::testEmptyDockStateHandling()
+{
+    SettingsManager settingsManager;
+    
+    // Save empty state
+    QByteArray emptyState;
+    settingsManager.saveDockState(emptyState);
+    
+    // Load should return empty QByteArray
+    QByteArray loadedState = settingsManager.loadDockState();
+    QVERIFY2(loadedState.isEmpty(),
+             "loadDockState() should return empty QByteArray when empty state was saved");
+    
+    // hasDockState should return true because the key exists (even if value is empty)
+    QVERIFY2(settingsManager.hasDockState(),
+             "hasDockState() should return true even when empty state was saved (key exists)");
+}
+
+/**
+ * Feature: dockable-panels, Property: Dock State Round-Trip Persistence
+ * 
+ * For any valid dock state (QByteArray), saving the state and then loading it
+ * should return an equivalent state.
+ */
+void TestSettingsManager::testDockStateRoundTrip_data()
+{
+    QTest::addColumn<QByteArray>("dockState");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100+ test cases with random dock state data
+    for (int i = 0; i < 100; ++i) {
+        // Generate random dock state byte array (simulating QMainWindow::saveState() output)
+        // Real dock state has a specific format, but for round-trip testing,
+        // any byte array should work since we're testing storage/retrieval
+        int size = rng->bounded(50, 300);  // Typical dock state size range
+        QByteArray state;
+        state.resize(size);
+        for (int j = 0; j < size; ++j) {
+            state[j] = static_cast<char>(rng->bounded(256));
+        }
+        
+        QTest::newRow(qPrintable(QString("dock_state_iteration_%1").arg(i))) << state;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_state") << QByteArray();
+    QTest::newRow("single_byte") << QByteArray(1, 'D');
+    QTest::newRow("large_state") << QByteArray(1000, 'Z');
+    QTest::newRow("binary_data") << QByteArray("\x00\x01\x02\xFF\xFE\xFD", 6);
+}
+
+void TestSettingsManager::testDockStateRoundTrip()
+{
+    // Feature: dockable-panels, Property: Dock State Round-Trip Persistence
+    
+    QFETCH(QByteArray, dockState);
+    
+    // Create first SettingsManager and save the dock state
+    {
+        SettingsManager settingsManager;
+        settingsManager.saveDockState(dockState);
+        
+        // Verify hasDockState returns true after saving (key exists even if empty)
+        QVERIFY2(settingsManager.hasDockState(),
+                 "hasDockState() should return true after saving state");
+    }
+    
+    // Create a new SettingsManager instance - it should load the saved state
+    {
+        SettingsManager settingsManager;
+        QByteArray loadedState = settingsManager.loadDockState();
+        
+        // Property: The loaded state should equal the saved state
+        QVERIFY2(loadedState == dockState,
+                 qPrintable(QString("Round-trip failed: saved %1 bytes, loaded %2 bytes")
+                           .arg(dockState.size())
                            .arg(loadedState.size())));
     }
 }

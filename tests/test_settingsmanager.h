@@ -29,6 +29,16 @@ private slots:
     void testSplitterStateRoundTrip();
     void testSplitterStateRoundTrip_data();
     
+    // Unit tests for dock state API
+    void testDockStateSaveStoresData();
+    void testDockStateLoadRetrievesData();
+    void testHasDockStateReturnsCorrectBoolean();
+    void testEmptyDockStateHandling();
+    
+    // Property: Dock State Round-Trip Persistence
+    void testDockStateRoundTrip();
+    void testDockStateRoundTrip_data();
+    
     // Property 4: Window Geometry Round-Trip
     void testWindowGeometryRoundTrip();
     void testWindowGeometryRoundTrip_data();
