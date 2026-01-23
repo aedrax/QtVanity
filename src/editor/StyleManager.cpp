@@ -116,7 +116,7 @@ QStringList StyleManager::availableTemplates() const
     }
     
     QStringList filters;
-    filters << "*.qss";
+    filters << "*.qvp";  // Changed from "*.qss" to load project files
     
     QFileInfoList files = dir.entryInfoList(filters, QDir::Files, QDir::Name);
     for (const QFileInfo &fileInfo : files) {

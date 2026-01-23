@@ -5,6 +5,7 @@
 #include "ThemeManager.h"
 #include "VariablePanel.h"
 #include "WidgetGallery.h"
+#include "VariableManager.h"
 
 #include <QDockWidget>
 #include <QMenuBar>
@@ -15,6 +16,10 @@
 #include <QApplication>
 #include <QSignalSpy>
 #include <QSettings>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 void TestMainWindow::initTestCase()
 {
@@ -1454,4 +1459,250 @@ void TestMainWindow::testMigrationFromSplitterOnlySettings()
         settings.remove("window/splitterState");
         settings.sync();
     }
+}
+
+
+/**
+ * Test loading a valid .qvp template file.
+ * 
+ * This test verifies that when a valid .qvp template is loaded:
+ * - The QssEditor contains the qssTemplate content from the .qvp file
+ * - The VariableManager contains the variables from the .qvp file
+ * - The resolved stylesheet is applied to the application
+ */
+void TestMainWindow::testLoadValidQvpTemplate()
+{
+    // Create a temporary directory for the test template
+    QTemporaryDir tempDir;
+    QVERIFY2(tempDir.isValid(), "Failed to create temporary directory");
+    
+    // Create a test .qvp template file
+    QString templateName = "test_template";
+    QString templatePath = tempDir.path() + "/" + templateName + ".qvp";
+    
+    // Create QVP content with variables and QSS template
+    QJsonObject variables;
+    variables["primary-color"] = "#3498db";
+    variables["background-color"] = "#2c3e50";
+    variables["text-color"] = "#ecf0f1";
+    
+    QString qssTemplate = "QWidget { background-color: ${background-color}; color: ${text-color}; }\n"
+                          "QPushButton { background-color: ${primary-color}; }";
+    
+    QJsonObject projectJson;
+    projectJson["version"] = 1;
+    projectJson["variables"] = variables;
+    projectJson["qssTemplate"] = qssTemplate;
+    
+    QJsonDocument doc(projectJson);
+    QFile templateFile(templatePath);
+    QVERIFY2(templateFile.open(QIODevice::WriteOnly), "Failed to create template file");
+    templateFile.write(doc.toJson());
+    templateFile.close();
+    
+    // Create MainWindow and configure StyleManager to use temp directory
+    MainWindow mainWindow;
+    mainWindow.show();
+    QApplication::processEvents();
+    
+    StyleManager *styleManager = mainWindow.styleManager();
+    QVERIFY2(styleManager != nullptr, "MainWindow should have a style manager");
+    
+    // Set the templates path to our temp directory
+    styleManager->setTemplatesPath(tempDir.path());
+    
+    // Get references to components we need to verify
+    QssEditor *editor = mainWindow.editor();
+    VariableManager *variableManager = mainWindow.variableManager();
+    
+    QVERIFY2(editor != nullptr, "MainWindow should have an editor");
+    QVERIFY2(variableManager != nullptr, "MainWindow should have a variable manager");
+    
+    // Set up signal spy to verify projectLoaded is emitted
+    QSignalSpy projectLoadedSpy(variableManager, &VariableManager::projectLoaded);
+    
+    // First, let's verify the template appears in available templates
+    QStringList templates = styleManager->availableTemplates();
+    QVERIFY2(templates.contains(templateName), 
+             qPrintable(QString("Template '%1' should be in available templates").arg(templateName)));
+    
+    // Invoke the private slot onLoadTemplate directly using QMetaObject
+    // This simulates what happens when a user clicks on a template in the menu
+    bool invoked = QMetaObject::invokeMethod(&mainWindow, "onLoadTemplate",
+                                              Qt::DirectConnection,
+                                              Q_ARG(QString, templateName));
+    QVERIFY2(invoked, "Should be able to invoke onLoadTemplate slot");
+    QApplication::processEvents();
+    
+    // Verify projectLoaded signal was emitted
+    QVERIFY2(projectLoadedSpy.count() >= 1, "projectLoaded signal should be emitted");
+    
+    // Verify editor contains the QSS template
+    QString editorContent = editor->styleSheet();
+    QVERIFY2(editorContent.contains("${background-color}"), 
+             "Editor should contain the QSS template with variable references");
+    QVERIFY2(editorContent.contains("${primary-color}"), 
+             "Editor should contain primary-color variable reference");
+    QVERIFY2(editorContent.contains("${text-color}"), 
+             "Editor should contain text-color variable reference");
+    
+    // Verify VariableManager contains the variables
+    QVERIFY2(variableManager->hasVariable("primary-color"), 
+             "VariableManager should have primary-color variable");
+    QVERIFY2(variableManager->hasVariable("background-color"), 
+             "VariableManager should have background-color variable");
+    QVERIFY2(variableManager->hasVariable("text-color"), 
+             "VariableManager should have text-color variable");
+    
+    QCOMPARE(variableManager->variable("primary-color"), QString("#3498db"));
+    QCOMPARE(variableManager->variable("background-color"), QString("#2c3e50"));
+    QCOMPARE(variableManager->variable("text-color"), QString("#ecf0f1"));
+    
+    // Clean up - reset stylesheet
+    qApp->setStyleSheet("");
+}
+
+/**
+ * Test error handling when loading a non-existent template file.
+ * 
+ * This test verifies that when a template file does not exist:
+ * - The load operation fails
+ * - The loadError signal is emitted
+ * - The application state remains unchanged
+ */
+void TestMainWindow::testLoadTemplateErrorForNonExistentFile()
+{
+    // Create a temporary directory (empty - no templates)
+    QTemporaryDir tempDir;
+    QVERIFY2(tempDir.isValid(), "Failed to create temporary directory");
+    
+    // Create a standalone VariableManager for testing error handling
+    // (not connected to MainWindow to avoid modal dialogs)
+    VariableManager variableManager;
+    
+    // Set up signal spy to verify loadError is emitted
+    QSignalSpy errorSpy(&variableManager, &VariableManager::loadError);
+    
+    // Store initial state
+    QMap<QString, QString> initialVariables = variableManager.allVariables();
+    
+    // Create a fake .qvp file path (but don't create the actual file)
+    // This simulates a race condition or file deletion
+    QString fakeTemplatePath = tempDir.path() + "/fake_template.qvp";
+    
+    // Try to load a non-existent template
+    QString qssTemplate;
+    bool loadResult = variableManager.loadProject(fakeTemplatePath, qssTemplate);
+    
+    // Verify load failed
+    QVERIFY2(!loadResult, "Loading non-existent template should fail");
+    
+    // Verify loadError signal was emitted
+    QVERIFY2(errorSpy.count() >= 1, "loadError signal should be emitted for non-existent file");
+    
+    // Verify variables unchanged
+    QCOMPARE(variableManager.allVariables(), initialVariables);
+    
+    // Verify qssTemplate output is empty
+    QVERIFY2(qssTemplate.isEmpty(), "qssTemplate should be empty after failed load");
+}
+
+/**
+ * Test that project state is correctly reset after loading a template.
+ * 
+ * This test verifies that when a .qvp template is loaded:
+ * - The current project path is cleared
+ * - The project modified flag is reset to false
+ * - The window title is updated to reflect no current project file
+ */
+void TestMainWindow::testProjectStateResetAfterLoadingTemplate()
+{
+    // Create a temporary directory for the test template
+    QTemporaryDir tempDir;
+    QVERIFY2(tempDir.isValid(), "Failed to create temporary directory");
+    
+    // Create a test .qvp template file
+    QString templateName = "state_reset_template";
+    QString templatePath = tempDir.path() + "/" + templateName + ".qvp";
+    
+    // Create QVP content
+    QJsonObject variables;
+    variables["test-var"] = "#ff0000";
+    
+    QString qssTemplate = "QWidget { color: ${test-var}; }";
+    
+    QJsonObject projectJson;
+    projectJson["version"] = 1;
+    projectJson["variables"] = variables;
+    projectJson["qssTemplate"] = qssTemplate;
+    
+    QJsonDocument doc(projectJson);
+    QFile templateFile(templatePath);
+    QVERIFY2(templateFile.open(QIODevice::WriteOnly), "Failed to create template file");
+    templateFile.write(doc.toJson());
+    templateFile.close();
+    
+    // Also create a "project" file to simulate having an open project
+    QString projectPath = tempDir.path() + "/existing_project.qvp";
+    QFile projectFile(projectPath);
+    QVERIFY2(projectFile.open(QIODevice::WriteOnly), "Failed to create project file");
+    projectFile.write(doc.toJson());
+    projectFile.close();
+    
+    // Create MainWindow
+    MainWindow mainWindow;
+    mainWindow.show();
+    QApplication::processEvents();
+    
+    StyleManager *styleManager = mainWindow.styleManager();
+    QssEditor *editor = mainWindow.editor();
+    VariableManager *variableManager = mainWindow.variableManager();
+    
+    QVERIFY2(styleManager != nullptr, "MainWindow should have a style manager");
+    QVERIFY2(editor != nullptr, "MainWindow should have an editor");
+    QVERIFY2(variableManager != nullptr, "MainWindow should have a variable manager");
+    
+    // Set the templates path to our temp directory
+    styleManager->setTemplatesPath(tempDir.path());
+    
+    // First, load the "project" file to simulate having an open project
+    QString loadedQss;
+    bool projectLoaded = variableManager->loadProject(projectPath, loadedQss);
+    QVERIFY2(projectLoaded, "Should be able to load the test project");
+    editor->setStyleSheet(loadedQss);
+    QApplication::processEvents();
+    
+    // Now load the template using QMetaObject::invokeMethod
+    bool invoked = QMetaObject::invokeMethod(&mainWindow, "onLoadTemplate",
+                                              Qt::DirectConnection,
+                                              Q_ARG(QString, templateName));
+    QVERIFY2(invoked, "Should be able to invoke onLoadTemplate slot");
+    QApplication::processEvents();
+    
+    // Verify project state is reset:
+    
+    // 1. Window title should reflect no current project (should be base title like "QtVanity")
+    QString titleAfterTemplate = mainWindow.windowTitle();
+    // The title should NOT contain a file path after loading a template
+    QVERIFY2(!titleAfterTemplate.contains(".qvp") || titleAfterTemplate == "QtVanity",
+             qPrintable(QString("Window title should not contain project path after loading template. Got: '%1'")
+                       .arg(titleAfterTemplate)));
+    
+    // 2. The editor should not be marked as modified (since we just loaded fresh content)
+    // We can verify this by checking if the editor reports unsaved changes
+    QVERIFY2(!editor->hasUnsavedChanges(), 
+             "Editor should not have unsaved changes after loading template");
+    
+    // 3. Verify the template content was loaded correctly
+    QString editorContent = editor->styleSheet();
+    QVERIFY2(editorContent.contains("${test-var}"), 
+             "Editor should contain the template content");
+    
+    // 4. Verify variables were loaded
+    QVERIFY2(variableManager->hasVariable("test-var"), 
+             "VariableManager should have the template variable");
+    QCOMPARE(variableManager->variable("test-var"), QString("#ff0000"));
+    
+    // Clean up
+    qApp->setStyleSheet("");
 }

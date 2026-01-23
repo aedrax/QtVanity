@@ -54,6 +54,11 @@ private slots:
     void testDefaultDockPositionsWhenNoSavedState();
     void testGracefulHandlingOfCorruptedDockState();
     void testMigrationFromSplitterOnlySettings();
+    
+    // Unit tests for template loading
+    void testLoadValidQvpTemplate();
+    void testLoadTemplateErrorForNonExistentFile();
+    void testProjectStateResetAfterLoadingTemplate();
 };
 
 #endif // TEST_MAINWINDOW_H

@@ -55,6 +55,11 @@ private slots:
     // Property 3: Style Application Consistency
     void testStyleApplicationConsistencyProperty();
     void testStyleApplicationConsistencyProperty_data();
+    
+    // Feature: load-template-project-files
+    // Property 1: Template Discovery Returns Only QVP Files
+    void testTemplateDiscoveryReturnsOnlyQvpFiles();
+    void testTemplateDiscoveryReturnsOnlyQvpFiles_data();
 };
 
 #endif // TEST_STYLEMANAGER_H

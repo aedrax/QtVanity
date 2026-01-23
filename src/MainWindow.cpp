@@ -654,25 +654,42 @@ void MainWindow::onToggleStyle()
 
 void MainWindow::onLoadTemplate(const QString &templateName)
 {
-    // Check for unsaved project changes first
-    if (!maybeSaveProject()) {
+    // Only prompt to save if there are actual unsaved changes
+    if (m_projectModified) {
+        if (!maybeSaveProject()) {
+            return;
+        }
+    }
+
+    // Construct path to .qvp file
+    QString templatePath = m_styleManager->templatesPath() + "/" + templateName + ".qvp";
+    
+    // Check if file exists
+    if (!QFile::exists(templatePath)) {
+        QMessageBox::critical(
+            this,
+            tr("Template Error"),
+            tr("Template file not found: %1").arg(templateName)
+        );
         return;
     }
 
-    QString content = m_styleManager->loadTemplate(templateName);
-    if (!content.isEmpty()) {
-        // Clear variables when loading a template
-        m_variableManager->clearVariables();
-        m_editor->setStyleSheet(content);
+    // Load the project file using VariableManager
+    QString qssTemplate;
+    if (m_variableManager->loadProject(templatePath, qssTemplate)) {
+        m_editor->setStyleSheet(qssTemplate);
+        m_currentProjectPath.clear();  // Templates don't set a project path
         m_currentFilePath.clear();
-        m_currentProjectPath.clear();
         m_projectModified = false;
         m_editor->markAsSaved();
         updateWindowTitle();
         
-        // Optionally apply the template immediately
-        m_editor->apply();
+        // Apply the loaded style
+        onRegenerateStyle();
+        
+        statusBar()->showMessage(tr("Template '%1' loaded").arg(templateName), 2000);
     }
+    // Error handling is done via VariableManager signals (onProjectLoadError)
 }
 
 void MainWindow::onStyleApplied()

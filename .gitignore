@@ -42,3 +42,4 @@
 
 # CPack dir
 _CPack_Packages/
+build-wasm/

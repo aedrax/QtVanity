@@ -78,16 +78,17 @@ void TestStyleManager::testSaveAndLoad()
 
 void TestStyleManager::testAvailableTemplates()
 {
-    // Create a temporary directory with some .qss files
+    // Create a temporary directory with some .qvp files
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
     
-    // Create test template files
+    // Create test template files (.qvp format)
     QStringList templateNames = {"dark", "light", "solarized"};
     for (const QString &name : templateNames) {
-        QFile file(tempDir.path() + "/" + name + ".qss");
+        QFile file(tempDir.path() + "/" + name + ".qvp");
         QVERIFY(file.open(QIODevice::WriteOnly));
-        file.write("/* Test template */");
+        // Write minimal valid QVP JSON content
+        file.write(R"({"version": 1, "variables": {}, "qssTemplate": "/* Test template */"})");
         file.close();
     }
     
@@ -913,4 +914,195 @@ void TestStyleManager::testStyleApplicationConsistencyProperty()
     // The important thing is that the style was applied and currentStyle() returns the correct value.
     QStyle *appStyle = QApplication::style();
     QVERIFY2(appStyle != nullptr, "QApplication::style() should not be null after setStyle()");
+}
+
+
+// ============================================================================
+// Feature: load-template-project-files Property Tests
+// ============================================================================
+
+/**
+ * Feature: load-template-project-files, Property 1: Template Discovery Returns Only QVP Files
+ * 
+ * For any templates directory containing a mix of .qss, .qvp, and other files,
+ * calling availableTemplates() SHALL return exactly the base names (without extension)
+ * of .qvp files only, sorted alphabetically.
+ */
+void TestStyleManager::testTemplateDiscoveryReturnsOnlyQvpFiles_data()
+{
+    QTest::addColumn<QStringList>("qvpFiles");
+    QTest::addColumn<QStringList>("qssFiles");
+    QTest::addColumn<QStringList>("otherFiles");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Base names to use for generating files
+    QStringList possibleNames = {
+        "dark", "light", "solarized", "monokai", "dracula",
+        "nord", "gruvbox", "onedark", "material", "atom",
+        "vscode", "sublime", "github", "ayu", "palenight",
+        "oceanic", "synthwave", "cobalt", "tomorrow", "zenburn",
+        "catppuccin", "everforest", "kanagawa", "tokyonight", "rose-pine"
+    };
+    
+    // Other file extensions to test
+    QStringList otherExtensions = {
+        ".txt", ".json", ".xml", ".css", ".scss", ".less",
+        ".md", ".html", ".js", ".ts", ".py", ".cpp", ".h",
+        ".qml", ".ui", ".pro", ".cmake", ".yaml", ".toml"
+    };
+    
+    // Generate 100 random test cases
+    for (int i = 0; i < 100; ++i) {
+        QStringList qvpFiles;
+        QStringList qssFiles;
+        QStringList otherFiles;
+        
+        // Shuffle the possible names for this iteration
+        QStringList shuffledNames = possibleNames;
+        for (int j = shuffledNames.size() - 1; j > 0; --j) {
+            int k = rng->generate() % (j + 1);
+            shuffledNames.swapItemsAt(j, k);
+        }
+        
+        int nameIndex = 0;
+        
+        // Generate 0-8 .qvp files
+        int numQvp = rng->generate() % 9;
+        for (int j = 0; j < numQvp && nameIndex < shuffledNames.size(); ++j) {
+            qvpFiles << shuffledNames[nameIndex++];
+        }
+        
+        // Generate 0-8 .qss files (using different names)
+        int numQss = rng->generate() % 9;
+        for (int j = 0; j < numQss && nameIndex < shuffledNames.size(); ++j) {
+            qssFiles << shuffledNames[nameIndex++];
+        }
+        
+        // Generate 0-5 other files
+        int numOther = rng->generate() % 6;
+        for (int j = 0; j < numOther && nameIndex < shuffledNames.size(); ++j) {
+            QString ext = otherExtensions[rng->generate() % otherExtensions.size()];
+            otherFiles << (shuffledNames[nameIndex++] + ext);
+        }
+        
+        QTest::newRow(qPrintable(QString("random_mix_%1").arg(i))) 
+            << qvpFiles << qssFiles << otherFiles;
+    }
+    
+    // Edge cases
+    QTest::newRow("empty_directory") 
+        << QStringList() << QStringList() << QStringList();
+    
+    QTest::newRow("only_qvp_files") 
+        << QStringList({"dark", "light", "solarized"}) 
+        << QStringList() 
+        << QStringList();
+    
+    QTest::newRow("only_qss_files") 
+        << QStringList() 
+        << QStringList({"dark", "light", "solarized"}) 
+        << QStringList();
+    
+    QTest::newRow("only_other_files") 
+        << QStringList() 
+        << QStringList() 
+        << QStringList({"readme.txt", "config.json", "styles.css"});
+    
+    QTest::newRow("qss_and_other_no_qvp") 
+        << QStringList() 
+        << QStringList({"dark", "light"}) 
+        << QStringList({"readme.txt", "config.json"});
+    
+    QTest::newRow("single_qvp") 
+        << QStringList({"theme"}) 
+        << QStringList() 
+        << QStringList();
+    
+    QTest::newRow("many_qvp_files") 
+        << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"}) 
+        << QStringList() 
+        << QStringList();
+    
+    QTest::newRow("mixed_all_types") 
+        << QStringList({"dark", "light"}) 
+        << QStringList({"legacy-dark", "legacy-light"}) 
+        << QStringList({"readme.md", "config.json", "styles.css"});
+}
+
+void TestStyleManager::testTemplateDiscoveryReturnsOnlyQvpFiles()
+{
+    // Feature: load-template-project-files, Property 1: Template Discovery Returns Only QVP Files
+    
+    QFETCH(QStringList, qvpFiles);
+    QFETCH(QStringList, qssFiles);
+    QFETCH(QStringList, otherFiles);
+    
+    // Create a temporary directory for this test
+    QTemporaryDir tempDir;
+    QVERIFY2(tempDir.isValid(), "Failed to create temporary directory");
+    
+    // Create .qvp files
+    for (const QString &name : qvpFiles) {
+        QFile file(tempDir.path() + "/" + name + ".qvp");
+        QVERIFY2(file.open(QIODevice::WriteOnly), 
+                 qPrintable(QString("Failed to create .qvp file: %1").arg(name)));
+        // Write minimal valid JSON content for .qvp file
+        file.write("{\"version\":1,\"variables\":{},\"qssTemplate\":\"\"}");
+        file.close();
+    }
+    
+    // Create .qss files
+    for (const QString &name : qssFiles) {
+        QFile file(tempDir.path() + "/" + name + ".qss");
+        QVERIFY2(file.open(QIODevice::WriteOnly),
+                 qPrintable(QString("Failed to create .qss file: %1").arg(name)));
+        file.write("/* QSS template */");
+        file.close();
+    }
+    
+    // Create other files
+    for (const QString &filename : otherFiles) {
+        QFile file(tempDir.path() + "/" + filename);
+        QVERIFY2(file.open(QIODevice::WriteOnly),
+                 qPrintable(QString("Failed to create other file: %1").arg(filename)));
+        file.write("test content");
+        file.close();
+    }
+    
+    // Create StyleManager and set templates path
+    StyleManager manager;
+    manager.setTemplatesPath(tempDir.path());
+    
+    // Get available templates
+    QStringList templates = manager.availableTemplates();
+    
+    // Property: The returned list should contain exactly the .qvp base names
+    QStringList expectedTemplates = qvpFiles;
+    expectedTemplates.sort();  // availableTemplates() returns sorted list
+    
+    // Verify count matches
+    QVERIFY2(templates.size() == expectedTemplates.size(),
+             qPrintable(QString("Expected %1 templates, got %2. Expected: [%3], Got: [%4]")
+                       .arg(expectedTemplates.size())
+                       .arg(templates.size())
+                       .arg(expectedTemplates.join(", "))
+                       .arg(templates.join(", "))));
+    
+    // Verify exact match (sorted)
+    QCOMPARE(templates, expectedTemplates);
+    
+    // Additional verification: no .qss files should be in the result
+    for (const QString &qssName : qssFiles) {
+        QVERIFY2(!templates.contains(qssName),
+                 qPrintable(QString(".qss file '%1' should not be in availableTemplates()").arg(qssName)));
+    }
+    
+    // Additional verification: no other files should be in the result
+    for (const QString &otherFile : otherFiles) {
+        // Extract base name without extension
+        QString baseName = QFileInfo(otherFile).baseName();
+        QVERIFY2(!templates.contains(baseName) || qvpFiles.contains(baseName),
+                 qPrintable(QString("Other file '%1' should not be in availableTemplates()").arg(otherFile)));
+    }
 }
