@@ -62,8 +62,14 @@ set(SOURCES
     src/gallery/MainWindowPage.h
     src/gallery/AdvancedPage.cpp
     src/gallery/AdvancedPage.h
+    src/gallery/CustomWidgetsPage.cpp
+    src/gallery/CustomWidgetsPage.h
     src/gallery/WidgetGallery.cpp
     src/gallery/WidgetGallery.h
+    src/plugins/PluginManager.cpp
+    src/plugins/PluginManager.h
+    src/plugins/PluginMetadata.h
+    src/plugins/WidgetPluginInterface.h
 )
 
 # Create executable
@@ -86,6 +92,7 @@ target_include_directories(QtVanity PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gallery
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plugins
 )
 
 # =============================================================================
@@ -794,8 +801,14 @@ if(BUILD_TESTING)
         src/gallery/MainWindowPage.h
         src/gallery/AdvancedPage.cpp
         src/gallery/AdvancedPage.h
+        src/gallery/CustomWidgetsPage.cpp
+        src/gallery/CustomWidgetsPage.h
         src/gallery/WidgetGallery.cpp
         src/gallery/WidgetGallery.h
+        src/plugins/PluginManager.cpp
+        src/plugins/PluginManager.h
+        src/plugins/PluginMetadata.h
+        src/plugins/WidgetPluginInterface.h
     )
     
     target_link_libraries(qtvanity_lib PUBLIC
@@ -808,6 +821,7 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gallery
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/plugins
     )
     
     # Test executable
@@ -845,6 +859,10 @@ if(BUILD_TESTING)
         tests/test_variablepanel.h
         tests/test_findreplacebar.cpp
         tests/test_findreplacebar.h
+        tests/test_pluginmanager.cpp
+        tests/test_pluginmanager.h
+        tests/test_customwidgetspage.cpp
+        tests/test_customwidgetspage.h
     )
     
     target_link_libraries(qtvanity_tests PRIVATE
@@ -856,9 +874,76 @@ if(BUILD_TESTING)
     target_include_directories(qtvanity_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/plugins
         ${CMAKE_CURRENT_SOURCE_DIR}/tests
     )
     
     # Register tests with CTest
     add_test(NAME qtvanity_tests COMMAND qtvanity_tests)
 endif()
+
+    # Standalone PluginManager test executable for faster iteration
+    add_executable(test_pluginmanager_standalone
+        tests/test_pluginmanager_standalone.cpp
+        tests/test_pluginmanager.cpp
+        tests/test_pluginmanager.h
+    )
+    
+    target_link_libraries(test_pluginmanager_standalone PRIVATE
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        qtvanity_lib
+    )
+    
+    target_include_directories(test_pluginmanager_standalone PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/plugins
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    
+    add_test(NAME test_pluginmanager COMMAND test_pluginmanager_standalone)
+
+    # Standalone SettingsManager test executable for faster iteration
+    add_executable(test_settingsmanager_standalone
+        tests/test_settingsmanager_standalone.cpp
+        tests/test_settingsmanager.cpp
+        tests/test_settingsmanager.h
+    )
+    
+    target_link_libraries(test_settingsmanager_standalone PRIVATE
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        qtvanity_lib
+    )
+    
+    target_include_directories(test_settingsmanager_standalone PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    
+    add_test(NAME test_settingsmanager COMMAND test_settingsmanager_standalone)
+
+    # Standalone CustomWidgetsPage test executable for faster iteration
+    add_executable(test_customwidgetspage_standalone
+        tests/test_customwidgetspage_standalone.cpp
+        tests/test_customwidgetspage.cpp
+        tests/test_customwidgetspage.h
+    )
+    
+    target_link_libraries(test_customwidgetspage_standalone PRIVATE
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        qtvanity_lib
+    )
+    
+    target_include_directories(test_customwidgetspage_standalone PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/editor
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gallery
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/plugins
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    
+    add_test(NAME test_customwidgetspage COMMAND test_customwidgetspage_standalone)
