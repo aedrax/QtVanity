@@ -30,6 +30,7 @@ void TestSettingsManager::init()
     settings.remove(QStringLiteral("window/dockState"));
     settings.remove(QStringLiteral("appearance/baseStyle"));
     settings.remove(QStringLiteral("recentProjects"));
+    settings.remove(QStringLiteral("plugins/directory"));
 }
 
 void TestSettingsManager::cleanup()
@@ -41,6 +42,7 @@ void TestSettingsManager::cleanup()
     settings.remove(QStringLiteral("window/dockState"));
     settings.remove(QStringLiteral("appearance/baseStyle"));
     settings.remove(QStringLiteral("recentProjects"));
+    settings.remove(QStringLiteral("plugins/directory"));
 }
 
 /**
@@ -667,4 +669,295 @@ void TestSettingsManager::testRecentProjectsOrderingAndCap()
              qPrintable(QString("Expected size %1, got %2")
                        .arg(expectedMaxSize)
                        .arg(recentProjects.size())));
+}
+
+
+/**
+ * Feature: custom-widget-plugin, Property 12: Settings Storage Round-Trip
+ * 
+ * For any valid directory path set as the Plugin_Directory in SettingsManager,
+ * retrieving the Plugin_Directory should return the same path.
+ */
+void TestSettingsManager::testPluginDirectoryRoundTrip_data()
+{
+    QTest::addColumn<QString>("directoryPath");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100+ test cases with random directory paths
+    for (int i = 0; i < 100; ++i) {
+        // Generate random directory path components
+        int numComponents = rng->bounded(1, 6);  // 1-5 path components
+        QString path;
+        
+        // Start with root or drive letter
+#ifdef Q_OS_WIN
+        path = QString("C:");
+#else
+        path = QString();
+#endif
+        
+        for (int j = 0; j < numComponents; ++j) {
+            // Generate random directory name (alphanumeric + underscore)
+            int nameLength = rng->bounded(3, 15);
+            QString dirName;
+            for (int k = 0; k < nameLength; ++k) {
+                int charType = rng->bounded(3);
+                if (charType == 0) {
+                    dirName += QChar('a' + rng->bounded(26));  // lowercase letter
+                } else if (charType == 1) {
+                    dirName += QChar('A' + rng->bounded(26));  // uppercase letter
+                } else {
+                    dirName += QChar('0' + rng->bounded(10));  // digit
+                }
+            }
+            path += "/" + dirName;
+        }
+        
+        QTest::newRow(qPrintable(QString("random_path_%1").arg(i))) << path;
+    }
+    
+    // Edge cases - various valid directory path formats
+    QTest::newRow("simple_path") << QString("/home/user/plugins");
+    QTest::newRow("nested_path") << QString("/usr/local/share/qtvanity/plugins");
+    QTest::newRow("path_with_numbers") << QString("/opt/app123/plugins456");
+    QTest::newRow("path_with_underscores") << QString("/my_app/my_plugins");
+    QTest::newRow("path_with_dots") << QString("/home/user/.config/qtvanity/plugins");
+    QTest::newRow("single_component") << QString("/plugins");
+    
+#ifdef Q_OS_WIN
+    // Windows-specific paths
+    QTest::newRow("windows_path") << QString("C:/Users/Test/AppData/Local/QtVanity/plugins");
+    QTest::newRow("windows_program_files") << QString("C:/Program Files/QtVanity/plugins");
+#endif
+    
+    // Path with spaces (valid on most filesystems)
+    QTest::newRow("path_with_spaces") << QString("/home/user/My Plugins");
+    
+    // Unicode path (valid on modern filesystems)
+    QTest::newRow("unicode_path") << QString("/home/user/плагины");
+}
+
+void TestSettingsManager::testPluginDirectoryRoundTrip()
+{
+    // Feature: custom-widget-plugin, Property 12: Settings Storage Round-Trip
+    
+    QFETCH(QString, directoryPath);
+    
+    // Create first SettingsManager and set the plugin directory
+    {
+        SettingsManager settingsManager;
+        settingsManager.setPluginDirectory(directoryPath);
+    }
+    
+    // Create a new SettingsManager instance - it should return the saved directory
+    {
+        SettingsManager settingsManager;
+        QString loadedPath = settingsManager.pluginDirectory();
+        
+        // Property: The loaded path should equal the saved path
+        QVERIFY2(loadedPath == directoryPath,
+                 qPrintable(QString("Round-trip failed: saved '%1', loaded '%2'")
+                           .arg(directoryPath)
+                           .arg(loadedPath)));
+    }
+}
+
+
+/**
+ * Feature: custom-widget-plugin, Property 13: Directory Change Triggers Rescan
+ * 
+ * For any change to the Plugin_Directory setting, the SettingsManager SHALL emit
+ * the pluginDirectoryChanged() signal. When the same path is set again (idempotency),
+ * no signal should be emitted.
+ */
+void TestSettingsManager::testDirectoryChangeTriggerSignal_data()
+{
+    QTest::addColumn<QString>("initialPath");
+    QTest::addColumn<QString>("newPath");
+    QTest::addColumn<bool>("expectSignal");
+    
+    QRandomGenerator *rng = QRandomGenerator::global();
+    
+    // Generate 100+ test cases with random directory path changes
+    for (int i = 0; i < 100; ++i) {
+        // Generate two different random directory paths
+        auto generateRandomPath = [&rng]() -> QString {
+            int numComponents = rng->bounded(1, 6);  // 1-5 path components
+            QString path;
+            
+#ifdef Q_OS_WIN
+            path = QString("C:");
+#else
+            path = QString();
+#endif
+            
+            for (int j = 0; j < numComponents; ++j) {
+                int nameLength = rng->bounded(3, 15);
+                QString dirName;
+                for (int k = 0; k < nameLength; ++k) {
+                    int charType = rng->bounded(3);
+                    if (charType == 0) {
+                        dirName += QChar('a' + rng->bounded(26));
+                    } else if (charType == 1) {
+                        dirName += QChar('A' + rng->bounded(26));
+                    } else {
+                        dirName += QChar('0' + rng->bounded(10));
+                    }
+                }
+                path += "/" + dirName;
+            }
+            return path;
+        };
+        
+        QString initialPath = generateRandomPath();
+        QString newPath = generateRandomPath();
+        
+        // Ensure paths are different for the "change" test cases
+        while (newPath == initialPath) {
+            newPath = generateRandomPath();
+        }
+        
+        // Test case: changing to a different path should emit signal
+        QTest::newRow(qPrintable(QString("different_path_%1").arg(i))) 
+            << initialPath << newPath << true;
+    }
+    
+    // Generate 50 test cases for idempotency (same path, no signal)
+    for (int i = 0; i < 50; ++i) {
+        auto generateRandomPath = [&rng]() -> QString {
+            int numComponents = rng->bounded(1, 6);
+            QString path;
+            
+#ifdef Q_OS_WIN
+            path = QString("C:");
+#else
+            path = QString();
+#endif
+            
+            for (int j = 0; j < numComponents; ++j) {
+                int nameLength = rng->bounded(3, 15);
+                QString dirName;
+                for (int k = 0; k < nameLength; ++k) {
+                    int charType = rng->bounded(3);
+                    if (charType == 0) {
+                        dirName += QChar('a' + rng->bounded(26));
+                    } else if (charType == 1) {
+                        dirName += QChar('A' + rng->bounded(26));
+                    } else {
+                        dirName += QChar('0' + rng->bounded(10));
+                    }
+                }
+                path += "/" + dirName;
+            }
+            return path;
+        };
+        
+        QString samePath = generateRandomPath();
+        
+        // Test case: setting the same path should NOT emit signal (idempotency)
+        QTest::newRow(qPrintable(QString("same_path_%1").arg(i))) 
+            << samePath << samePath << false;
+    }
+    
+    // Edge cases - different paths
+    QTest::newRow("simple_change") 
+        << QString("/home/user/plugins") 
+        << QString("/home/user/other_plugins") 
+        << true;
+    
+    QTest::newRow("nested_to_simple") 
+        << QString("/usr/local/share/qtvanity/plugins") 
+        << QString("/plugins") 
+        << true;
+    
+    QTest::newRow("simple_to_nested") 
+        << QString("/plugins") 
+        << QString("/usr/local/share/qtvanity/plugins") 
+        << true;
+    
+    // Edge cases - same paths (idempotency)
+    QTest::newRow("same_simple_path") 
+        << QString("/home/user/plugins") 
+        << QString("/home/user/plugins") 
+        << false;
+    
+    QTest::newRow("same_nested_path") 
+        << QString("/usr/local/share/qtvanity/plugins") 
+        << QString("/usr/local/share/qtvanity/plugins") 
+        << false;
+    
+    QTest::newRow("same_path_with_spaces") 
+        << QString("/home/user/My Plugins") 
+        << QString("/home/user/My Plugins") 
+        << false;
+    
+#ifdef Q_OS_WIN
+    // Windows-specific edge cases
+    QTest::newRow("windows_different_paths") 
+        << QString("C:/Users/Test/plugins") 
+        << QString("D:/Plugins") 
+        << true;
+    
+    QTest::newRow("windows_same_path") 
+        << QString("C:/Users/Test/AppData/Local/QtVanity/plugins") 
+        << QString("C:/Users/Test/AppData/Local/QtVanity/plugins") 
+        << false;
+#endif
+}
+
+void TestSettingsManager::testDirectoryChangeTriggerSignal()
+{
+    // Feature: custom-widget-plugin, Property 13: Directory Change Triggers Rescan
+    
+    QFETCH(QString, initialPath);
+    QFETCH(QString, newPath);
+    QFETCH(bool, expectSignal);
+    
+    // Clear any existing plugin directory setting
+    {
+        QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+        settings.remove(QStringLiteral("plugins/directory"));
+    }
+    
+    SettingsManager settingsManager;
+    
+    // Set the initial path first
+    settingsManager.setPluginDirectory(initialPath);
+    
+    // Verify initial path was set correctly
+    QVERIFY2(settingsManager.pluginDirectory() == initialPath,
+             qPrintable(QString("Initial path not set correctly: expected '%1', got '%2'")
+                       .arg(initialPath)
+                       .arg(settingsManager.pluginDirectory())));
+    
+    // Set up signal spy to monitor pluginDirectoryChanged signal
+    QSignalSpy spy(&settingsManager, &SettingsManager::pluginDirectoryChanged);
+    QVERIFY2(spy.isValid(), "Signal spy should be valid");
+    
+    // Now set the new path (which may be the same or different)
+    settingsManager.setPluginDirectory(newPath);
+    
+    // Verify the path is now set to newPath
+    QVERIFY2(settingsManager.pluginDirectory() == newPath,
+             qPrintable(QString("New path not set correctly: expected '%1', got '%2'")
+                       .arg(newPath)
+                       .arg(settingsManager.pluginDirectory())));
+    
+    if (expectSignal) {
+        // Property: When directory changes, signal MUST be emitted
+        QVERIFY2(spy.count() == 1,
+                 qPrintable(QString("Expected pluginDirectoryChanged signal to be emitted once when "
+                                   "changing from '%1' to '%2', but signal count was %3")
+                           .arg(initialPath)
+                           .arg(newPath)
+                           .arg(spy.count())));
+    } else {
+        // Property: When directory is the same (idempotency), signal MUST NOT be emitted
+        QVERIFY2(spy.count() == 0,
+                 qPrintable(QString("Expected NO pluginDirectoryChanged signal when setting same path '%1', "
+                                   "but signal was emitted %2 time(s)")
+                           .arg(newPath)
+                           .arg(spy.count())));
+    }
 }

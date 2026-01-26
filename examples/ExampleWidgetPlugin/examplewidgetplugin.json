@@ -1,0 +1,7 @@
+{
+    "name": "Example Widget Plugin",
+    "version": "1.0.0",
+    "description": "A demonstration widget plugin for QtVanity featuring gradient buttons and color swatches",
+    "author": "QtVanity",
+    "license": "MIT"
+}

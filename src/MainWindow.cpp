@@ -7,7 +7,9 @@
 #include "editor/VariableManager.h"
 #include "editor/VariablePanel.h"
 #include "gallery/WidgetGallery.h"
+#include "plugins/PluginManager.h"
 
+#include <QDir>
 #include <QDockWidget>
 #include <QMenuBar>
 #include <QMenu>
@@ -33,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_variableManager(nullptr)
     , m_variablePanel(nullptr)
     , m_settingsManager(nullptr)
+    , m_pluginManager(nullptr)
     , m_fileMenu(nullptr)
     , m_editMenu(nullptr)
     , m_viewMenu(nullptr)
@@ -59,6 +62,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_clearRecentAction(nullptr)
     , m_showVariablePanelAction(nullptr)
     , m_showGalleryAction(nullptr)
+    , m_refreshPluginsAction(nullptr)
+    , m_pluginDirectoryAction(nullptr)
     , m_projectModified(false)
 {
     // Create settings manager first
@@ -90,6 +95,26 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Create variable manager
     m_variableManager = new VariableManager(this);
+
+    // Create plugin manager
+    m_pluginManager = new PluginManager(this);
+    m_pluginManager->setPluginDirectory(m_settingsManager->pluginDirectory());
+    
+    // Create plugin directory if it doesn't exist
+    QString pluginDir = m_settingsManager->pluginDirectory();
+    QDir dir(pluginDir);
+    if (!dir.exists()) {
+        dir.mkpath(pluginDir);
+    }
+    
+    m_pluginManager->loadPlugins();
+
+    // Connect plugin directory changes to trigger rescan
+    connect(m_settingsManager, &SettingsManager::pluginDirectoryChanged,
+            this, [this]() {
+                m_pluginManager->setPluginDirectory(m_settingsManager->pluginDirectory());
+                m_pluginManager->loadPlugins();
+            });
 
     // Setup UI components
     setupCentralWidget();
@@ -136,6 +161,7 @@ void MainWindow::setupCentralWidget()
 
     // Create Widget Gallery dock widget
     m_gallery = new WidgetGallery(this);
+    m_gallery->setPluginManager(m_pluginManager);
     
     m_galleryDock = new QDockWidget(tr("Widget Gallery"), this);
     m_galleryDock->setObjectName("WidgetGalleryDock");
@@ -217,6 +243,14 @@ void MainWindow::setupFileMenu()
 
     m_fileMenu->addSeparator();
 
+    // Plugin Directory action
+    m_pluginDirectoryAction = new QAction(tr("Plugin &Directory..."), this);
+    m_pluginDirectoryAction->setStatusTip(tr("Select the directory where custom widget plugins are located"));
+    connect(m_pluginDirectoryAction, &QAction::triggered, this, &MainWindow::onPluginDirectory);
+    m_fileMenu->addAction(m_pluginDirectoryAction);
+
+    m_fileMenu->addSeparator();
+
     // Exit action
     m_exitAction = new QAction(tr("E&xit"), this);
     m_exitAction->setShortcut(QKeySequence::Quit);
@@ -291,6 +325,16 @@ void MainWindow::setupViewMenu()
     m_showGalleryAction = m_galleryDock->toggleViewAction();
     m_showGalleryAction->setText(tr("Widget &Gallery"));
     m_viewMenu->addAction(m_showGalleryAction);
+
+    m_viewMenu->addSeparator();
+
+    // Refresh Plugins action
+    m_refreshPluginsAction = new QAction(tr("&Refresh Plugins"), this);
+    m_refreshPluginsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_R));
+    m_refreshPluginsAction->setStatusTip(tr("Rescan the plugin directory and reload all plugins"));
+    connect(m_refreshPluginsAction, &QAction::triggered,
+            m_pluginManager, &PluginManager::refreshPlugins);
+    m_viewMenu->addAction(m_refreshPluginsAction);
 }
 
 void MainWindow::setupHelpMenu()
@@ -996,6 +1040,23 @@ void MainWindow::onClearRecentProjects()
     m_settingsManager->clearRecentProjects();
 }
 
+void MainWindow::onPluginDirectory()
+{
+    QString currentDir = m_settingsManager->pluginDirectory();
+    
+    QString newDir = QFileDialog::getExistingDirectory(
+        this,
+        tr("Select Plugin Directory"),
+        currentDir,
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+    );
+    
+    if (!newDir.isEmpty() && newDir != currentDir) {
+        m_settingsManager->setPluginDirectory(newDir);
+        // The signal connection in the constructor will automatically trigger the rescan
+    }
+}
+
 void MainWindow::updateThemeActions()
 {
     if (!m_themeManager) {
@@ -1051,4 +1112,9 @@ VariablePanel* MainWindow::variablePanel() const
 SettingsManager* MainWindow::settingsManager() const
 {
     return m_settingsManager;
+}
+
+PluginManager* MainWindow::pluginManager() const
+{
+    return m_pluginManager;
 }

@@ -1,4 +1,5 @@
 #include "SettingsManager.h"
+#include <QDir>
 
 namespace {
     // Settings keys
@@ -7,6 +8,7 @@ namespace {
     const QString KeyDockState = QStringLiteral("window/dockState");
     const QString KeyBaseStyle = QStringLiteral("appearance/baseStyle");
     const QString KeyRecentProjects = QStringLiteral("recentProjects");
+    const QString KeyPluginDirectory = QStringLiteral("plugins/directory");
 }
 
 SettingsManager::SettingsManager(QObject *parent)
@@ -79,6 +81,31 @@ QString SettingsManager::loadBaseStyle() const
 bool SettingsManager::hasBaseStyle() const
 {
     return m_settings.contains(KeyBaseStyle);
+}
+
+// Plugin directory
+QString SettingsManager::pluginDirectory() const
+{
+    QString path = m_settings.value(KeyPluginDirectory).toString();
+    if (path.isEmpty()) {
+        return defaultPluginDirectory();
+    }
+    return path;
+}
+
+void SettingsManager::setPluginDirectory(const QString &path)
+{
+    QString currentPath = pluginDirectory();
+    if (currentPath != path) {
+        m_settings.setValue(KeyPluginDirectory, path);
+        emit pluginDirectoryChanged();
+    }
+}
+
+QString SettingsManager::defaultPluginDirectory() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    return QDir(appDataPath).filePath(QStringLiteral("plugins"));
 }
 
 // Recent projects

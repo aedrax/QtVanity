@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStringList>
 
 /**
@@ -109,6 +110,27 @@ public:
      */
     bool hasBaseStyle() const;
 
+    // Plugin directory
+    /**
+     * @brief Returns the configured plugin directory path.
+     * @return The plugin directory path, or the default path if none is configured.
+     */
+    QString pluginDirectory() const;
+
+    /**
+     * @brief Sets the plugin directory path.
+     * @param path The directory path where plugins are located.
+     * 
+     * Emits pluginDirectoryChanged() after modification.
+     */
+    void setPluginDirectory(const QString &path);
+
+    /**
+     * @brief Returns the default plugin directory path.
+     * @return The default path: {app_data}/plugins
+     */
+    QString defaultPluginDirectory() const;
+
     // Recent projects
     /**
      * @brief Adds a project to the recent projects list.
@@ -151,6 +173,11 @@ signals:
      * @brief Emitted when the recent projects list changes.
      */
     void recentProjectsChanged();
+
+    /**
+     * @brief Emitted when the plugin directory setting changes.
+     */
+    void pluginDirectoryChanged();
 
 private:
     QSettings m_settings;

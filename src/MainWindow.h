@@ -16,6 +16,7 @@ class ThemeManager;
 class VariableManager;
 class VariablePanel;
 class SettingsManager;
+class PluginManager;
 
 /**
  * @brief Main application window for QtVanity.
@@ -86,6 +87,12 @@ public:
      */
     SettingsManager* settingsManager() const;
 
+    /**
+     * @brief Returns the plugin manager.
+     * @return Pointer to the PluginManager.
+     */
+    PluginManager* pluginManager() const;
+
 protected:
     /**
      * @brief Handles close event with unsaved changes check.
@@ -130,6 +137,9 @@ private slots:
     // Recent projects
     void onOpenRecentProject(const QString &filePath);
     void onClearRecentProjects();
+    
+    // Plugin directory
+    void onPluginDirectory();
 
 private:
     void setupCentralWidget();
@@ -158,6 +168,7 @@ private:
     VariableManager *m_variableManager;
     VariablePanel *m_variablePanel;
     SettingsManager *m_settingsManager;
+    PluginManager *m_pluginManager;
 
     // Menus
     QMenu *m_fileMenu;
@@ -192,6 +203,10 @@ private:
     // Dock widget toggle actions
     QAction *m_showVariablePanelAction;
     QAction *m_showGalleryAction;
+    
+    // Plugin actions
+    QAction *m_refreshPluginsAction;
+    QAction *m_pluginDirectoryAction;
 
     QString m_currentFilePath;
     QString m_currentProjectPath;

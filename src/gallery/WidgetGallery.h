@@ -13,6 +13,8 @@ class DialogsPage;
 class DisplayPage;
 class MainWindowPage;
 class AdvancedPage;
+class CustomWidgetsPage;
+class PluginManager;
 
 /**
  * @brief Container widget organizing all demonstration widgets into categorized tabs.
@@ -65,6 +67,16 @@ public slots:
      */
     void setInputsReadOnly(bool readOnly);
 
+    /**
+     * @brief Sets the PluginManager for custom widget support.
+     * @param pluginManager Pointer to the PluginManager instance.
+     * 
+     * The PluginManager is used to create the CustomWidgetsPage and
+     * connect plugin refresh signals. This should be called after
+     * construction but before the gallery is displayed.
+     */
+    void setPluginManager(PluginManager *pluginManager);
+
 signals:
     /**
      * @brief Emitted when the enabled state toggle changes.
@@ -99,6 +111,8 @@ private:
     DisplayPage *m_displayPage;
     MainWindowPage *m_mainWindowPage;
     AdvancedPage *m_advancedPage;
+    CustomWidgetsPage *m_customWidgetsPage;
+    PluginManager *m_pluginManager;
 };
 
 #endif // WIDGETGALLERY_H

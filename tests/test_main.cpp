@@ -18,6 +18,8 @@
 #include "test_settingsmanager.h"
 #include "test_variablepanel.h"
 #include "test_findreplacebar.h"
+#include "test_pluginmanager.h"
+#include "test_customwidgetspage.h"
 
 int main(int argc, char *argv[])
 {
@@ -121,6 +123,18 @@ int main(int argc, char *argv[])
     // Run FindReplaceBar tests
     {
         TestFindReplaceBar test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run PluginManager tests
+    {
+        TestPluginManager test;
+        status |= QTest::qExec(&test, argc, argv);
+    }
+    
+    // Run CustomWidgetsPage tests
+    {
+        TestCustomWidgetsPage test;
         status |= QTest::qExec(&test, argc, argv);
     }
     

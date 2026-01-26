@@ -46,6 +46,14 @@ private slots:
     // Property 5: Recent Projects List Ordering and Cap
     void testRecentProjectsOrderingAndCap();
     void testRecentProjectsOrderingAndCap_data();
+    
+    // Property 12: Settings Storage Round-Trip (Plugin Directory)
+    void testPluginDirectoryRoundTrip();
+    void testPluginDirectoryRoundTrip_data();
+    
+    // Property 13: Directory Change Triggers Rescan
+    void testDirectoryChangeTriggerSignal();
+    void testDirectoryChangeTriggerSignal_data();
 };
 
 #endif // TEST_SETTINGSMANAGER_H

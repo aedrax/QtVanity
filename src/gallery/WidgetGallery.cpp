@@ -8,6 +8,8 @@
 #include "DisplayPage.h"
 #include "MainWindowPage.h"
 #include "AdvancedPage.h"
+#include "CustomWidgetsPage.h"
+#include "PluginManager.h"
 
 #include <QTabWidget>
 #include <QCheckBox>
@@ -31,6 +33,8 @@ WidgetGallery::WidgetGallery(QWidget *parent)
     , m_displayPage(nullptr)
     , m_mainWindowPage(nullptr)
     , m_advancedPage(nullptr)
+    , m_customWidgetsPage(nullptr)
+    , m_pluginManager(nullptr)
 {
     setupUi();
 }
@@ -138,6 +142,9 @@ void WidgetGallery::setWidgetsEnabled(bool enabled)
     if (m_advancedPage) {
         m_advancedPage->setWidgetsEnabled(enabled);
     }
+    if (m_customWidgetsPage) {
+        m_customWidgetsPage->setWidgetsEnabled(enabled);
+    }
 
     // Update checkbox state if called programmatically
     if (m_enabledCheckBox && m_enabledCheckBox->isChecked() != enabled) {
@@ -181,4 +188,19 @@ void WidgetGallery::onEnabledToggled(bool checked)
 void WidgetGallery::onReadOnlyToggled(bool checked)
 {
     setInputsReadOnly(checked);
+}
+
+void WidgetGallery::setPluginManager(PluginManager *pluginManager)
+{
+    m_pluginManager = pluginManager;
+    
+    if (m_pluginManager) {
+        // Create CustomWidgetsPage with the PluginManager
+        m_customWidgetsPage = new CustomWidgetsPage(m_pluginManager, m_tabWidget);
+        m_tabWidget->addTab(m_customWidgetsPage, tr("Custom Widgets"));
+        
+        // Connect pluginsLoaded signal to rebuildWidgets for automatic updates
+        connect(m_pluginManager, &PluginManager::pluginsLoaded,
+                m_customWidgetsPage, &CustomWidgetsPage::rebuildWidgets);
+    }
 }
