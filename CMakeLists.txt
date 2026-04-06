@@ -424,7 +424,7 @@ if(WIN32)
     
     # Unique upgrade GUID - IMPORTANT: Generate once and keep constant for upgrades
     # Generated using: uuidgen or https://www.uuidgenerator.net/
-    set(CPACK_WIX_UPGRADE_GUID "A1B2C3D4-E5F6-7890-ABCD-EF1234567890")
+    set(CPACK_WIX_UPGRADE_GUID "f8428ce6-1bc3-4fac-8046-f0c9fb4aebde")
     
     # Product GUID (auto-generated per version is fine)
     # set(CPACK_WIX_PRODUCT_GUID "...")  # Let WiX auto-generate
@@ -880,7 +880,6 @@ if(BUILD_TESTING)
     
     # Register tests with CTest
     add_test(NAME qtvanity_tests COMMAND qtvanity_tests)
-endif()
 
     # Standalone PluginManager test executable for faster iteration
     add_executable(test_pluginmanager_standalone
@@ -947,3 +946,5 @@ endif()
     )
     
     add_test(NAME test_customwidgetspage COMMAND test_customwidgetspage_standalone)
+
+endif()

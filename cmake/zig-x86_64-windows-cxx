@@ -1,0 +1,44 @@
+#!/bin/sh
+# Zig C++ compiler wrapper targeting x86_64-windows-gnu
+# - Filters out CMake's --target= flag (zig uses its own target format)
+# - Filters out host Linux system include paths that conflict with
+#   Zig's Windows libc headers (e.g. mbstate_t redefinition)
+
+ARGS=""
+SKIP_NEXT=0
+SKIP_INCLUDE=0
+for arg in "$@"; do
+    if [ "$SKIP_NEXT" = "1" ]; then
+        SKIP_NEXT=0
+        continue
+    fi
+    # If previous arg was -isystem/-I, check if the path is a host system dir
+    if [ "$SKIP_INCLUDE" = "1" ]; then
+        SKIP_INCLUDE=0
+        case "$arg" in
+            /usr/include*|/usr/local/include*|/usr/lib/gcc/*)
+                # Drop the flag we saved and skip this path
+                ARGS="${SAVED_ARGS}"
+                continue ;;
+            *)
+                ARGS="$ARGS $arg"
+                continue ;;
+        esac
+    fi
+    case "$arg" in
+        --target=*) ;;
+        -target)    SKIP_NEXT=1 ;;
+        -isystem|-I)
+            SKIP_INCLUDE=1
+            SAVED_ARGS="$ARGS"
+            ARGS="$ARGS $arg"
+            ;;
+        -isystem/usr/include*|-isystem/usr/local/include*|-isystem/usr/lib/gcc/*)
+            ;;
+        -I/usr/include*|-I/usr/local/include*|-I/usr/lib/gcc/*)
+            ;;
+        *) ARGS="$ARGS $arg" ;;
+    esac
+done
+
+exec zig c++ -target x86_64-windows-gnu $ARGS

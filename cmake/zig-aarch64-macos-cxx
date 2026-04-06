@@ -1,0 +1,44 @@
+#!/bin/sh
+# Zig C++ compiler wrapper targeting aarch64-macos
+# - Filters out CMake's --target= flag (zig uses its own target format)
+# - Converts framework binary paths to -framework flags for zig's linker
+# - Preserves framework paths used as include directories (-isystem, -I, etc.)
+# - Adds macOS SDK framework stubs search path
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SDK_STUBS="${SCRIPT_DIR}/macos-sdk-stubs"
+
+ARGS=""
+SKIP_NEXT=0
+PASS_NEXT=0
+for arg in "$@"; do
+    if [ "$SKIP_NEXT" = "1" ]; then
+        SKIP_NEXT=0
+        continue
+    fi
+    # If the previous arg was a flag that takes a path, pass this arg through as-is
+    if [ "$PASS_NEXT" = "1" ]; then
+        PASS_NEXT=0
+        ARGS="$ARGS $arg"
+        continue
+    fi
+    case "$arg" in
+        --target=*) ;;
+        -target)    SKIP_NEXT=1 ;;
+        -isystem|-iframework|-I|-F|-isysroot)
+            PASS_NEXT=1
+            ARGS="$ARGS $arg"
+            ;;
+        *.framework/Versions/*/*)
+            fw_name=$(echo "$arg" | sed 's|.*/\([^/]*\)\.framework/.*|\1|')
+            ARGS="$ARGS -framework $fw_name"
+            ;;
+        *.framework/*)
+            fw_name=$(echo "$arg" | sed 's|.*/\([^/]*\)\.framework/.*|\1|')
+            ARGS="$ARGS -framework $fw_name"
+            ;;
+        *) ARGS="$ARGS $arg" ;;
+    esac
+done
+
+exec zig c++ -target aarch64-macos -F"${SDK_STUBS}" $ARGS
