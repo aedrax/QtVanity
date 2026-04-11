@@ -1,0 +1,93 @@
+#!/bin/sh
+# Zig C++ compiler wrapper targeting aarch64-linux-gnu
+# - Filters out CMake's --target= flag (zig uses its own target format)
+# - Filters out host Linux system include paths that conflict with
+#   Zig's Linux ARM64 cross-compilation headers
+# - Filters out -rpath-link which Zig's linker does not support
+# - Uses libstdc++ (from g++-aarch64-linux-gnu) instead of Zig's libc++
+#   because the Qt ARM64 libraries are built with GCC/libstdc++
+
+# Detect the aarch64 cross-compile libstdc++ version
+STDCXX_VER=""
+for v in 14 13 12 11 10; do
+    if [ -d "/usr/aarch64-linux-gnu/include/c++/${v}" ]; then
+        STDCXX_VER="${v}"
+        break
+    fi
+done
+
+STDCXX_ARGS=""
+STDCXX_LINK=""
+if [ -n "$STDCXX_VER" ]; then
+    STDCXX_INC="/usr/aarch64-linux-gnu/include/c++/${STDCXX_VER}"
+    # Resolve Zig's lib directory for C headers
+    ZIG_LIB=$(zig env 2>/dev/null | grep '\.lib_dir' | sed 's/.*= "\(.*\)".*/\1/')
+    STDCXX_ARGS="-nostdinc++"
+    STDCXX_ARGS="$STDCXX_ARGS -cxx-isystem ${STDCXX_INC}"
+    STDCXX_ARGS="$STDCXX_ARGS -cxx-isystem ${STDCXX_INC}/aarch64-linux-gnu"
+    STDCXX_ARGS="$STDCXX_ARGS -cxx-isystem ${STDCXX_INC}/backward"
+    # Zig deduplicates all include paths, so we can't re-add lib/include
+    # after the libstdc++ paths. Create a symlink with a unique name so
+    # Zig treats it as a new path. This ensures #include_next from
+    # libstdc++ (cstdlib -> stdlib.h) finds Zig's C stdlib.h.
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    ZIG_C_SHIM="${SCRIPT_DIR}/linux-aarch64-stubs/zig-c-include"
+    if [ -n "$ZIG_LIB" ] && [ -d "$ZIG_LIB/include" ]; then
+        if [ ! -L "$ZIG_C_SHIM" ]; then
+            mkdir -p "$(dirname "$ZIG_C_SHIM")"
+            ln -sf "$ZIG_LIB/include" "$ZIG_C_SHIM"
+        fi
+        STDCXX_ARGS="$STDCXX_ARGS -idirafter ${ZIG_C_SHIM}"
+    fi
+    STDCXX_LINK="-nostdlib++ -lstdc++"
+fi
+
+ARGS=""
+SKIP_NEXT=0
+SKIP_INCLUDE=0
+IS_COMPILE_ONLY=0
+for arg in "$@"; do
+    if [ "$SKIP_NEXT" = "1" ]; then
+        SKIP_NEXT=0
+        continue
+    fi
+    # If previous arg was -isystem/-I, check if the path is a host system dir
+    if [ "$SKIP_INCLUDE" = "1" ]; then
+        SKIP_INCLUDE=0
+        case "$arg" in
+            /usr/include*|/usr/local/include*|/usr/lib/gcc/*)
+                # Drop the flag we saved and skip this path
+                ARGS="${SAVED_ARGS}"
+                continue ;;
+            *)
+                ARGS="$ARGS $arg"
+                continue ;;
+        esac
+    fi
+    case "$arg" in
+        -c) IS_COMPILE_ONLY=1; ARGS="$ARGS $arg" ;;
+        --target=*) ;;
+        -target)    SKIP_NEXT=1 ;;
+        -isystem|-I)
+            SKIP_INCLUDE=1
+            SAVED_ARGS="$ARGS"
+            ARGS="$ARGS $arg"
+            ;;
+        -isystem/usr/include*|-isystem/usr/local/include*|-isystem/usr/lib/gcc/*)
+            ;;
+        -I/usr/include*|-I/usr/local/include*|-I/usr/lib/gcc/*)
+            ;;
+        -Wl,-rpath-link,*|-Wl,-rpath-link) ;;
+        -rpath-link)  SKIP_NEXT=1 ;;
+        -rpath-link*) ;;
+        *) ARGS="$ARGS $arg" ;;
+    esac
+done
+
+# Only pass -nostdlib++ -lstdc++ during linking, not compilation.
+# -nostdlib++ at compile time interferes with -nostdinc++ header suppression.
+if [ "$IS_COMPILE_ONLY" = "1" ]; then
+    STDCXX_LINK=""
+fi
+
+exec zig c++ -target aarch64-linux-gnu $STDCXX_ARGS $ARGS $STDCXX_LINK

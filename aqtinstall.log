@@ -1,0 +1,284 @@
+2026-04-06 14:20:20,466 - aqt.main - INFO - installer 126752486588544 aqtinstall(aqt) v3.3.0 on Python 3.12.3 [CPython GCC 13.3.0]
+2026-04-06 14:20:20,466 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 14:20:21,602 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtwebengine/6102/llvm_mingw/Updates.xml.sha256
+2026-04-06 14:20:22,085 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtwebengine/6102/llvm_mingw/Updates.xml.sha256
+2026-04-06 14:20:22,575 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtwebengine/6102/llvm_mingw/Updates.xml.sha256
+2026-04-06 14:20:23,058 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtwebengine/6102/llvm_mingw/Updates.xml.sha256
+2026-04-06 14:20:23,539 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtwebengine/6102/llvm_mingw/Updates.xml.sha256
+2026-04-06 14:20:24,018 - aqt.helper - DEBUG - helper 126752486588544 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtpdf/6102/llvm_mingw/Updates.xml.sha256
+2026-04-06 14:20:25,000 - aqt.archives - INFO - archives 126752486588544 Found extension qtpdf
+2026-04-06 14:20:25,185 - aqt.helper - DEBUG - helper 130568517550208 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtsvg-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-04-06 14:20:25,186 - aqt.helper - DEBUG - helper 128241558519936 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtbase-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-04-06 14:20:25,187 - aqt.helper - DEBUG - helper 136352045850752 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtdeclarative-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-04-06 14:20:25,189 - aqt.helper - DEBUG - helper 132908768936064 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qttools-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-04-06 14:20:25,671 - aqt.helper - INFO - helper 130568517550208 Downloading qtsvg...
+2026-04-06 14:20:25,671 - aqt.helper - INFO - helper 128241558519936 Downloading qtbase...
+2026-04-06 14:20:25,672 - aqt.helper - INFO - helper 132908768936064 Downloading qttools...
+2026-04-06 14:20:25,671 - aqt.installer - DEBUG - installer 130568517550208 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtsvg-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:25,674 - aqt.helper - INFO - helper 136352045850752 Downloading qtdeclarative...
+2026-04-06 14:20:25,684 - aqt.installer - DEBUG - installer 136352045850752 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtdeclarative-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:25,683 - aqt.installer - DEBUG - installer 128241558519936 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtbase-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:25,683 - aqt.installer - DEBUG - installer 132908768936064 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qttools-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:26,165 - aqt.helper - DEBUG - helper 136352045850752 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtdeclarative-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:26,165 - aqt.helper - INFO - helper 136352045850752 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:26,165 - aqt.helper - DEBUG - helper 128241558519936 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtbase-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:26,166 - aqt.helper - INFO - helper 128241558519936 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:26,167 - aqt.helper - DEBUG - helper 132908768936064 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qttools-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:26,167 - aqt.helper - INFO - helper 132908768936064 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:26,174 - aqt.helper - DEBUG - helper 130568517550208 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qtsvg-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:26,174 - aqt.helper - INFO - helper 130568517550208 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:26,462 - aqt.installer - INFO - installer 130568517550208 Finished installation of qtsvg-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z in 1.27811241
+2026-04-06 14:20:26,472 - aqt.helper - DEBUG - helper 130568517550208 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qttranslations-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-04-06 14:20:26,953 - aqt.helper - INFO - helper 130568517550208 Downloading qttranslations...
+2026-04-06 14:20:26,953 - aqt.installer - DEBUG - installer 130568517550208 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qttranslations-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:27,477 - aqt.helper - DEBUG - helper 130568517550208 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212qttranslations-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z
+2026-04-06 14:20:27,477 - aqt.helper - INFO - helper 130568517550208 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:28,042 - aqt.installer - INFO - installer 130568517550208 Finished installation of qttranslations-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z in 1.57078278
+2026-04-06 14:20:28,052 - aqt.helper - DEBUG - helper 130568517550208 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212llvm-mingw-20231128-ucrt-x86_64-runtime.7z.sha256
+2026-04-06 14:20:28,539 - aqt.helper - INFO - helper 130568517550208 Downloading llvm...
+2026-04-06 14:20:28,539 - aqt.installer - DEBUG - installer 130568517550208 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212llvm-mingw-20231128-ucrt-x86_64-runtime.7z
+2026-04-06 14:20:28,710 - aqt.installer - INFO - installer 132908768936064 Finished installation of qttools-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z in 3.52247256
+2026-04-06 14:20:28,721 - aqt.helper - DEBUG - helper 132908768936064 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212d3dcompiler_47-x64.7z.sha256
+2026-04-06 14:20:28,980 - aqt.installer - INFO - installer 128241558519936 Finished installation of qtbase-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z in 3.79544856
+2026-04-06 14:20:28,994 - aqt.helper - DEBUG - helper 128241558519936 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212opengl32sw-64-mesa_11_2_2-signed_sha256.7z.sha256
+2026-04-06 14:20:29,019 - aqt.helper - DEBUG - helper 130568517550208 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212llvm-mingw-20231128-ucrt-x86_64-runtime.7z
+2026-04-06 14:20:29,019 - aqt.helper - INFO - helper 130568517550208 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:29,204 - aqt.helper - INFO - helper 132908768936064 Downloading d3dcompiler_47...
+2026-04-06 14:20:29,204 - aqt.installer - DEBUG - installer 132908768936064 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212d3dcompiler_47-x64.7z
+2026-04-06 14:20:29,479 - aqt.helper - INFO - helper 128241558519936 Downloading opengl32sw...
+2026-04-06 14:20:29,480 - aqt.installer - DEBUG - installer 128241558519936 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212opengl32sw-64-mesa_11_2_2-signed_sha256.7z
+2026-04-06 14:20:29,689 - aqt.helper - DEBUG - helper 132908768936064 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212d3dcompiler_47-x64.7z
+2026-04-06 14:20:29,689 - aqt.helper - INFO - helper 132908768936064 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:29,877 - aqt.installer - INFO - installer 130568517550208 Finished installation of llvm-mingw-20231128-ucrt-x86_64-runtime.7z in 1.82745643
+2026-04-06 14:20:29,960 - aqt.helper - DEBUG - helper 128241558519936 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/windows_x86/desktop/qt6_6102/qt6_6102/qt.qt6.6102.win64_llvm_mingw/6.10.2-0-202601261212opengl32sw-64-mesa_11_2_2-signed_sha256.7z
+2026-04-06 14:20:29,961 - aqt.helper - INFO - helper 128241558519936 Redirected: qt.mirror.constant.com
+2026-04-06 14:20:30,064 - aqt.installer - INFO - installer 132908768936064 Finished installation of d3dcompiler_47-x64.7z in 1.34533448
+2026-04-06 14:20:30,639 - aqt.installer - INFO - installer 128241558519936 Finished installation of opengl32sw-64-mesa_11_2_2-signed_sha256.7z in 1.64581068
+2026-04-06 14:20:31,602 - aqt.installer - INFO - installer 136352045850752 Finished installation of qtdeclarative-Windows-Windows_11_24H2-Clang-Windows-Windows_11_24H2-X86_64.7z in 6.41657877
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickVectorImageHelpers.pc
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2FusionStyleImpl.pc
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2Fusion.pc
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Xml.pc
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2FluentWinUI3StyleImpl.pc
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6UiPlugin.pc
+2026-04-06 14:20:31,677 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsSynchronizer.pc
+2026-04-06 14:20:31,678 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlWorkerScript.pc
+2026-04-06 14:20:31,678 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6PrintSupport.pc
+2026-04-06 14:20:31,678 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2.pc
+2026-04-06 14:20:31,678 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsFolderListModel.pc
+2026-04-06 14:20:31,678 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickEffects.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsSharedImage.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Help.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlMeta.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6OpenGLWidgets.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6DBus.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2WindowsStyleImpl.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Sql.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Test.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsQmlModels.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Designer.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickDialogs2QuickImpl.pc
+2026-04-06 14:20:31,679 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2Basic.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlXmlListModel.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsPlatform.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Qml.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickDialogs2.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickLayouts.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlIntegration.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2BasicStyleImpl.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsAnimation.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2Material.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickTest.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Linguist.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Widgets.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2UniversalStyleImpl.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlCompiler.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickTemplates2.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlModels.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6UiTools.pc
+2026-04-06 14:20:31,680 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickVectorImage.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Platform.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Quick.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlCore.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Svg.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6SvgWidgets.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Network.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2ImagineStyleImpl.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlAssetDownloader.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2Impl.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2Imagine.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6OpenGL.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Gui.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2MaterialStyleImpl.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickDialogs2Utils.pc
+2026-04-06 14:20:31,681 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Core.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickControls2Universal.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6Concurrent.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsWavefrontMesh.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QuickWidgets.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlLocalStorage.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6QmlNetwork.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/pkgconfig/Qt6LabsSettings.pc
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlAssetDownloader.prl
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6PacketProtocol.prl
+2026-04-06 14:20:31,682 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Svg.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6ExamplesAssetDownloader.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickParticles.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsPlatform.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickVectorImageHelpers.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickTestUtils.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlMeta.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Core.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickDialogs2Utils.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickTemplates2.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlDom.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Concurrent.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlFormat.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6DesignerComponents.prl
+2026-04-06 14:20:31,683 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6UiTools.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6FbSupport.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Designer.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickVectorImageGenerator.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6ExampleIcons.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickTest.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2Fusion.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsSynchronizer.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6DBus.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2Impl.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2Material.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsAnimation.prl
+2026-04-06 14:20:31,684 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickShapesDesignHelpers.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlLocalStorage.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Xml.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6OpenGL.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsWavefrontMesh.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickLayouts.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsSettings.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Gui.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6PrintSupport.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlDebug.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2BasicStyleImpl.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2ImagineStyleImpl.prl
+2026-04-06 14:20:31,685 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Network.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickEffects.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlModels.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControlsTestUtils.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsQmlModels.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlTypeRegistrar.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlNetwork.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6EntryPoint.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlXmlListModel.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickVectorImage.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickWidgets.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Widgets.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2WindowsStyleImpl.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Help.prl
+2026-04-06 14:20:31,686 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2MaterialStyleImpl.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlCore.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlCompiler.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2Universal.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsSharedImage.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2UniversalStyleImpl.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlLS.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6SvgWidgets.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Test.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2Imagine.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2FusionStyleImpl.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6LabsFolderListModel.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickShapes.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Qml.prl
+2026-04-06 14:20:31,687 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlToolingSettings.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QmlWorkerScript.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6DeviceDiscoverySupport.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2Basic.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickControls2FluentWinUI3StyleImpl.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickDialogs2QuickImpl.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Quick.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6QuickDialogs2.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6Sql.prl
+2026-04-06 14:20:31,688 - aqt.updater - INFO - updater 126752486588544 Patching /data/projects/projects/QtVanity/6.10.2/6.10.2/llvm-mingw_64/lib/Qt6OpenGLWidgets.prl
+2026-04-06 14:20:31,688 - aqt.main - INFO - installer 126752486588544 Finished installation
+2026-04-06 14:20:31,688 - aqt.main - INFO - installer 126752486588544 Time elapsed: 11.22280010 second
+2026-04-06 14:38:06,221 - aqt.main - ERROR - installer 138863500845184 'qt' is not a valid target for host 'linux_arm64'
+2026-04-06 15:18:19,615 - aqt.main - INFO - installer 130453954113664 aqtinstall(aqt) v3.3.0 on Python 3.12.3 [CPython GCC 13.3.0]
+2026-04-06 15:18:19,615 - aqt.helper - DEBUG - helper 130453954113664 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:18:20,603 - aqt.helper - DEBUG - helper 130453954113664 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/extensions/qtwebengine/6102/x86_64/Updates.xml.sha256
+2026-04-06 15:18:21,577 - aqt.archives - INFO - archives 130453954113664 Found extension qtwebengine
+2026-04-06 15:18:21,578 - aqt.helper - DEBUG - helper 130453954113664 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/extensions/qtpdf/6102/x86_64/Updates.xml.sha256
+2026-04-06 15:18:22,561 - aqt.archives - INFO - archives 130453954113664 Found extension qtpdf
+2026-04-06 15:18:22,565 - aqt.main - ERROR - installer 130453954113664 The packages ['qt_base'] were not found while parsing XML of package information!
+==============================Suggested follow-up:==============================
+* Please use 'aqt list-qt linux desktop --arch 6.10.2' to show architectures available.
+2026-04-06 15:20:12,586 - aqt.main - INFO - installer 135838135419008 aqtinstall(aqt) v3.3.0 on Python 3.12.3 [CPython GCC 13.3.0]
+2026-04-06 15:20:12,586 - aqt.helper - DEBUG - helper 135838135419008 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:20:13,556 - aqt.helper - DEBUG - helper 135838135419008 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/extensions/qtwebengine/6102/x86_64/Updates.xml.sha256
+2026-04-06 15:20:14,530 - aqt.archives - INFO - archives 135838135419008 Found extension qtwebengine
+2026-04-06 15:20:14,530 - aqt.helper - DEBUG - helper 135838135419008 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/extensions/qtpdf/6102/x86_64/Updates.xml.sha256
+2026-04-06 15:20:15,489 - aqt.archives - INFO - archives 135838135419008 Found extension qtpdf
+2026-04-06 15:20:15,492 - aqt.main - ERROR - installer 135838135419008 The packages ['qt_base'] were not found while parsing XML of package information!
+==============================Suggested follow-up:==============================
+* Please use 'aqt list-qt linux desktop --arch 6.10.2' to show architectures available.
+2026-04-06 15:20:30,166 - aqt.helper - DEBUG - helper 127871752687744 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:20:41,221 - aqt.helper - DEBUG - helper 130130701533312 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_x64/desktop/qt6_6110/qt6_6110/Updates.xml.sha256
+2026-04-06 15:20:51,479 - aqt.helper - DEBUG - helper 128256837783680 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:21:12,082 - aqt.main - INFO - installer 125306076979328 aqtinstall(aqt) v3.3.0 on Python 3.12.3 [CPython GCC 13.3.0]
+2026-04-06 15:21:12,083 - aqt.helper - DEBUG - helper 125306076979328 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:21:43,599 - aqt.helper - DEBUG - helper 125306076979328 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/extensions/qtwebengine/6102/arm64/Updates.xml.sha256
+2026-04-06 15:22:14,955 - aqt.archives - INFO - archives 125306076979328 Found extension qtwebengine
+2026-04-06 15:22:14,955 - aqt.helper - DEBUG - helper 125306076979328 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/extensions/qtpdf/6102/arm64/Updates.xml.sha256
+2026-04-06 15:22:15,943 - aqt.archives - INFO - archives 125306076979328 Found extension qtpdf
+2026-04-06 15:22:15,947 - aqt.main - ERROR - installer 125306076979328 The packages ['qt_base'] were not found while parsing XML of package information!
+==============================Suggested follow-up:==============================
+* Please use 'aqt list-qt linux_arm64 desktop --arch 6.10.2' to show architectures available.
+2026-04-06 15:23:02,194 - aqt.helper - DEBUG - helper 125407265292416 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:24:06,416 - aqt.main - INFO - installer 128972198477952 aqtinstall(aqt) v3.3.0 on Python 3.12.3 [CPython GCC 13.3.0]
+2026-04-06 15:24:06,416 - aqt.helper - DEBUG - helper 128972198477952 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/Updates.xml.sha256
+2026-04-06 15:24:07,380 - aqt.helper - DEBUG - helper 128972198477952 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/extensions/qtwebengine/6102/arm64/Updates.xml.sha256
+2026-04-06 15:24:08,341 - aqt.archives - INFO - archives 128972198477952 Found extension qtwebengine
+2026-04-06 15:24:08,341 - aqt.helper - DEBUG - helper 128972198477952 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/extensions/qtpdf/6102/arm64/Updates.xml.sha256
+2026-04-06 15:24:09,324 - aqt.archives - INFO - archives 128972198477952 Found extension qtpdf
+2026-04-06 15:24:09,505 - aqt.helper - DEBUG - helper 139715786387584 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtbase-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z.sha256
+2026-04-06 15:24:09,505 - aqt.helper - DEBUG - helper 133442762113152 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtsvg-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z.sha256
+2026-04-06 15:24:09,510 - aqt.helper - DEBUG - helper 127533782147200 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtdeclarative-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z.sha256
+2026-04-06 15:24:09,520 - aqt.helper - DEBUG - helper 124634410840192 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qttools-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z.sha256
+2026-04-06 15:24:10,004 - aqt.helper - INFO - helper 133442762113152 Downloading qtsvg...
+2026-04-06 15:24:10,005 - aqt.installer - DEBUG - installer 133442762113152 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtsvg-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:10,008 - aqt.helper - INFO - helper 127533782147200 Downloading qtdeclarative...
+2026-04-06 15:24:10,008 - aqt.installer - DEBUG - installer 127533782147200 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtdeclarative-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:10,493 - aqt.helper - DEBUG - helper 133442762113152 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtsvg-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:10,493 - aqt.helper - DEBUG - helper 127533782147200 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtdeclarative-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:10,493 - aqt.helper - INFO - helper 127533782147200 Redirected: qt.mirror.constant.com
+2026-04-06 15:24:10,493 - aqt.helper - INFO - helper 133442762113152 Redirected: qt.mirror.constant.com
+2026-04-06 15:24:10,738 - aqt.installer - INFO - installer 133442762113152 Finished installation of qtsvg-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z in 1.23371688
+2026-04-06 15:24:10,746 - aqt.helper - DEBUG - helper 133442762113152 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qttranslations-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z.sha256
+2026-04-06 15:24:20,610 - aqt.installer - INFO - installer 127533782147200 Finished installation of qtdeclarative-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z in 11.10186600
+2026-04-06 15:24:20,626 - aqt.helper - DEBUG - helper 127533782147200 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtwayland-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z.sha256
+2026-04-06 15:24:41,632 - aqt.helper - INFO - helper 133442762113152 Downloading qttranslations...
+2026-04-06 15:24:41,633 - aqt.installer - DEBUG - installer 133442762113152 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qttranslations-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:42,119 - aqt.helper - DEBUG - helper 133442762113152 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qttranslations-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:42,119 - aqt.helper - INFO - helper 133442762113152 Redirected: qt.mirror.constant.com
+2026-04-06 15:24:42,555 - aqt.installer - INFO - installer 133442762113152 Finished installation of qttranslations-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z in 31.81000018
+2026-04-06 15:24:42,564 - aqt.helper - DEBUG - helper 133442762113152 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212icu-linux-Debian11.6-arm64.7z.sha256
+2026-04-06 15:24:43,043 - aqt.helper - INFO - helper 133442762113152 Downloading icu...
+2026-04-06 15:24:43,043 - aqt.installer - DEBUG - installer 133442762113152 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212icu-linux-Debian11.6-arm64.7z
+2026-04-06 15:24:43,525 - aqt.helper - DEBUG - helper 133442762113152 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212icu-linux-Debian11.6-arm64.7z
+2026-04-06 15:24:43,525 - aqt.helper - INFO - helper 133442762113152 Redirected: qt.mirror.constant.com
+2026-04-06 15:24:44,422 - aqt.installer - INFO - installer 133442762113152 Finished installation of icu-linux-Debian11.6-arm64.7z in 1.85908863
+2026-04-06 15:24:49,211 - aqt.helper - INFO - helper 139715786387584 Downloading qtbase...
+2026-04-06 15:24:49,211 - aqt.helper - INFO - helper 124634410840192 Downloading qttools...
+2026-04-06 15:24:49,211 - aqt.installer - DEBUG - installer 139715786387584 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtbase-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:49,211 - aqt.installer - DEBUG - installer 124634410840192 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qttools-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:51,498 - aqt.helper - INFO - helper 127533782147200 Downloading qtwayland...
+2026-04-06 15:24:51,498 - aqt.installer - DEBUG - installer 127533782147200 Download URL: https://download.qt.io/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtwayland-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:54,308 - aqt.helper - DEBUG - helper 124634410840192 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qttools-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:54,309 - aqt.helper - INFO - helper 124634410840192 Redirected: qt.mirror.constant.com
+2026-04-06 15:24:54,309 - aqt.helper - DEBUG - helper 139715786387584 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtbase-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:24:54,309 - aqt.helper - INFO - helper 139715786387584 Redirected: qt.mirror.constant.com
+2026-04-06 15:24:56,476 - aqt.installer - INFO - installer 124634410840192 Finished installation of qttools-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z in 46.95712671
+2026-04-06 15:24:57,019 - aqt.installer - INFO - installer 139715786387584 Finished installation of qtbase-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z in 47.51494028
+2026-04-06 15:25:22,358 - aqt.helper - DEBUG - helper 127533782147200 Asked to redirect(302) to: https://qt.mirror.constant.com/online/qtsdkrepository/linux_arm64/desktop/qt6_6102/qt6_6102/qt.qt6.6102.linux_gcc_arm64/6.10.2-0-202601261212qtwayland-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+2026-04-06 15:25:22,359 - aqt.helper - INFO - helper 127533782147200 Redirected: qt.mirror.constant.com
+2026-04-06 15:25:22,540 - aqt.installer - INFO - installer 127533782147200 Finished installation of qtwayland-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z in 61.91523307
+2026-04-06 15:25:22,610 - aqt.main - INFO - installer 128972198477952 Finished installation
+2026-04-06 15:25:22,610 - aqt.main - INFO - installer 128972198477952 Time elapsed: 76.19411080 second

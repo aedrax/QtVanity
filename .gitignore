@@ -43,3 +43,14 @@
 # CPack dir
 _CPack_Packages/
 build-wasm/
+.hypothesis/
+6.10.2/
+.kiro/
+.vscode/
+build-macos-arm64/
+*.tbd
+**/build/**
+**/__pycache__/**
+build-windows-x64/
+build-linux-arm64/
+cmake/linux-aarch64-stubs/
