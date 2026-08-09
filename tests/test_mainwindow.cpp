@@ -13,7 +13,9 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QPushButton>
+#include <QTextEdit>
 #include <QApplication>
+#include <QtTest>
 #include <QSignalSpy>
 #include <QSettings>
 #include <QTemporaryDir>
@@ -113,7 +115,7 @@ void TestMainWindow::testStyleApplicationUpdatesWidgets()
     
     // Set a simple stylesheet that changes button background
     QString testStyle = "QPushButton { background-color: rgb(255, 0, 0); }";
-    editor->setStyleSheet(testStyle);
+    editor->setQssText(testStyle);
     
     // Apply the style
     editor->apply();
@@ -423,6 +425,98 @@ void TestMainWindow::testNoAmbiguousShortcuts()
 }
 
 /**
+ * Test that editing does not apply the stylesheet while Auto-Apply is off.
+ *
+ * MainWindow used to reapply the whole stylesheet from the contentsChanged
+ * signal, which runs per keystroke. That restyled every widget in the process
+ * on every character and bypassed both the Auto-Apply checkbox and its
+ * debounce timer, so switching Auto-Apply off did not stop anything.
+ */
+void TestMainWindow::testEditingDoesNotApplyWhenAutoApplyDisabled()
+{
+    MainWindow mainWindow;
+    QssEditor *editor = mainWindow.editor();
+
+    qApp->setStyleSheet(QString());
+    editor->setAutoApplyEnabled(false);
+
+    // Type the way a user does, through the text widget itself.
+    editor->textEdit()->setPlainText(QStringLiteral("QLabel { color: #abcdef; }"));
+
+    QVERIFY2(!qApp->styleSheet().contains(QStringLiteral("#abcdef")),
+             "Editing applied the stylesheet even though Auto-Apply is disabled");
+
+    // An explicit Apply still works.
+    editor->apply();
+    QVERIFY2(qApp->styleSheet().contains(QStringLiteral("#abcdef")),
+             "Explicit apply() did not apply the stylesheet");
+
+    editor->cancelPendingApply();
+    qApp->setStyleSheet(QString());
+}
+
+/**
+ * Test that Auto-Apply waits for the debounce delay rather than firing per keystroke.
+ */
+void TestMainWindow::testAutoApplyIsDebounced()
+{
+    MainWindow mainWindow;
+    QssEditor *editor = mainWindow.editor();
+
+    qApp->setStyleSheet(QString());
+    editor->setAutoApplyDelay(50);
+    editor->setAutoApplyEnabled(true);   // applies the (empty) document once
+
+    editor->textEdit()->setPlainText(QStringLiteral("QLabel { color: #abcdef; }"));
+
+    QVERIFY2(!qApp->styleSheet().contains(QStringLiteral("#abcdef")),
+             "Auto-Apply fired synchronously on edit instead of after the delay");
+
+    QTRY_VERIFY_WITH_TIMEOUT(qApp->styleSheet().contains(QStringLiteral("#abcdef")), 2000);
+
+    editor->setAutoApplyEnabled(false);
+    editor->cancelPendingApply();
+    qApp->setStyleSheet(QString());
+}
+
+/**
+ * Test that New Project clears the editor, the variables and the applied style.
+ *
+ * clearProject() used to clear the variables before the editor, so the
+ * regeneration triggered by variablesCleared ran against the still-populated
+ * editor with no variables defined, leaving the application showing a
+ * stylesheet full of unresolved ${...} references that nothing corrected.
+ */
+void TestMainWindow::testNewProjectClearsProjectState()
+{
+    MainWindow mainWindow;
+    QssEditor *editor = mainWindow.editor();
+    VariableManager *variables = mainWindow.variableManager();
+
+    variables->setVariable(QStringLiteral("bg"), QStringLiteral("#ff0000"));
+    editor->setQssText(QStringLiteral("QWidget { background: ${bg}; }"));
+    editor->apply();
+    QVERIFY2(qApp->styleSheet().contains(QStringLiteral("#ff0000")),
+             "Precondition failed: the variable-substituted style was not applied");
+
+    QMetaObject::invokeMethod(&mainWindow, "onNewProject");
+
+    QVERIFY2(editor->qssText().isEmpty(),
+             "New Project left text in the editor");
+    QVERIFY2(variables->variableNames().isEmpty(),
+             "New Project left variables defined");
+    QVERIFY2(!qApp->styleSheet().contains(QStringLiteral("${")),
+             "New Project left an unresolved variable reference applied");
+    QVERIFY2(qApp->styleSheet().isEmpty(),
+             "New Project left the previous stylesheet applied");
+    QVERIFY2(!mainWindow.windowTitle().startsWith(QLatin1Char('*')),
+             "New Project left the window marked as modified");
+
+    editor->cancelPendingApply();
+    qApp->setStyleSheet(QString());
+}
+
+/**
  * Test that triggering toggle action changes the style mode.
  */
 void TestMainWindow::testToggleActionTriggersModeChange()
@@ -544,7 +638,7 @@ void TestMainWindow::testQssPreservationAcrossStyleChanges()
     
     // Set some QSS content in the editor
     QString testQss = "QPushButton { background-color: red; }";
-    editor->setStyleSheet(testQss);
+    editor->setQssText(testQss);
     
     // Apply the QSS
     editor->apply();
@@ -573,7 +667,7 @@ void TestMainWindow::testQssPreservationAcrossStyleChanges()
     styleManager->setStyle(targetStyle);
     
     // Verify QSS content in editor is unchanged
-    QCOMPARE(editor->styleSheet(), testQss);
+    QCOMPARE(editor->qssText(), testQss);
     
     // Verify QSS is still applied to the application
     QVERIFY2(qApp->styleSheet().contains("background-color"), 
@@ -1582,7 +1676,7 @@ void TestMainWindow::testLoadValidQvpTemplate()
     QVERIFY2(projectLoadedSpy.count() >= 1, "projectLoaded signal should be emitted");
     
     // Verify editor contains the QSS template
-    QString editorContent = editor->styleSheet();
+    QString editorContent = editor->qssText();
     QVERIFY2(editorContent.contains("${background-color}"), 
              "Editor should contain the QSS template with variable references");
     QVERIFY2(editorContent.contains("${primary-color}"), 
@@ -1713,7 +1807,7 @@ void TestMainWindow::testProjectStateResetAfterLoadingTemplate()
     QString loadedQss;
     bool projectLoaded = variableManager->loadProject(projectPath, loadedQss);
     QVERIFY2(projectLoaded, "Should be able to load the test project");
-    editor->setStyleSheet(loadedQss);
+    editor->setQssText(loadedQss);
     QApplication::processEvents();
     
     // Now load the template using QMetaObject::invokeMethod
@@ -1738,7 +1832,7 @@ void TestMainWindow::testProjectStateResetAfterLoadingTemplate()
              "Editor should not have unsaved changes after loading template");
     
     // 3. Verify the template content was loaded correctly
-    QString editorContent = editor->styleSheet();
+    QString editorContent = editor->qssText();
     QVERIFY2(editorContent.contains("${test-var}"), 
              "Editor should contain the template content");
     

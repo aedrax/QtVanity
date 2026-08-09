@@ -24,6 +24,13 @@ private slots:
     // Keyboard shortcut integrity
     void testNoAmbiguousShortcuts();
 
+    // Live preview behaviour
+    void testEditingDoesNotApplyWhenAutoApplyDisabled();
+    void testAutoApplyIsDebounced();
+
+    // Project lifecycle
+    void testNewProjectClearsProjectState();
+
     // Style toggle integration tests
     void testToggleStyleActionExistsInEditMenu();
     void testToggleStyleKeyboardShortcut();

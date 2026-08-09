@@ -55,12 +55,12 @@ public:
     /**
      * @brief Hides the bar and clears highlights.
      */
-    void hide();
+    void hideBar();
     
     /**
      * @brief Returns whether the bar is currently visible.
      */
-    bool isVisible() const;
+    bool isBarVisible() const;
 
     // Search state
     /**

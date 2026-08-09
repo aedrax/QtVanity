@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QSaveFile>
 #include <QTextStream>
 #include <QDir>
 #include <QFileInfo>
@@ -80,8 +81,13 @@ QString StyleManager::loadFromFile(const QString &filePath)
     }
     
     QTextStream in(&file);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    in.setEncoding(QStringConverter::Utf8);
+#else
+    in.setCodec("UTF-8");
+#endif
     QString content = in.readAll();
-    
+
     if (file.error() != QFile::NoError) {
         emit loadError(tr("Error reading file: %1").arg(file.errorString()));
         return QString();
@@ -93,23 +99,23 @@ QString StyleManager::loadFromFile(const QString &filePath)
 
 bool StyleManager::saveToFile(const QString &filePath, const QString &qss)
 {
-    QFile file(filePath);
-    
+    // QSaveFile so a failed write leaves any existing file untouched, and an
+    // explicit UTF-8 encoding because Qt 5's QTextStream defaults to the
+    // locale codec.
+    QSaveFile file(filePath);
+
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         emit saveError(tr("Cannot save file: %1").arg(file.errorString()));
         return false;
     }
-    
-    QTextStream out(&file);
-    out << qss;
-    
-    if (file.error() != QFile::NoError) {
+
+    file.write(qss.toUtf8());
+
+    if (!file.commit()) {
         emit saveError(tr("Error writing file: %1").arg(file.errorString()));
-        file.close();
         return false;
     }
-    
-    file.close();
+
     return true;
 }
 

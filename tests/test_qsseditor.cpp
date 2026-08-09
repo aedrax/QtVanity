@@ -26,9 +26,9 @@ void TestQssEditor::testSetStyleSheet()
     QssEditor editor;
     QString testContent = "QPushButton { color: red; }";
     
-    editor.setStyleSheet(testContent);
+    editor.setQssText(testContent);
     
-    QCOMPARE(editor.styleSheet(), testContent);
+    QCOMPARE(editor.qssText(), testContent);
 }
 
 void TestQssEditor::testGetStyleSheet()
@@ -36,8 +36,8 @@ void TestQssEditor::testGetStyleSheet()
     QssEditor editor;
     QString testContent = "QLabel { background-color: blue; }";
     
-    editor.setStyleSheet(testContent);
-    QString retrieved = editor.styleSheet();
+    editor.setQssText(testContent);
+    QString retrieved = editor.qssText();
     
     QCOMPARE(retrieved, testContent);
 }
@@ -55,7 +55,7 @@ void TestQssEditor::testHasUnsavedChangesAfterEdit()
     QssEditor editor;
     
     // Set initial content
-    editor.setStyleSheet("/* Initial */");
+    editor.setQssText("/* Initial */");
     QVERIFY(!editor.hasUnsavedChanges());
     
     // Modify content via text edit
@@ -155,7 +155,7 @@ void TestQssEditor::testCursorPositionPreservation()
     QFETCH(int, cursorPosition);
     
     QssEditor editor;
-    editor.setStyleSheet(qssContent);
+    editor.setQssText(qssContent);
     
     // Set cursor position
     QTextCursor cursor = editor.textEdit()->textCursor();
@@ -242,7 +242,7 @@ void TestQssEditor::testUnsavedChangesTracking()
     QssEditor editor;
     
     // Set initial content - should have no unsaved changes
-    editor.setStyleSheet(initialContent);
+    editor.setQssText(initialContent);
     QVERIFY2(!editor.hasUnsavedChanges(), 
              "Should have no unsaved changes after setStyleSheet");
     
@@ -421,18 +421,18 @@ void TestQssEditor::testEditorContentPreservation()
     QssEditor editor;
     
     // Set initial content and make sure we're in Custom mode
-    editor.setStyleSheet(qssContent);
+    editor.setQssText(qssContent);
     QVERIFY(editor.isCustomStyleActive());
     
     // Store content before toggle
-    QString contentBeforeToggle = editor.styleSheet();
+    QString contentBeforeToggle = editor.qssText();
     
     // Toggle to Default mode
     editor.setCustomStyleActive(false);
     QVERIFY(!editor.isCustomStyleActive());
     
     // Verify content is preserved
-    QString contentAfterToggle = editor.styleSheet();
+    QString contentAfterToggle = editor.qssText();
     QCOMPARE(contentAfterToggle, contentBeforeToggle);
     
     // Toggle back to Custom mode
@@ -440,7 +440,7 @@ void TestQssEditor::testEditorContentPreservation()
     QVERIFY(editor.isCustomStyleActive());
     
     // Verify content is still preserved
-    QString contentAfterSecondToggle = editor.styleSheet();
+    QString contentAfterSecondToggle = editor.qssText();
     QCOMPARE(contentAfterSecondToggle, contentBeforeToggle);
 }
 
@@ -506,7 +506,7 @@ void TestQssEditor::testModePersistenceDuringEdit()
     QssEditor editor;
     
     // Set initial content
-    editor.setStyleSheet(initialContent);
+    editor.setQssText(initialContent);
     
     // Switch to Default mode
     editor.setCustomStyleActive(false);
@@ -520,7 +520,7 @@ void TestQssEditor::testModePersistenceDuringEdit()
              "Mode should remain Default after editing content");
     
     // Verify the content was actually changed
-    QCOMPARE(editor.styleSheet(), newContent);
+    QCOMPARE(editor.qssText(), newContent);
 }
 
 /**
@@ -585,7 +585,7 @@ void TestQssEditor::testApplySwitchesToCustomMode()
     QssEditor editor;
     
     // Set content
-    editor.setStyleSheet(qssContent);
+    editor.setQssText(qssContent);
     
     // Switch to Default mode
     editor.setCustomStyleActive(false);

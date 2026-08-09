@@ -156,7 +156,7 @@ void FindReplaceBar::setupConnections()
 
     // Close button
     connect(m_closeButton, &QToolButton::clicked,
-            this, &FindReplaceBar::hide);
+            this, &FindReplaceBar::hideBar);
 
     // Replace buttons
     connect(m_replaceButton, &QPushButton::clicked,
@@ -185,7 +185,7 @@ void FindReplaceBar::showReplaceMode()
     emit visibilityChanged(true);
 }
 
-void FindReplaceBar::hide()
+void FindReplaceBar::hideBar()
 {
     clearHighlights();
     QWidget::hide();
@@ -198,7 +198,7 @@ void FindReplaceBar::hide()
     emit visibilityChanged(false);
 }
 
-bool FindReplaceBar::isVisible() const
+bool FindReplaceBar::isBarVisible() const
 {
     return QWidget::isVisible();
 }

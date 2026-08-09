@@ -517,11 +517,14 @@ void MainWindow::setupConnections()
     connect(m_variableManager, &VariableManager::saveError,
             this, &MainWindow::onProjectSaveError);
 
-    // Connect editor content changes for live preview with variables
+    // Editing marks the project dirty. It deliberately does not apply the
+    // style: doing that here restyled every widget in the process on every
+    // keystroke, and bypassed both the Auto-Apply checkbox and its debounce
+    // timer, so turning Auto-Apply off did not actually stop applying.
+    // The editor drives application through applyRequested instead.
     connect(m_editor, &QssEditor::contentsChanged,
             this, [this]() {
                 setProjectModified(true);
-                onRegenerateStyle();
             });
 
     // Connect variable insertion from panel to editor
@@ -631,14 +634,21 @@ void MainWindow::setProjectModified(bool modified)
 
 void MainWindow::clearProject()
 {
+    // Clear the editor before the variables. The old order regenerated the
+    // style from the still-populated editor with the variables already gone,
+    // leaving the application showing a stylesheet full of unresolved ${...}
+    // references, and the final setStyleSheet() blocks signals so nothing ever
+    // corrected it.
+    m_editor->setQssText(QString());
     m_variableManager->clearVariables();
-    m_editor->setStyleSheet(QString());
+
     m_currentProjectPath.clear();
     m_currentFilePath.clear();
     m_projectModified = false;
-    if (m_editor) {
-        m_editor->markAsSaved();
-    }
+    m_editor->markAsSaved();
+
+    // Push the now-empty stylesheet so the preview matches the empty project.
+    onRegenerateStyle();
     updateWindowTitle();
 }
 
@@ -676,7 +686,7 @@ void MainWindow::onLoadStyle()
     if (!content.isNull()) {
         // Clear variables when importing plain QSS
         m_variableManager->clearVariables();
-        m_editor->setStyleSheet(content);
+        m_editor->setQssText(content);
         m_currentFilePath = filePath;
         m_currentProjectPath.clear();
         m_projectModified = false;
@@ -707,7 +717,7 @@ void MainWindow::onSaveStyle()
         filePath += ".qss";
     }
 
-    if (m_styleManager->saveToFile(filePath, m_editor->styleSheet())) {
+    if (m_styleManager->saveToFile(filePath, m_editor->qssText())) {
         m_currentFilePath = filePath;
         m_editor->markAsSaved();
         updateWindowTitle();
@@ -746,7 +756,7 @@ void MainWindow::onLoadTemplate(const QString &templateName)
     // Load the project file using VariableManager
     QString qssTemplate;
     if (m_variableManager->loadProject(templatePath, qssTemplate)) {
-        m_editor->setStyleSheet(qssTemplate);
+        m_editor->setQssText(qssTemplate);
         m_currentProjectPath.clear();  // Templates don't set a project path
         m_currentFilePath.clear();
         m_projectModified = false;
@@ -842,7 +852,7 @@ void MainWindow::onRegenerateStyle()
 {
     // Only regenerate if custom style mode is active
     if (m_editor && m_editor->isCustomStyleActive()) {
-        QString qssTemplate = m_editor->styleSheet();
+        QString qssTemplate = m_editor->qssText();
         QString resolvedQss = m_variableManager->substitute(qssTemplate);
         m_styleManager->applyStyleSheet(resolvedQss);
     }
@@ -900,7 +910,7 @@ void MainWindow::onOpenProject()
 
     QString qssTemplate;
     if (m_variableManager->loadProject(filePath, qssTemplate)) {
-        m_editor->setStyleSheet(qssTemplate);
+        m_editor->setQssText(qssTemplate);
         m_currentProjectPath = filePath;
         m_currentFilePath.clear();
         m_projectModified = false;
@@ -922,7 +932,7 @@ void MainWindow::onSaveProject()
         return;
     }
 
-    if (m_variableManager->saveProject(m_currentProjectPath, m_editor->styleSheet())) {
+    if (m_variableManager->saveProject(m_currentProjectPath, m_editor->qssText())) {
         m_projectModified = false;
         m_editor->markAsSaved();
         updateWindowTitle();
@@ -950,7 +960,7 @@ void MainWindow::onSaveProjectAs()
         filePath += QStringLiteral(".qvp");
     }
 
-    if (m_variableManager->saveProject(filePath, m_editor->styleSheet())) {
+    if (m_variableManager->saveProject(filePath, m_editor->qssText())) {
         m_currentProjectPath = filePath;
         m_currentFilePath.clear();
         m_projectModified = false;
@@ -980,7 +990,7 @@ void MainWindow::onExportQss()
         filePath += QStringLiteral(".qss");
     }
 
-    if (m_variableManager->exportResolvedQss(filePath, m_editor->styleSheet())) {
+    if (m_variableManager->exportResolvedQss(filePath, m_editor->qssText())) {
         statusBar()->showMessage(tr("QSS exported to %1").arg(filePath), 3000);
     }
 }
@@ -1024,7 +1034,7 @@ void MainWindow::onOpenRecentProject(const QString &filePath)
 
     QString qssTemplate;
     if (m_variableManager->loadProject(filePath, qssTemplate)) {
-        m_editor->setStyleSheet(qssTemplate);
+        m_editor->setQssText(qssTemplate);
         m_currentProjectPath = filePath;
         m_currentFilePath.clear();
         m_projectModified = false;

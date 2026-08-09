@@ -420,7 +420,7 @@ void TestStyleManager::testDefaultModeEmptyStylesheet()
                      &manager, &StyleManager::clearStyleSheet);
     
     // Set content and make sure we're in Custom mode
-    editor.setStyleSheet(qssContent);
+    editor.setQssText(qssContent);
     QVERIFY(editor.isCustomStyleActive());
     
     // Apply the stylesheet first (to verify qApp has a stylesheet)
@@ -521,7 +521,7 @@ void TestStyleManager::testCustomModeRestoresStylesheet()
                      &manager, &StyleManager::clearStyleSheet);
     
     // Set content
-    editor.setStyleSheet(qssContent);
+    editor.setQssText(qssContent);
     QVERIFY(editor.isCustomStyleActive());
     
     // Start in Default mode
@@ -545,7 +545,7 @@ void TestStyleManager::testCustomModeRestoresStylesheet()
     QCOMPARE(manager.currentStyleSheet(), qssContent);
     
     // Verify editor content is unchanged
-    QCOMPARE(editor.styleSheet(), qssContent);
+    QCOMPARE(editor.qssText(), qssContent);
 }
 
 

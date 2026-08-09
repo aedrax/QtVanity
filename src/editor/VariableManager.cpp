@@ -1,6 +1,7 @@
 #include "VariableManager.h"
 
 #include <QFile>
+#include <QSaveFile>
 #include <QTextStream>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -131,12 +132,14 @@ QStringList VariableManager::findUndefinedReferences(const QString &qssTemplate)
 
 bool VariableManager::saveProject(const QString &filePath, const QString &qssTemplate)
 {
-    QFile file(filePath);
+    // QSaveFile writes to a temporary and renames on commit, so a failure part
+    // way through leaves the previous project intact rather than truncated.
+    QSaveFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         emit saveError(tr("Cannot save file: %1").arg(file.errorString()));
         return false;
     }
-    
+
     QJsonObject root;
     root[QStringLiteral("version")] = 1;
     
@@ -150,17 +153,17 @@ bool VariableManager::saveProject(const QString &filePath, const QString &qssTem
     // Save template
     root[QStringLiteral("qssTemplate")] = qssTemplate;
     
-    QJsonDocument doc(root);
-    QTextStream out(&file);
-    out << doc.toJson(QJsonDocument::Indented);
-    
-    if (file.error() != QFile::NoError) {
+    const QJsonDocument doc(root);
+    file.write(doc.toJson(QJsonDocument::Indented));
+
+    // commit() flushes and renames; only then is the error state meaningful.
+    // The previous code checked file.error() while the data was still sitting
+    // in a QTextStream buffer, so a failed write could report success.
+    if (!file.commit()) {
         emit saveError(tr("Error writing file: %1").arg(file.errorString()));
-        file.close();
         return false;
     }
-    
-    file.close();
+
     emit projectSaved();
     return true;
 }
@@ -215,24 +218,21 @@ bool VariableManager::loadProject(const QString &filePath, QString &qssTemplate)
 
 bool VariableManager::exportResolvedQss(const QString &filePath, const QString &qssTemplate)
 {
-    QFile file(filePath);
+    QSaveFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         emit saveError(tr("Cannot save file: %1").arg(file.errorString()));
         return false;
     }
-    
-    QString resolved = substitute(qssTemplate);
-    
-    QTextStream out(&file);
-    out << resolved;
-    
-    if (file.error() != QFile::NoError) {
+
+    // Write UTF-8 explicitly. Under Qt 5 QTextStream defaults to the locale
+    // codec, which mangles non-ASCII content in a stylesheet.
+    file.write(substitute(qssTemplate).toUtf8());
+
+    if (!file.commit()) {
         emit saveError(tr("Error writing file: %1").arg(file.errorString()));
-        file.close();
         return false;
     }
-    
-    file.close();
+
     return true;
 }
 

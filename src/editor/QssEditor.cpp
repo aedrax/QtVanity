@@ -149,12 +149,12 @@ void QssEditor::setupConnections()
             });
 }
 
-QString QssEditor::styleSheet() const
+QString QssEditor::qssText() const
 {
     return m_textEdit->toPlainText();
 }
 
-void QssEditor::setStyleSheet(const QString &qss)
+void QssEditor::setQssText(const QString &qss)
 {
     // Block signals to avoid triggering unsaved changes
     m_textEdit->blockSignals(true);
@@ -236,6 +236,13 @@ void QssEditor::setCustomStyleActive(bool customActive)
 void QssEditor::toggleStyleMode()
 {
     setCustomStyleActive(!m_customStyleActive);
+}
+
+void QssEditor::cancelPendingApply()
+{
+    if (m_autoApplyTimer) {
+        m_autoApplyTimer->stop();
+    }
 }
 
 void QssEditor::apply()
@@ -476,7 +483,7 @@ void QssEditor::showReplaceBar()
 void QssEditor::hideFindReplaceBar()
 {
     if (m_findReplaceBar) {
-        m_findReplaceBar->hide();
+        m_findReplaceBar->hideBar();
     }
 }
 
@@ -509,7 +516,7 @@ void QssEditor::setupFindReplaceShortcuts()
     // F3 - Find next
     QShortcut *findNextShortcut = new QShortcut(QKeySequence::FindNext, this);
     connect(findNextShortcut, &QShortcut::activated, this, [this]() {
-        if (m_findReplaceBar && m_findReplaceBar->isVisible()) {
+        if (m_findReplaceBar && m_findReplaceBar->isBarVisible()) {
             m_findReplaceBar->findNext();
         }
     });
@@ -517,7 +524,7 @@ void QssEditor::setupFindReplaceShortcuts()
     // Shift+F3 - Find previous
     QShortcut *findPrevShortcut = new QShortcut(QKeySequence::FindPrevious, this);
     connect(findPrevShortcut, &QShortcut::activated, this, [this]() {
-        if (m_findReplaceBar && m_findReplaceBar->isVisible()) {
+        if (m_findReplaceBar && m_findReplaceBar->isBarVisible()) {
             m_findReplaceBar->findPrevious();
         }
     });

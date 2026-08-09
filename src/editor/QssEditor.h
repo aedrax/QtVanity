@@ -42,18 +42,24 @@ public:
     ~QssEditor();
 
     /**
-     * @brief Returns the current stylesheet content.
+     * @brief Returns the QSS text being edited.
      * @return The QSS content in the editor.
+     *
+     * Deliberately not named styleSheet(): that would shadow the non-virtual,
+     * Q_PROPERTY-backed QWidget::styleSheet(), so this widget's notion of
+     * "stylesheet" (the document being edited) and Qt's (the widget's own CSS)
+     * would silently diverge depending on the static type of the caller.
      */
-    QString styleSheet() const;
+    QString qssText() const;
 
     /**
-     * @brief Sets the stylesheet content in the editor.
+     * @brief Sets the QSS text being edited.
      * @param qss The QSS content to set.
-     * 
-     * This resets the unsaved changes state.
+     *
+     * This resets the unsaved changes state. See qssText() for why this is not
+     * called setStyleSheet().
      */
-    void setStyleSheet(const QString &qss);
+    void setQssText(const QString &qss);
 
     /**
      * @brief Returns whether there are unsaved changes.
@@ -232,6 +238,14 @@ signals:
     void styleChangeRequested(const QString &styleName);
 
 public slots:
+    /**
+     * @brief Cancels any pending auto-apply.
+     *
+     * Useful for teardown: a timer left running would apply a stylesheet after
+     * the caller believed it had finished.
+     */
+    void cancelPendingApply();
+
     /**
      * @brief Triggers style application.
      * 

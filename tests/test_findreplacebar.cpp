@@ -27,7 +27,7 @@ void TestFindReplaceBar::testInitialState()
     FindReplaceBar bar(&editor);
     
     // Initially hidden
-    QVERIFY(!bar.isVisible());
+    QVERIFY(!bar.isBarVisible());
     
     // No matches initially
     QCOMPARE(bar.matchCount(), 0);
@@ -47,7 +47,7 @@ void TestFindReplaceBar::testShowFindMode()
     
     bar.showFindMode();
     
-    QVERIFY(bar.isVisible());
+    QVERIFY(bar.isBarVisible());
 }
 
 void TestFindReplaceBar::testShowReplaceMode()
@@ -57,7 +57,7 @@ void TestFindReplaceBar::testShowReplaceMode()
     
     bar.showReplaceMode();
     
-    QVERIFY(bar.isVisible());
+    QVERIFY(bar.isBarVisible());
 }
 
 void TestFindReplaceBar::testHide()
@@ -66,10 +66,10 @@ void TestFindReplaceBar::testHide()
     FindReplaceBar bar(&editor);
     
     bar.showFindMode();
-    QVERIFY(bar.isVisible());
+    QVERIFY(bar.isBarVisible());
     
-    bar.hide();
-    QVERIFY(!bar.isVisible());
+    bar.hideBar();
+    QVERIFY(!bar.isBarVisible());
 }
 
 void TestFindReplaceBar::testSetSearchText()
