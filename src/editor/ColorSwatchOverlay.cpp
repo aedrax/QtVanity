@@ -1,15 +1,16 @@
 #include "ColorSwatchOverlay.h"
+#include "CodeEditor.h"
 
-#include <QTextEdit>
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QScrollBar>
 #include <QPainter>
+#include <QEvent>
 #include <QMouseEvent>
 #include <QColorDialog>
 #include <QToolTip>
 
-ColorSwatchOverlay::ColorSwatchOverlay(QTextEdit *editor, QWidget *parent)
+ColorSwatchOverlay::ColorSwatchOverlay(CodeEditor *editor, QWidget *parent)
     : QWidget(parent ? parent : editor->viewport())
     , m_editor(editor)
     , m_swatchSize(12)
@@ -24,11 +25,14 @@ ColorSwatchOverlay::ColorSwatchOverlay(QTextEdit *editor, QWidget *parent)
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
     setMouseTracking(true);
     
-    // Position overlay on top of the viewport
+    // Position overlay on top of the viewport, and follow it when it resizes.
+    // Geometry was previously only refreshed on scroll or edit, so resizing
+    // the window left the overlay at its old size until the user typed.
     if (m_editor && m_editor->viewport()) {
         setGeometry(m_editor->viewport()->rect());
+        m_editor->viewport()->installEventFilter(this);
     }
-    
+
     // Connect to editor signals
     connect(m_editor->document(), &QTextDocument::contentsChanged,
             this, &ColorSwatchOverlay::onTextChanged);
@@ -135,6 +139,16 @@ void ColorSwatchOverlay::updateSwatchPositions()
         
         info.swatchRect = QRect(x, y, m_swatchSize, m_swatchSize);
     }
+}
+
+bool ColorSwatchOverlay::eventFilter(QObject *watched, QEvent *event)
+{
+    if (m_editor && watched == m_editor->viewport() && event->type() == QEvent::Resize) {
+        setGeometry(m_editor->viewport()->rect());
+        updateSwatchPositions();
+        update();
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void ColorSwatchOverlay::paintEvent(QPaintEvent *event)

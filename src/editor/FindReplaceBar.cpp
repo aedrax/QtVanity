@@ -1,6 +1,6 @@
 #include "FindReplaceBar.h"
+#include "CodeEditor.h"
 
-#include <QTextEdit>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QToolButton>
@@ -11,7 +11,7 @@
 #include <QTextBlock>
 #include <QApplication>
 
-FindReplaceBar::FindReplaceBar(QTextEdit *editor, QWidget *parent)
+FindReplaceBar::FindReplaceBar(CodeEditor *editor, QWidget *parent)
     : QWidget(parent)
     , m_editor(editor)
     , m_searchInput(nullptr)
@@ -517,13 +517,13 @@ void FindReplaceBar::highlightMatches()
         extraSelections.append(selection);
     }
     
-    m_editor->setExtraSelections(extraSelections);
+    m_editor->setSearchSelections(extraSelections);
 }
 
 void FindReplaceBar::clearHighlights()
 {
     if (m_editor) {
-        m_editor->setExtraSelections(QList<QTextEdit::ExtraSelection>());
+        m_editor->setSearchSelections(QList<QTextEdit::ExtraSelection>());
     }
     m_matches.clear();
     m_currentMatchIndex = -1;

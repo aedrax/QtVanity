@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 
+#include "editor/CodeEditor.h"
 #include "editor/QssEditor.h"
 #include "editor/SettingsManager.h"
 #include "editor/StyleManager.h"
@@ -506,6 +507,24 @@ void MainWindow::setupConnections()
             this, &MainWindow::onVariableRemoved);
     connect(m_variableManager, &VariableManager::variablesCleared,
             this, &MainWindow::onVariablesCleared);
+
+    // Keep the editor's completer aware of the project's own variables so
+    // ${...} references complete alongside the static QSS vocabulary.
+    auto refreshCompletionVariables = [this]() {
+        m_editor->setCompletionVariables(m_variableManager->variableNames());
+    };
+    connect(m_variableManager, &VariableManager::variableChanged,
+            this, [refreshCompletionVariables](const QString &, const QString &) {
+                refreshCompletionVariables();
+            });
+    connect(m_variableManager, &VariableManager::variableRemoved,
+            this, [refreshCompletionVariables](const QString &) {
+                refreshCompletionVariables();
+            });
+    connect(m_variableManager, &VariableManager::variablesCleared,
+            this, refreshCompletionVariables);
+    connect(m_variableManager, &VariableManager::projectLoaded,
+            this, refreshCompletionVariables);
 
     // Connect variable manager project signals
     connect(m_variableManager, &VariableManager::projectLoaded,

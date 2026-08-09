@@ -2,8 +2,9 @@
 #include "QssSyntaxHighlighter.h"
 #include "ColorSwatchOverlay.h"
 #include "FindReplaceBar.h"
+#include "CodeEditor.h"
+#include "QssVocabulary.h"
 
-#include <QTextEdit>
 #include <QPushButton>
 #include <QCheckBox>
 #include <QComboBox>
@@ -50,11 +51,11 @@ void QssEditor::setupUi()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(4);
 
-    // Create text edit for QSS code input
-    m_textEdit = new QTextEdit(this);
-    m_textEdit->setAcceptRichText(false);
+    // Create the code editor for QSS input
+    m_textEdit = new CodeEditor(this);
     m_textEdit->setPlaceholderText(tr("Enter QSS code here..."));
     m_textEdit->setTabStopDistance(40); // 4 spaces equivalent
+    m_textEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
     
     // Use the platform's fixed-pitch font. "Monospace" is an X11 alias that
     // does not resolve on macOS or Windows, forcing a fallback lookup.
@@ -111,6 +112,10 @@ void QssEditor::setupUi()
     mainLayout->addWidget(m_findReplaceBar); // FindReplaceBar between text edit and buttons
     mainLayout->addLayout(buttonLayout);
 
+    // Seed completion with the static QSS vocabulary; variable names are
+    // folded in later, whenever the project's variables change.
+    setCompletionVariables(QStringList());
+
     // Create auto-apply timer
     m_autoApplyTimer = new QTimer(this);
     m_autoApplyTimer->setSingleShot(true);
@@ -119,7 +124,7 @@ void QssEditor::setupUi()
 void QssEditor::setupConnections()
 {
     // Connect text changes
-    connect(m_textEdit, &QTextEdit::textChanged,
+    connect(m_textEdit, &CodeEditor::textChanged,
             this, &QssEditor::onTextChanged);
 
     // Connect Apply button
@@ -201,7 +206,7 @@ void QssEditor::setAutoApplyDelay(int ms)
     m_autoApplyDelay = ms;
 }
 
-QTextEdit* QssEditor::textEdit() const
+CodeEditor* QssEditor::textEdit() const
 {
     return m_textEdit;
 }
@@ -411,6 +416,26 @@ void QssEditor::setDefaultStyleMarker(const QString &styleName)
         // Restore selection
         setCurrentStyle(currentSelection);
     }
+}
+
+void QssEditor::setCompletionVariables(const QStringList &variableNames)
+{
+    QStringList words;
+    words += QssVocabulary::selectors();
+    words += QssVocabulary::properties();
+    words += QssVocabulary::valueKeywords();
+
+    for (const QString &state : QssVocabulary::pseudoStates()) {
+        words += QLatin1Char(':') + state;
+    }
+    for (const QString &control : QssVocabulary::subControls()) {
+        words += QStringLiteral("::") + control;
+    }
+    for (const QString &name : variableNames) {
+        words += QStringLiteral("${%1}").arg(name);
+    }
+
+    m_textEdit->setCompletionWords(words);
 }
 
 void QssEditor::setDarkColorScheme(bool dark)

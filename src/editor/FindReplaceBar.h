@@ -7,7 +7,7 @@
 #include <QTextCursor>
 #include <QColor>
 
-class QTextEdit;
+class CodeEditor;
 class QLineEdit;
 class QPushButton;
 class QToolButton;
@@ -31,10 +31,10 @@ class FindReplaceBar : public QWidget
 public:
     /**
      * @brief Constructs a FindReplaceBar widget.
-     * @param editor The QTextEdit to search within.
+     * @param editor The editor to search within.
      * @param parent The parent widget.
      */
-    explicit FindReplaceBar(QTextEdit *editor, QWidget *parent = nullptr);
+    explicit FindReplaceBar(CodeEditor *editor, QWidget *parent = nullptr);
     
     /**
      * @brief Destructor.
@@ -171,7 +171,7 @@ private:
     void scrollToCurrentMatch();
 
     // Editor reference
-    QTextEdit *m_editor;
+    CodeEditor *m_editor;
     
     // UI widgets - Find row
     QLineEdit *m_searchInput;

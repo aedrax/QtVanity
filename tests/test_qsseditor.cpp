@@ -1,4 +1,5 @@
 #include "test_qsseditor.h"
+#include "CodeEditor.h"
 #include "QssEditor.h"
 
 #include <QTextEdit>

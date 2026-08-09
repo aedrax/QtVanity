@@ -5,13 +5,13 @@
 #include <QVector>
 #include <QRegularExpression>
 
-class QTextEdit;
+class CodeEditor;
 class QColorDialog;
 
 /**
  * @brief Overlay widget that displays clickable color swatches for hex color codes.
  * 
- * This widget sits on top of a QTextEdit and draws small colored squares
+ * This widget sits on top of the code editor and draws small colored squares
  * at the end of lines containing hex color codes. Clicking a swatch opens
  * a color picker to change the color.
  */
@@ -32,7 +32,7 @@ public:
         QRect swatchRect;   ///< Rectangle for the swatch (in overlay coordinates)
     };
 
-    explicit ColorSwatchOverlay(QTextEdit *editor, QWidget *parent = nullptr);
+    explicit ColorSwatchOverlay(CodeEditor *editor, QWidget *parent = nullptr);
     ~ColorSwatchOverlay();
 
     /**
@@ -67,6 +67,11 @@ signals:
     void colorChanged(const QString &oldColor, const QString &newColor);
 
 protected:
+    /**
+     * @brief Watches the editor viewport so the overlay tracks its size.
+     */
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
     void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -95,7 +100,7 @@ private:
 
     QString colorToHex(const QColor &color) const;
 
-    QTextEdit *m_editor;
+    CodeEditor *m_editor;
     QVector<ColorInfo> m_colors;
     QRegularExpression m_colorRegex;
     int m_swatchSize;

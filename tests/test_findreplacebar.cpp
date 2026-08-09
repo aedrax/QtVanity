@@ -1,4 +1,5 @@
 #include "test_findreplacebar.h"
+#include "CodeEditor.h"
 #include "FindReplaceBar.h"
 
 #include <QTextEdit>
@@ -23,7 +24,7 @@ void TestFindReplaceBar::cleanupTestCase()
 
 void TestFindReplaceBar::testInitialState()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     FindReplaceBar bar(&editor);
     
     // Initially hidden
@@ -42,7 +43,7 @@ void TestFindReplaceBar::testInitialState()
 
 void TestFindReplaceBar::testShowFindMode()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     FindReplaceBar bar(&editor);
     
     bar.showFindMode();
@@ -52,7 +53,7 @@ void TestFindReplaceBar::testShowFindMode()
 
 void TestFindReplaceBar::testShowReplaceMode()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     FindReplaceBar bar(&editor);
     
     bar.showReplaceMode();
@@ -62,7 +63,7 @@ void TestFindReplaceBar::testShowReplaceMode()
 
 void TestFindReplaceBar::testHide()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     FindReplaceBar bar(&editor);
     
     bar.showFindMode();
@@ -74,7 +75,7 @@ void TestFindReplaceBar::testHide()
 
 void TestFindReplaceBar::testSetSearchText()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText("Hello World Hello");
     FindReplaceBar bar(&editor);
     
@@ -87,7 +88,7 @@ void TestFindReplaceBar::testSetSearchText()
 
 void TestFindReplaceBar::testCaseSensitivity()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText("Hello hello HELLO");
     FindReplaceBar bar(&editor);
     
@@ -106,7 +107,7 @@ void TestFindReplaceBar::testCaseSensitivity()
 
 void TestFindReplaceBar::testEmptySearch()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText("Some content here");
     FindReplaceBar bar(&editor);
     
@@ -119,7 +120,7 @@ void TestFindReplaceBar::testEmptySearch()
 
 void TestFindReplaceBar::testNoMatches()
 {
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText("Hello World");
     FindReplaceBar bar(&editor);
     
@@ -211,7 +212,7 @@ void TestFindReplaceBar::testMatchCountConsistency()
     QFETCH(bool, caseSensitive);
     QFETCH(int, expectedCount);
     
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText(documentContent);
     FindReplaceBar bar(&editor);
     
@@ -223,7 +224,9 @@ void TestFindReplaceBar::testMatchCountConsistency()
     QCOMPARE(bar.matchCount(), expectedCount);
     
     // Property: number of highlighted regions equals match count
-    QList<QTextEdit::ExtraSelection> selections = editor.extraSelections();
+    // searchSelections(), not extraSelections(): the latter also carries the
+    // editor's own current-line and bracket-match highlighting.
+    QList<QTextEdit::ExtraSelection> selections = editor.searchSelections();
     QCOMPARE(selections.count(), expectedCount);
     
     // Property: if matches exist, current index is valid
@@ -301,7 +304,7 @@ void TestFindReplaceBar::testNavigationWrapAround()
     QFETCH(QString, searchQuery);
     QFETCH(int, expectedMatchCount);
     
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText(documentContent);
     FindReplaceBar bar(&editor);
     
@@ -440,7 +443,7 @@ void TestFindReplaceBar::testCaseSensitivityCorrectness()
     QFETCH(QString, searchQuery);
     QFETCH(bool, caseSensitive);
     
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText(documentContent);
     FindReplaceBar bar(&editor);
     
@@ -461,7 +464,9 @@ void TestFindReplaceBar::testCaseSensitivityCorrectness()
     }
     
     // Get the extra selections (highlighted matches)
-    QList<QTextEdit::ExtraSelection> selections = editor.extraSelections();
+    // searchSelections(), not extraSelections(): the latter also carries the
+    // editor's own current-line and bracket-match highlighting.
+    QList<QTextEdit::ExtraSelection> selections = editor.searchSelections();
     QCOMPARE(selections.count(), matchCount);
     
     // Property: Verify each match has correct casing behavior
@@ -568,7 +573,7 @@ void TestFindReplaceBar::testReplaceAllCompleteness()
     QFETCH(QString, replacementText);
     QFETCH(int, expectedReplacements);
     
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText(documentContent);
     FindReplaceBar bar(&editor);
     
@@ -692,7 +697,7 @@ void TestFindReplaceBar::testReplacePreservesNonMatches()
     QFETCH(QString, replacementText);
     QFETCH(QStringList, nonMatchSegments);
     
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText(documentContent);
     FindReplaceBar bar(&editor);
     
@@ -784,7 +789,7 @@ void TestFindReplaceBar::testUndoAtomicity()
     QFETCH(QString, replacementText);
     QFETCH(int, expectedReplacements);
     
-    QTextEdit editor;
+    CodeEditor editor;
     editor.setPlainText(documentContent);
     
     // Store original content

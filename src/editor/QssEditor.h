@@ -5,7 +5,7 @@
 #include <QString>
 #include <QStringList>
 
-class QTextEdit;
+class CodeEditor;
 class QPushButton;
 class QCheckBox;
 class QComboBox;
@@ -97,12 +97,12 @@ public:
     void setAutoApplyDelay(int ms);
 
     /**
-     * @brief Returns the internal QTextEdit widget.
-     * @return Pointer to the text edit widget.
-     * 
+     * @brief Returns the internal code editor widget.
+     * @return Pointer to the editor widget.
+     *
      * Useful for testing and advanced customization.
      */
-    QTextEdit* textEdit() const;
+    CodeEditor* textEdit() const;
 
     /**
      * @brief Returns whether custom style mode is active.
@@ -146,6 +146,15 @@ public:
      * The default style will be displayed with "(Default)" suffix.
      */
     void setDefaultStyleMarker(const QString &styleName);
+
+    /**
+     * @brief Rebuilds the completion word list.
+     * @param variableNames Names of the variables currently defined.
+     *
+     * Combines the static QSS vocabulary with the project's own variables so
+     * ${...} references complete too.
+     */
+    void setCompletionVariables(const QStringList &variableNames);
 
     /**
      * @brief Sets the syntax highlighter color scheme.
@@ -255,7 +264,7 @@ private:
     void setupConnections();
     void setupFindReplaceShortcuts();
 
-    QTextEdit *m_textEdit;
+    CodeEditor *m_textEdit;
     QssSyntaxHighlighter *m_highlighter;
     ColorSwatchOverlay *m_colorSwatchOverlay;
     FindReplaceBar *m_findReplaceBar;

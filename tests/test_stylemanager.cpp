@@ -1,4 +1,5 @@
 #include "test_stylemanager.h"
+#include "CodeEditor.h"
 #include "StyleManager.h"
 #include "QssEditor.h"
 

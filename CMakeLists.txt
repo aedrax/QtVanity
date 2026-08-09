@@ -38,6 +38,8 @@ set(SOURCES
     src/editor/QssSyntaxHighlighter.h
     src/editor/QssVocabulary.cpp
     src/editor/QssVocabulary.h
+    src/editor/CodeEditor.cpp
+    src/editor/CodeEditor.h
     src/editor/QssEditor.cpp
     src/editor/QssEditor.h
     src/editor/ColorSwatchOverlay.cpp
@@ -779,6 +781,8 @@ if(BUILD_TESTING)
         src/editor/QssSyntaxHighlighter.h
         src/editor/QssVocabulary.cpp
         src/editor/QssVocabulary.h
+        src/editor/CodeEditor.cpp
+        src/editor/CodeEditor.h
         src/editor/QssEditor.cpp
         src/editor/QssEditor.h
         src/editor/ColorSwatchOverlay.cpp

@@ -1,4 +1,5 @@
 #include "test_mainwindow.h"
+#include "CodeEditor.h"
 #include "MainWindow.h"
 #include "QssEditor.h"
 #include "StyleManager.h"
