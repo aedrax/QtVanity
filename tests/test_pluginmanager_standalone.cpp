@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
     qputenv("QT_QPA_PLATFORM", "offscreen");
     
     QApplication app(argc, argv);
+    app.setProperty("qtvanity.headless", true);
     
     TestPluginManager test;
     return QTest::qExec(&test, argc, argv);

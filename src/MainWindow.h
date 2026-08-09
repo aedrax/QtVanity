@@ -154,7 +154,22 @@ private:
     void setupConnections();
     void updateWindowTitle();
     void updateThemeActions();
-    bool maybeSave();
+
+    /**
+     * @brief Reports an error to the user.
+     * @param title The dialog title.
+     * @param message The error message.
+     * @param severity Critical for errors, Warning for recoverable problems.
+     *
+     * Shows a modal message box in normal operation. When the application
+     * property "qtvanity.headless" is set (as the test harness does), the
+     * message is written to the status bar and qWarning() instead, so an
+     * error can never deadlock an automated run waiting for a click.
+     */
+    enum class ErrorSeverity { Warning, Critical };
+    void reportError(const QString &title, const QString &message,
+                     ErrorSeverity severity = ErrorSeverity::Critical);
+
     bool maybeSaveProject();
     void setProjectModified(bool modified);
     void clearProject();

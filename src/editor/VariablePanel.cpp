@@ -443,6 +443,8 @@ void VariablePanel::refreshVariableList()
 
 void VariablePanel::updateColorSwatch(int row, const QString &value)
 {
+    QTableWidgetItem *colorItem = m_variableTable->item(row, COL_COLOR);
+
     if (VariableManager::isColorValue(value)) {
         QColor color = parseColor(value);
         if (color.isValid()) {
@@ -454,13 +456,32 @@ void VariablePanel::updateColorSwatch(int row, const QString &value)
                 .arg(color.name(QColor::HexArgb));
             colorWidget->setStyleSheet(styleSheet);
             colorWidget->setToolTip(value);
+            colorWidget->setAccessibleName(tr("Color swatch %1").arg(value));
             m_variableTable->setCellWidget(row, COL_COLOR, colorWidget);
+
+            // Mirror the color onto the item itself. The cell widget is what the
+            // user sees, but the item's brush is what assistive technology and
+            // any programmatic reader can actually observe.
+            if (colorItem) {
+                const bool wasUpdating = m_updatingTable;
+                m_updatingTable = true;
+                colorItem->setBackground(color);
+                colorItem->setToolTip(value);
+                m_updatingTable = wasUpdating;
+            }
             return;
         }
     }
-    
-    // Not a color - remove any color widget
+
+    // Not a color - remove any color widget and clear the mirrored brush
     m_variableTable->removeCellWidget(row, COL_COLOR);
+    if (colorItem) {
+        const bool wasUpdating = m_updatingTable;
+        m_updatingTable = true;
+        colorItem->setBackground(QBrush());
+        colorItem->setToolTip(QString());
+        m_updatingTable = wasUpdating;
+    }
 }
 
 int VariablePanel::findRowByName(const QString &name) const

@@ -25,7 +25,9 @@ QssEditor::QssEditor(QWidget *parent)
     , m_styleCombo(nullptr)
     , m_autoApplyTimer(nullptr)
     , m_hasUnsavedChanges(false)
-    , m_customStyleActive(false)
+    // The editor starts live: typing applies. Starting in Default mode makes the
+    // most visible feature of the app inert until the user finds the toggle.
+    , m_customStyleActive(true)
     , m_autoApplyDelay(DEFAULT_AUTO_APPLY_DELAY_MS)
     , m_isApplying(false)
 {
@@ -86,8 +88,9 @@ void QssEditor::setupUi()
         tr("Automatically apply styles after a brief delay when text changes"));
     m_autoApplyCheckbox->setChecked(false);
 
-    // Create Toggle button for switching between Custom and Default styles
-    m_toggleButton = new QPushButton(tr("Default"), this);
+    // Create Toggle button for switching between Custom and Default styles.
+    // The label reflects the mode currently in effect.
+    m_toggleButton = new QPushButton(m_customStyleActive ? tr("Custom") : tr("Default"), this);
     m_toggleButton->setToolTip(tr("Toggle between custom QSS and default Qt style (Ctrl+T)"));
 
     // Create Style selector combo box

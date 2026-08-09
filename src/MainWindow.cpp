@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QApplication>
+#include <QDebug>
 #include <QStatusBar>
 #include <QTextCursor>
 #include <QTextEdit>
@@ -540,35 +541,32 @@ void MainWindow::updateWindowTitle()
     setWindowTitle(title);
 }
 
-bool MainWindow::maybeSave()
+void MainWindow::reportError(const QString &title, const QString &message,
+                             ErrorSeverity severity)
 {
-    if (!m_editor || !m_editor->hasUnsavedChanges()) {
-        return true;
+    // A modal dialog in a headless run blocks forever waiting for a click that
+    // never comes, so degrade to a non-blocking report instead.
+    if (qApp->property("qtvanity.headless").toBool()) {
+        qWarning().noquote() << title << "-" << message;
+        statusBar()->showMessage(QString("%1: %2").arg(title, message), 5000);
+        return;
     }
 
-    QMessageBox::StandardButton result = QMessageBox::warning(
-        this,
-        tr("Unsaved Changes"),
-        tr("The stylesheet has been modified.\n"
-           "Do you want to save your changes?"),
-        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel
-    );
-
-    switch (result) {
-    case QMessageBox::Save:
-        onSaveStyle();
-        return !m_editor->hasUnsavedChanges(); // Return true if save succeeded
-    case QMessageBox::Discard:
-        return true;
-    case QMessageBox::Cancel:
-    default:
-        return false;
+    if (severity == ErrorSeverity::Critical) {
+        QMessageBox::critical(this, title, message);
+    } else {
+        QMessageBox::warning(this, title, message);
     }
 }
 
 bool MainWindow::maybeSaveProject()
 {
     if (!m_projectModified && (!m_editor || !m_editor->hasUnsavedChanges())) {
+        return true;
+    }
+
+    // Never block an automated run on a modal prompt; discard and continue.
+    if (qApp->property("qtvanity.headless").toBool()) {
         return true;
     }
 
@@ -710,11 +708,8 @@ void MainWindow::onLoadTemplate(const QString &templateName)
     
     // Check if file exists
     if (!QFile::exists(templatePath)) {
-        QMessageBox::critical(
-            this,
-            tr("Template Error"),
-            tr("Template file not found: %1").arg(templateName)
-        );
+        reportError(tr("Template Error"),
+                    tr("Template file not found: %1").arg(templateName));
         return;
     }
 
@@ -760,29 +755,18 @@ void MainWindow::onStyleModeChanged(bool customActive)
 
 void MainWindow::onLoadError(const QString &error)
 {
-    QMessageBox::critical(
-        this,
-        tr("Load Error"),
-        tr("Failed to load stylesheet:\n%1").arg(error)
-    );
+    reportError(tr("Load Error"), tr("Failed to load stylesheet:\n%1").arg(error));
 }
 
 void MainWindow::onSaveError(const QString &error)
 {
-    QMessageBox::critical(
-        this,
-        tr("Save Error"),
-        tr("Failed to save stylesheet:\n%1").arg(error)
-    );
+    reportError(tr("Save Error"), tr("Failed to save stylesheet:\n%1").arg(error));
 }
 
 void MainWindow::onStyleChangeError(const QString &error)
 {
-    QMessageBox::warning(
-        this,
-        tr("Style Change Error"),
-        tr("Failed to change style:\n%1").arg(error)
-    );
+    reportError(tr("Style Change Error"), tr("Failed to change style:\n%1").arg(error),
+                ErrorSeverity::Warning);
 }
 
 void MainWindow::onUnsavedChangesChanged(bool hasChanges)
@@ -983,31 +967,21 @@ void MainWindow::onProjectSaved()
 
 void MainWindow::onProjectLoadError(const QString &error)
 {
-    QMessageBox::critical(
-        this,
-        tr("Project Load Error"),
-        tr("Failed to load project:\n%1").arg(error)
-    );
+    reportError(tr("Project Load Error"), tr("Failed to load project:\n%1").arg(error));
 }
 
 void MainWindow::onProjectSaveError(const QString &error)
 {
-    QMessageBox::critical(
-        this,
-        tr("Project Save Error"),
-        tr("Failed to save project:\n%1").arg(error)
-    );
+    reportError(tr("Project Save Error"), tr("Failed to save project:\n%1").arg(error));
 }
 
 void MainWindow::onOpenRecentProject(const QString &filePath)
 {
     // Check if file exists
     if (!QFileInfo::exists(filePath)) {
-        QMessageBox::warning(
-            this,
-            tr("File Not Found"),
-            tr("The project file no longer exists:\n%1").arg(filePath)
-        );
+        reportError(tr("File Not Found"),
+                    tr("The project file no longer exists:\n%1").arg(filePath),
+                    ErrorSeverity::Warning);
         // Remove from recent projects list
         m_settingsManager->removeRecentProject(filePath);
         return;

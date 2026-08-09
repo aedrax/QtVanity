@@ -27,7 +27,11 @@ int main(int argc, char *argv[])
     qputenv("QT_QPA_PLATFORM", "offscreen");
     
     QApplication app(argc, argv);
-    
+
+    // Tell the application code it is running unattended: error paths must
+    // report without opening a modal dialog, which would block forever here.
+    app.setProperty("qtvanity.headless", true);
+
     int status = 0;
     
     // Run StyleManager tests
