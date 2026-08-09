@@ -379,6 +379,50 @@ void TestMainWindow::testToggleStyleKeyboardShortcut()
 }
 
 /**
+ * Test that no keyboard shortcut is claimed by more than one action.
+ *
+ * The Main Window gallery page builds a working QMenuBar to demonstrate menu
+ * styling. Its actions carried real key sequences (New, Open, Save, Save As,
+ * Quit, Close) with the default Qt::WindowShortcut context, so they were live
+ * across the whole window and collided with the real File menu. Qt reports
+ * "Ambiguous shortcut overload" for such a collision and fires neither action,
+ * which silently broke Ctrl+S, Ctrl+O, Ctrl+N and Ctrl+Q for the user.
+ *
+ * Demo actions must therefore either carry no shortcut or use a context that
+ * cannot activate from the main window.
+ */
+void TestMainWindow::testNoAmbiguousShortcuts()
+{
+    MainWindow mainWindow;
+
+    // Count only shortcuts that can actually fire from the main window.
+    QMap<QString, QStringList> claimants;
+    const QList<QAction*> actions = mainWindow.findChildren<QAction*>();
+    for (QAction *action : actions) {
+        if (action->shortcut().isEmpty()) {
+            continue;
+        }
+        if (action->shortcutContext() == Qt::WidgetShortcut ||
+            action->shortcutContext() == Qt::WidgetWithChildrenShortcut) {
+            continue;
+        }
+        claimants[action->shortcut().toString()].append(action->text());
+    }
+
+    QStringList ambiguous;
+    for (auto it = claimants.constBegin(); it != claimants.constEnd(); ++it) {
+        if (it.value().size() > 1) {
+            ambiguous.append(QString("%1 claimed by [%2]")
+                             .arg(it.key(), it.value().join(", ")));
+        }
+    }
+
+    QVERIFY2(ambiguous.isEmpty(),
+             qPrintable(QString("Ambiguous shortcuts would disable these commands: %1")
+                        .arg(ambiguous.join("; "))));
+}
+
+/**
  * Test that triggering toggle action changes the style mode.
  */
 void TestMainWindow::testToggleActionTriggersModeChange()

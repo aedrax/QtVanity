@@ -3,17 +3,24 @@
 
 #include <QObject>
 
-class StyleManager;
+class SettingsManager;
 class QTimer;
 
 /**
- * @brief Manages UI theme preferences (Dark, Light, System).
- * 
+ * @brief Manages the application chrome's appearance (Dark, Light, System).
+ *
  * The ThemeManager is responsible for:
  * - Storing the user's theme mode preference (Dark/Light/System)
  * - Detecting the system's current appearance setting
- * - Persisting preferences via QSettings
- * - Automatically updating the theme when system appearance changes
+ * - Applying the appearance to the application
+ * - Automatically updating when the system appearance changes
+ *
+ * It deliberately does *not* go through StyleManager. Themes used to be
+ * QSS templates pushed into qApp->setStyleSheet(), which is the same channel
+ * the user's own stylesheet uses - so switching theme silently discarded the
+ * user's work, and a missing template surfaced as an error dialog. The
+ * appearance is now expressed through Qt's colour scheme / palette instead,
+ * which leaves the stylesheet channel entirely to the user.
  */
 class ThemeManager : public QObject
 {
@@ -32,10 +39,11 @@ public:
 
     /**
      * @brief Constructs a ThemeManager.
-     * @param styleManager The StyleManager to use for applying themes.
+     * @param settings Where the preference is persisted. May be nullptr, in
+     *        which case the preference is not remembered between sessions.
      * @param parent The parent QObject.
      */
-    explicit ThemeManager(StyleManager *styleManager, QObject *parent = nullptr);
+    explicit ThemeManager(SettingsManager *settings = nullptr, QObject *parent = nullptr);
 
     /**
      * @brief Destructor.
@@ -51,7 +59,7 @@ public:
     /**
      * @brief Sets the theme mode.
      * @param mode The ThemeMode to set.
-     * 
+     *
      * This will save the preference and apply the appropriate theme.
      */
     void setThemeMode(ThemeMode mode);
@@ -78,7 +86,7 @@ signals:
     /**
      * @brief Emitted when the effective theme changes.
      * @param effectiveTheme The new effective theme (Dark or Light).
-     * 
+     *
      * This is emitted when:
      * - The user changes the theme mode
      * - System mode is active and the system theme changes
@@ -98,12 +106,12 @@ private:
     void applyCurrentTheme();
 
     /**
-     * @brief Loads the theme preference from QSettings.
+     * @brief Loads the theme preference.
      */
     void loadPreference();
 
     /**
-     * @brief Saves the theme preference to QSettings.
+     * @brief Saves the theme preference.
      */
     void savePreference();
 
@@ -118,9 +126,11 @@ private:
      */
     void setupSystemThemeWatcher();
 
-    StyleManager *m_styleManager;
+    SettingsManager *m_settings;
     ThemeMode m_currentMode;
     ThemeMode m_lastEffectiveTheme;
+
+    /// Polling fallback, only created on Qt versions without colour-scheme notifications.
     QTimer *m_systemThemeTimer;
 };
 

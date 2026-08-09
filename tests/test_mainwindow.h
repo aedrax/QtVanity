@@ -21,6 +21,9 @@ private slots:
     void testEditMenuActions();
     void testHelpMenuActions();
     
+    // Keyboard shortcut integrity
+    void testNoAmbiguousShortcuts();
+
     // Style toggle integration tests
     void testToggleStyleActionExistsInEditMenu();
     void testToggleStyleKeyboardShortcut();

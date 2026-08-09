@@ -91,8 +91,9 @@ MainWindow::MainWindow(QWidget *parent)
         // If invalid, StyleManager keeps platform default
     }
     
-    // Create theme manager
-    m_themeManager = new ThemeManager(m_styleManager, this);
+    // Create theme manager. It themes the application chrome through Qt's
+    // colour scheme, independently of the stylesheet the user is editing.
+    m_themeManager = new ThemeManager(m_settingsManager, this);
 
     // Create variable manager
     m_variableManager = new VariableManager(this);
@@ -114,13 +115,17 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_settingsManager, &SettingsManager::pluginDirectoryChanged,
             this, [this]() {
                 m_pluginManager->setPluginDirectory(m_settingsManager->pluginDirectory());
-                m_pluginManager->loadPlugins();
+                // refreshPlugins(), not loadPlugins(): the latter leaves the old
+                // loaders alive and the old interfaces registered, leaking one
+                // QPluginLoader per plugin on every directory change.
+                m_pluginManager->refreshPlugins();
             });
 
     // Setup UI components
     setupCentralWidget();
     setupMenuBar();
     setupConnections();
+    clearDockCloseShortcuts();
 
     // Restore saved dock state if available (must be after setupCentralWidget and setupMenuBar)
     if (m_settingsManager->hasDockState()) {
@@ -484,6 +489,16 @@ void MainWindow::setupConnections()
     connect(m_themeManager, &ThemeManager::themeModeChanged,
             this, [this](ThemeManager::ThemeMode) { onThemeModeChanged(); });
 
+    // Keep the syntax highlighter in step with the chrome. Without this the
+    // highlighter stays on its dark palette forever, rendering pale tokens on
+    // a white background under a light theme.
+    connect(m_themeManager, &ThemeManager::effectiveThemeChanged,
+            this, [this](ThemeManager::ThemeMode effective) {
+                m_editor->setDarkColorScheme(effective == ThemeManager::ThemeMode::Dark);
+            });
+    m_editor->setDarkColorScheme(
+        m_themeManager->effectiveTheme() == ThemeManager::ThemeMode::Dark);
+
     // Connect variable manager signals for live preview
     connect(m_variableManager, &VariableManager::variableChanged,
             this, &MainWindow::onVariableChanged);
@@ -518,6 +533,21 @@ void MainWindow::setupConnections()
                 cursor.insertText(reference);
                 m_editor->textEdit()->setFocus();
             });
+}
+
+void MainWindow::clearDockCloseShortcuts()
+{
+    const QKeySequence closeSequence(QKeySequence::Close);
+    const QList<QDockWidget*> docks = findChildren<QDockWidget*>();
+
+    for (QDockWidget *dock : docks) {
+        const QList<QAction*> actions = dock->findChildren<QAction*>();
+        for (QAction *action : actions) {
+            if (action->shortcut() == closeSequence) {
+                action->setShortcut(QKeySequence());
+            }
+        }
+    }
 }
 
 void MainWindow::updateWindowTitle()

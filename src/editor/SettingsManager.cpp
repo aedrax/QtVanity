@@ -4,16 +4,19 @@
 namespace {
     // Settings keys
     const QString KeyWindowGeometry = QStringLiteral("window/geometry");
-    const QString KeySplitterState = QStringLiteral("window/splitterState");
     const QString KeyDockState = QStringLiteral("window/dockState");
     const QString KeyBaseStyle = QStringLiteral("appearance/baseStyle");
+    const QString KeyThemeMode = QStringLiteral("appearance/themeMode");
     const QString KeyRecentProjects = QStringLiteral("recentProjects");
     const QString KeyPluginDirectory = QStringLiteral("plugins/directory");
 }
 
+// The default QSettings constructor picks up the organisation and application
+// names set in main.cpp. Passing explicit names here used to send these
+// settings to a different file than ThemeManager's, so the theme preference
+// was persisted somewhere nothing else could see it.
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
-    , m_settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"))
 {
 }
 
@@ -33,22 +36,6 @@ QByteArray SettingsManager::loadWindowGeometry() const
 bool SettingsManager::hasWindowGeometry() const
 {
     return m_settings.contains(KeyWindowGeometry);
-}
-
-// Splitter state
-void SettingsManager::saveSplitterState(const QByteArray &state)
-{
-    m_settings.setValue(KeySplitterState, state);
-}
-
-QByteArray SettingsManager::loadSplitterState() const
-{
-    return m_settings.value(KeySplitterState).toByteArray();
-}
-
-bool SettingsManager::hasSplitterState() const
-{
-    return m_settings.contains(KeySplitterState);
 }
 
 // Dock state
@@ -81,6 +68,23 @@ QString SettingsManager::loadBaseStyle() const
 bool SettingsManager::hasBaseStyle() const
 {
     return m_settings.contains(KeyBaseStyle);
+}
+
+// Theme mode
+void SettingsManager::saveThemeMode(int mode)
+{
+    m_settings.setValue(KeyThemeMode, mode);
+}
+
+int SettingsManager::loadThemeMode() const
+{
+    // -1 means "not set"; ThemeManager treats out-of-range values as System.
+    return m_settings.value(KeyThemeMode, -1).toInt();
+}
+
+bool SettingsManager::hasThemeMode() const
+{
+    return m_settings.contains(KeyThemeMode);
 }
 
 // Plugin directory

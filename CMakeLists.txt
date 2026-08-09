@@ -166,7 +166,7 @@ install(TARGETS QtVanity
 # Install style templates
 install(DIRECTORY styles/
     DESTINATION ${QTVANITY_INSTALL_DATADIR}/styles
-    FILES_MATCHING PATTERN "*.qss"
+    FILES_MATCHING PATTERN "*.qvp"
 )
 
 # Install resources
@@ -205,7 +205,7 @@ if(APPLE)
     # Copy styles into the bundle
     install(DIRECTORY styles/
         DESTINATION QtVanity.app/Contents/Resources/styles
-        FILES_MATCHING PATTERN "*.qss"
+        FILES_MATCHING PATTERN "*.qvp"
     )
 endif()
 

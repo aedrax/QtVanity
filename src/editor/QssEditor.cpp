@@ -428,7 +428,7 @@ void QssEditor::setDarkColorScheme(bool dark)
 void QssEditor::setColorSwatchesEnabled(bool enabled)
 {
     if (m_colorSwatchOverlay) {
-        m_colorSwatchOverlay->setEnabled(enabled);
+        m_colorSwatchOverlay->setOverlayEnabled(enabled);
     }
 }
 

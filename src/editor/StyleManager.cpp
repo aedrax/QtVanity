@@ -1,4 +1,5 @@
 #include "StyleManager.h"
+#include "VariableManager.h"
 
 #include <QApplication>
 #include <QFile>
@@ -27,29 +28,35 @@ StyleManager::StyleManager(QObject *parent)
     // First try the application directory, then standard data locations
     QString appDir = QCoreApplication::applicationDirPath();
     
-    // Check for styles directory relative to executable
-    QDir stylesDir(appDir + "/styles");
-    if (stylesDir.exists()) {
-        m_templatesPath = stylesDir.absolutePath();
-    } else {
-        // Try parent directory (for development builds)
-        stylesDir.setPath(appDir + "/../styles");
-        if (stylesDir.exists()) {
-            m_templatesPath = stylesDir.absolutePath();
-        } else {
-            // Try standard data location
-            QStringList dataPaths = QStandardPaths::standardLocations(
-                QStandardPaths::AppDataLocation);
-            for (const QString &path : dataPaths) {
-                QDir dir(path + "/styles");
-                if (dir.exists()) {
-                    m_templatesPath = dir.absolutePath();
-                    break;
-                }
+    // Search, in order: alongside the executable, inside a macOS bundle's
+    // Resources (where CMake installs them), the parent directory (development
+    // builds run from build/), then the standard data locations.
+    const QStringList candidates = {
+        appDir + "/styles",
+        appDir + "/../Resources/styles",
+        appDir + "/../styles"
+    };
+
+    for (const QString &candidate : candidates) {
+        QDir dir(candidate);
+        if (dir.exists()) {
+            m_templatesPath = dir.absolutePath();
+            break;
+        }
+    }
+
+    if (m_templatesPath.isEmpty()) {
+        const QStringList dataPaths = QStandardPaths::standardLocations(
+            QStandardPaths::AppDataLocation);
+        for (const QString &path : dataPaths) {
+            QDir dir(path + "/styles");
+            if (dir.exists()) {
+                m_templatesPath = dir.absolutePath();
+                break;
             }
         }
     }
-    
+
     // If still not found, use a reasonable default
     if (m_templatesPath.isEmpty()) {
         m_templatesPath = appDir + "/styles";
@@ -128,14 +135,24 @@ QStringList StyleManager::availableTemplates() const
 
 QString StyleManager::loadTemplate(const QString &templateName)
 {
-    QString templatePath = m_templatesPath + "/" + templateName + ".qss";
-    
+    // Templates are .qvp project files (JSON: variables + qssTemplate), matching
+    // what availableTemplates() lists. Reading ".qss" here is what made every
+    // template load fail after the project-file migration.
+    const QString templatePath = m_templatesPath + "/" + templateName + ".qvp";
+
     if (!QFile::exists(templatePath)) {
         emit loadError(tr("Template not found: %1").arg(templateName));
         return QString();
     }
-    
-    return loadFromFile(templatePath);
+
+    VariableManager variables;
+    QString qssTemplate;
+    if (!variables.loadProject(templatePath, qssTemplate)) {
+        emit loadError(tr("Template '%1' could not be read").arg(templateName));
+        return QString();
+    }
+
+    return variables.substitute(qssTemplate);
 }
 
 QString StyleManager::currentStyleSheet() const

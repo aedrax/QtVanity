@@ -1,32 +1,81 @@
 #include "ThemeManager.h"
-#include "StyleManager.h"
+#include "SettingsManager.h"
 
-#include <QSettings>
+#include <QApplication>
+#include <QPalette>
+#include <QStyle>
+#include <QStyleHints>
 #include <QTimer>
 
-#ifdef Q_OS_WIN
-#include <QSettings>
-#endif
+// Qt gained a queryable colour scheme in 6.5 and a settable one in 6.8. Below
+// those versions we fall back to per-platform probing and an explicit palette.
+#define QTVANITY_HAS_COLOR_SCHEME_QUERY (QT_VERSION >= QT_VERSION_CHECK(6, 5, 0))
+#define QTVANITY_HAS_COLOR_SCHEME_SET   (QT_VERSION >= QT_VERSION_CHECK(6, 8, 0))
 
+#if !QTVANITY_HAS_COLOR_SCHEME_QUERY
+#include <QSettings>
 #ifdef Q_OS_MACOS
 #include <QProcess>
 #endif
-
 #ifdef Q_OS_LINUX
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
 #include <QProcess>
 #endif
+#endif
 
 namespace {
-    const QString SETTINGS_KEY = QStringLiteral("appearance/themeMode");
-    const int SYSTEM_THEME_POLL_INTERVAL_MS = 5000; // 5 seconds
-}
 
-ThemeManager::ThemeManager(StyleManager *styleManager, QObject *parent)
+#if !QTVANITY_HAS_COLOR_SCHEME_QUERY
+const int SYSTEM_THEME_POLL_INTERVAL_MS = 5000; // 5 seconds
+#endif
+
+#if !QTVANITY_HAS_COLOR_SCHEME_SET
+/**
+ * @brief Builds a dark palette for Qt versions that cannot be told the scheme.
+ *
+ * Modelled on Qt's own Fusion dark palette so that the chrome remains legible
+ * with the platform style the user has selected.
+ */
+QPalette buildDarkPalette()
+{
+    QPalette palette;
+    const QColor window(53, 53, 53);
+    const QColor base(35, 35, 35);
+    const QColor text(220, 220, 220);
+    const QColor disabled(127, 127, 127);
+    const QColor highlight(38, 110, 183);
+
+    palette.setColor(QPalette::Window, window);
+    palette.setColor(QPalette::WindowText, text);
+    palette.setColor(QPalette::Base, base);
+    palette.setColor(QPalette::AlternateBase, window);
+    palette.setColor(QPalette::ToolTipBase, window);
+    palette.setColor(QPalette::ToolTipText, text);
+    palette.setColor(QPalette::Text, text);
+    palette.setColor(QPalette::Button, window);
+    palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::BrightText, Qt::red);
+    palette.setColor(QPalette::Link, highlight);
+    palette.setColor(QPalette::Highlight, highlight);
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::PlaceholderText, disabled);
+
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, disabled);
+    palette.setColor(QPalette::Disabled, QPalette::Text, disabled);
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabled);
+    palette.setColor(QPalette::Disabled, QPalette::HighlightedText, disabled);
+
+    return palette;
+}
+#endif // !QTVANITY_HAS_COLOR_SCHEME_SET
+
+} // namespace
+
+ThemeManager::ThemeManager(SettingsManager *settings, QObject *parent)
     : QObject(parent)
-    , m_styleManager(styleManager)
+    , m_settings(settings)
     , m_currentMode(ThemeMode::System)
     , m_lastEffectiveTheme(ThemeMode::Light)
     , m_systemThemeTimer(nullptr)
@@ -108,24 +157,41 @@ void ThemeManager::onSystemThemeChanged()
 
 void ThemeManager::applyCurrentTheme()
 {
-    if (!m_styleManager) {
+    if (!qApp) {
         return;
     }
 
-    ThemeMode effective = effectiveTheme();
-    QString templateName = (effective == ThemeMode::Dark) ? QStringLiteral("dark") 
-                                                          : QStringLiteral("light");
-
-    QString qss = m_styleManager->loadTemplate(templateName);
-    if (!qss.isEmpty()) {
-        m_styleManager->applyStyleSheet(qss);
+#if QTVANITY_HAS_COLOR_SCHEME_SET
+    // Ask Qt for the appearance and let the active style honour it. This never
+    // touches the application stylesheet, so the user's QSS is left alone.
+    switch (m_currentMode) {
+    case ThemeMode::Dark:
+        qApp->styleHints()->setColorScheme(Qt::ColorScheme::Dark);
+        break;
+    case ThemeMode::Light:
+        qApp->styleHints()->setColorScheme(Qt::ColorScheme::Light);
+        break;
+    case ThemeMode::System:
+        qApp->styleHints()->unsetColorScheme();
+        break;
     }
+#else
+    // No settable colour scheme: express the appearance as a palette instead.
+    if (effectiveTheme() == ThemeMode::Dark) {
+        qApp->setPalette(buildDarkPalette());
+    } else if (QStyle *style = qApp->style()) {
+        qApp->setPalette(style->standardPalette());
+    }
+#endif
 }
 
 void ThemeManager::loadPreference()
 {
-    QSettings settings;
-    int modeValue = settings.value(SETTINGS_KEY, static_cast<int>(ThemeMode::System)).toInt();
+    if (!m_settings) {
+        return;
+    }
+
+    int modeValue = m_settings->loadThemeMode();
 
     // Validate the loaded value is within valid range (0-2)
     if (modeValue < 0 || modeValue > 2) {
@@ -137,14 +203,19 @@ void ThemeManager::loadPreference()
 
 void ThemeManager::savePreference()
 {
-    QSettings settings;
-    settings.setValue(SETTINGS_KEY, static_cast<int>(m_currentMode));
+    if (m_settings) {
+        m_settings->saveThemeMode(static_cast<int>(m_currentMode));
+    }
 }
-
 
 bool ThemeManager::detectSystemDarkMode() const
 {
-#ifdef Q_OS_WIN
+#if QTVANITY_HAS_COLOR_SCHEME_QUERY
+    // In System mode the colour scheme is unset, so this reports what the OS
+    // is actually doing. In an explicit mode effectiveTheme() never consults
+    // this function, so reading back our own request is not a concern.
+    return qApp && qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#elif defined(Q_OS_WIN)
     // Windows: Read registry AppsUseLightTheme
     // Value of 0 means dark mode, 1 means light mode
     QSettings settings(
@@ -154,18 +225,15 @@ bool ThemeManager::detectSystemDarkMode() const
 #elif defined(Q_OS_MACOS)
     // macOS: Use defaults read for AppleInterfaceStyle
     QProcess process;
-    process.start(QStringLiteral("defaults"), 
-                  QStringList() << QStringLiteral("read") 
-                               << QStringLiteral("-g") 
+    process.start(QStringLiteral("defaults"),
+                  QStringList() << QStringLiteral("read")
+                               << QStringLiteral("-g")
                                << QStringLiteral("AppleInterfaceStyle"));
     process.waitForFinished(1000);
     QString output = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
     return output.compare(QStringLiteral("Dark"), Qt::CaseInsensitive) == 0;
 #elif defined(Q_OS_LINUX)
     // Linux: Check GTK theme name for "dark" keyword
-    // Try multiple locations for GTK settings
-    
-    // First try GTK 3.0 settings.ini
     QString configPath = QDir::homePath() + QStringLiteral("/.config/gtk-3.0/settings.ini");
     QFile file(configPath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -179,26 +247,23 @@ bool ThemeManager::detectSystemDarkMode() const
         }
         file.close();
     }
-    
-    // Try environment variable
+
     QString gtkTheme = qEnvironmentVariable("GTK_THEME");
     if (!gtkTheme.isEmpty()) {
         return gtkTheme.contains(QStringLiteral("dark"), Qt::CaseInsensitive);
     }
-    
-    // Fallback: check XDG color-scheme via gsettings (if available)
+
     QProcess process;
-    process.start(QStringLiteral("gsettings"), 
-                  QStringList() << QStringLiteral("get") 
-                               << QStringLiteral("org.gnome.desktop.interface") 
+    process.start(QStringLiteral("gsettings"),
+                  QStringList() << QStringLiteral("get")
+                               << QStringLiteral("org.gnome.desktop.interface")
                                << QStringLiteral("color-scheme"));
     process.waitForFinished(1000);
     if (process.exitCode() == 0) {
         QString output = QString::fromUtf8(process.readAllStandardOutput()).trimmed();
         return output.contains(QStringLiteral("dark"), Qt::CaseInsensitive);
     }
-    
-    // Default to light mode if detection fails
+
     return false;
 #else
     // Unknown platform: default to light mode
@@ -208,6 +273,13 @@ bool ThemeManager::detectSystemDarkMode() const
 
 void ThemeManager::setupSystemThemeWatcher()
 {
+#if QTVANITY_HAS_COLOR_SCHEME_QUERY
+    // Qt notifies us; no polling, and no process spawned every few seconds.
+    if (qApp) {
+        connect(qApp->styleHints(), &QStyleHints::colorSchemeChanged,
+                this, &ThemeManager::onSystemThemeChanged);
+    }
+#else
     m_systemThemeTimer = new QTimer(this);
     m_systemThemeTimer->setInterval(SYSTEM_THEME_POLL_INTERVAL_MS);
     connect(m_systemThemeTimer, &QTimer::timeout, this, &ThemeManager::onSystemThemeChanged);
@@ -216,4 +288,5 @@ void ThemeManager::setupSystemThemeWatcher()
     if (m_currentMode == ThemeMode::System) {
         m_systemThemeTimer->start();
     }
+#endif
 }

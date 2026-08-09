@@ -212,10 +212,22 @@ signals:
      * has finished processing all plugin files in the directory.
      */
     void pluginsLoaded();
-    
+
+    /**
+     * @brief Emitted immediately before any plugin library is unloaded.
+     *
+     * Widgets produced by a plugin's createWidget() have their vtables and
+     * destructors inside that plugin's shared library. Once QPluginLoader
+     * unloads it, those widgets are unusable and destroying them jumps into
+     * unmapped memory. Every consumer must therefore destroy the widgets it
+     * obtained from this manager while handling this signal - by the time
+     * pluginsUnloaded() arrives it is already too late.
+     */
+    void pluginsAboutToUnload();
+
     /**
      * @brief Emitted when a single plugin is successfully loaded.
-     * 
+     *
      * @param metadata The metadata for the loaded plugin.
      */
     void pluginLoaded(const PluginMetadata &metadata);

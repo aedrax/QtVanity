@@ -74,6 +74,12 @@ public:
      */
     void setWidgetsEnabled(bool enabled) override;
 
+    /**
+     * @brief Points the page at a different plugin manager and rebuilds.
+     * @param pluginManager The manager to read plugins from. Must not be nullptr.
+     */
+    void setPluginManager(PluginManager *pluginManager);
+
 public slots:
     /**
      * @brief Rebuilds the widget display from current plugin state.
@@ -85,7 +91,21 @@ public slots:
      */
     void rebuildWidgets();
 
+    /**
+     * @brief Destroys every widget obtained from a plugin.
+     *
+     * Must run before the plugin libraries are unloaded: the widgets'
+     * destructors live inside those libraries, so destroying them afterwards
+     * jumps into unmapped memory. Connect to PluginManager::pluginsAboutToUnload().
+     */
+    void releaseWidgets();
+
 private:
+    /**
+     * @brief Removes every group from the page, leaving an empty layout.
+     */
+    void clearContent();
+
     /**
      * @brief Sets up the initial widget display.
      * 

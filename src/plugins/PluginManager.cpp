@@ -54,12 +54,16 @@ void PluginManager::refreshPlugins()
 
 void PluginManager::unloadPlugins()
 {
+    // Give consumers the chance to destroy plugin-created widgets while the
+    // libraries providing their vtables and destructors are still mapped.
+    emit pluginsAboutToUnload();
+
     // Unload all plugins
     for (QPluginLoader *loader : m_loaders) {
         loader->unload();
         delete loader;
     }
-    
+
     m_loaders.clear();
     m_plugins.clear();
     m_metadata.clear();

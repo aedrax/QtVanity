@@ -192,15 +192,34 @@ void WidgetGallery::onReadOnlyToggled(bool checked)
 
 void WidgetGallery::setPluginManager(PluginManager *pluginManager)
 {
-    m_pluginManager = pluginManager;
-    
+    if (m_pluginManager == pluginManager) {
+        return;
+    }
+
     if (m_pluginManager) {
-        // Create CustomWidgetsPage with the PluginManager
+        disconnect(m_pluginManager, nullptr, m_customWidgetsPage, nullptr);
+    }
+
+    m_pluginManager = pluginManager;
+
+    if (!m_pluginManager) {
+        return;
+    }
+
+    // Create the page once; a second call must re-target the existing tab
+    // rather than adding a duplicate one and leaking the first.
+    if (!m_customWidgetsPage) {
         m_customWidgetsPage = new CustomWidgetsPage(m_pluginManager, m_tabWidget);
         m_tabWidget->addTab(m_customWidgetsPage, tr("Custom Widgets"));
-        
-        // Connect pluginsLoaded signal to rebuildWidgets for automatic updates
-        connect(m_pluginManager, &PluginManager::pluginsLoaded,
-                m_customWidgetsPage, &CustomWidgetsPage::rebuildWidgets);
+    } else {
+        m_customWidgetsPage->setPluginManager(m_pluginManager);
     }
+
+    // Connect pluginsLoaded signal to rebuildWidgets for automatic updates
+    connect(m_pluginManager, &PluginManager::pluginsLoaded,
+            m_customWidgetsPage, &CustomWidgetsPage::rebuildWidgets);
+
+    // Destroy plugin-created widgets before their libraries are unmapped.
+    connect(m_pluginManager, &PluginManager::pluginsAboutToUnload,
+            m_customWidgetsPage, &CustomWidgetsPage::releaseWidgets);
 }

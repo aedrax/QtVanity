@@ -43,9 +43,13 @@ public:
     int swatchSize() const { return m_swatchSize; }
 
     /**
-     * @brief Enables or disables the overlay.
+     * @brief Shows or hides the overlay.
+     *
+     * Deliberately not named setEnabled(): that would shadow the non-virtual
+     * QWidget::setEnabled(), so a call through a QWidget* would silently take
+     * the base version and leave the overlay in an inconsistent state.
      */
-    void setEnabled(bool enabled);
+    void setOverlayEnabled(bool enabled);
     bool isOverlayEnabled() const { return m_enabled; }
 
 public slots:
@@ -76,7 +80,19 @@ private slots:
 private:
     void parseColors();
     void updateSwatchPositions();
-    ColorInfo* findSwatchAt(const QPoint &pos);
+
+    /**
+     * @brief Returns the index into m_colors of the swatch under @p pos, or -1.
+     */
+    int swatchIndexAt(const QPoint &pos) const;
+
+    /**
+     * @brief Returns the index of the swatch starting at @p startPos, or -1.
+     *
+     * Used to re-resolve a swatch after the document has been reparsed.
+     */
+    int swatchIndexForStartPos(int startPos) const;
+
     QString colorToHex(const QColor &color) const;
 
     QTextEdit *m_editor;
@@ -84,8 +100,14 @@ private:
     QRegularExpression m_colorRegex;
     int m_swatchSize;
     bool m_enabled;
-    ColorInfo *m_hoveredSwatch;
-    ColorInfo *m_editingSwatch;
+
+    // Swatches are identified by index and by document offset, never by
+    // address. parseColors() clears and refills m_colors on every keystroke,
+    // so a ColorInfo* held across an edit points into freed storage - and
+    // paintEvent() and onColorSelected() both dereference these.
+    int m_hoveredIndex;
+    int m_editingStartPos;
+
     QColorDialog *m_colorDialog;
 };
 

@@ -14,8 +14,8 @@ ColorSwatchOverlay::ColorSwatchOverlay(QTextEdit *editor, QWidget *parent)
     , m_editor(editor)
     , m_swatchSize(12)
     , m_enabled(true)
-    , m_hoveredSwatch(nullptr)
-    , m_editingSwatch(nullptr)
+    , m_hoveredIndex(-1)
+    , m_editingStartPos(-1)
     , m_colorDialog(nullptr)
 {
     // Match hex colors: #RGB, #RRGGBB, #AARRGGBB
@@ -55,7 +55,7 @@ void ColorSwatchOverlay::setSwatchSize(int size)
     }
 }
 
-void ColorSwatchOverlay::setEnabled(bool enabled)
+void ColorSwatchOverlay::setOverlayEnabled(bool enabled)
 {
     if (m_enabled != enabled) {
         m_enabled = enabled;
@@ -78,7 +78,11 @@ void ColorSwatchOverlay::updateColors()
 void ColorSwatchOverlay::parseColors()
 {
     m_colors.clear();
-    
+    // The vector the hover index refers to is gone; anything drawn from it
+    // would read stale entries. The editing swatch survives as a document
+    // offset and is re-resolved when the dialog reports a color.
+    m_hoveredIndex = -1;
+
     if (!m_editor || !m_editor->document()) return;
     
     QTextDocument *doc = m_editor->document();
@@ -143,19 +147,21 @@ void ColorSwatchOverlay::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing);
     
     QRect visibleRect = rect();
-    
-    for (const ColorInfo &info : qAsConst(m_colors)) {
+
+    for (int i = 0; i < m_colors.size(); ++i) {
+        const ColorInfo &info = m_colors.at(i);
+
         // Only draw visible swatches
         if (!visibleRect.intersects(info.swatchRect)) continue;
-        
+
         // Draw border
         painter.setPen(QPen(Qt::gray, 1));
-        
+
         // Highlight hovered swatch
-        if (m_hoveredSwatch && m_hoveredSwatch->startPos == info.startPos) {
+        if (i == m_hoveredIndex) {
             painter.setPen(QPen(Qt::white, 2));
         }
-        
+
         // Fill with color
         painter.setBrush(info.color);
         painter.drawRect(info.swatchRect);
@@ -189,22 +195,30 @@ void ColorSwatchOverlay::mousePressEvent(QMouseEvent *event)
         return;
     }
     
-    ColorInfo *swatch = findSwatchAt(event->pos());
-    
-    if (swatch && event->button() == Qt::LeftButton) {
-        m_editingSwatch = swatch;
-        
+    const int index = swatchIndexAt(event->pos());
+
+    if (index >= 0 && event->button() == Qt::LeftButton) {
+        // Remember the swatch by document offset. The dialog is modeless, so
+        // the user can keep editing while it is open and m_colors will have
+        // been rebuilt by the time a color comes back.
+        m_editingStartPos = m_colors.at(index).startPos;
+
         // Create color dialog if needed
         if (!m_colorDialog) {
             m_colorDialog = new QColorDialog(this);
             m_colorDialog->setOption(QColorDialog::ShowAlphaChannel, true);
             connect(m_colorDialog, &QColorDialog::colorSelected,
                     this, &ColorSwatchOverlay::onColorSelected);
+            // Live preview as the user drags through the picker.
+            connect(m_colorDialog, &QColorDialog::currentColorChanged,
+                    this, &ColorSwatchOverlay::onColorSelected);
+            connect(m_colorDialog, &QColorDialog::finished,
+                    this, [this]() { m_editingStartPos = -1; });
         }
-        
-        m_colorDialog->setCurrentColor(swatch->color);
+
+        m_colorDialog->setCurrentColor(m_colors.at(index).color);
         m_colorDialog->show();
-        
+
         event->accept();
     } else {
         // Pass through to editor
@@ -219,25 +233,30 @@ void ColorSwatchOverlay::mouseMoveEvent(QMouseEvent *event)
         return;
     }
     
-    ColorInfo *swatch = findSwatchAt(event->pos());
-    
-    if (swatch != m_hoveredSwatch) {
-        m_hoveredSwatch = swatch;
-        
-        if (swatch) {
+    const int index = swatchIndexAt(event->pos());
+
+    if (index != m_hoveredIndex) {
+        m_hoveredIndex = index;
+
+        if (index >= 0) {
             setCursor(Qt::PointingHandCursor);
-            QToolTip::showText(event->globalPos(), 
-                tr("Click to change color: %1").arg(swatch->colorCode));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            const QPoint tipPos = event->globalPosition().toPoint();
+#else
+            const QPoint tipPos = event->globalPos();
+#endif
+            QToolTip::showText(tipPos,
+                tr("Click to change color: %1").arg(m_colors.at(index).colorCode));
         } else {
             setCursor(Qt::IBeamCursor);
             QToolTip::hideText();
         }
-        
+
         update();
     }
-    
+
     // Pass through if not on a swatch
-    if (!swatch) {
+    if (index < 0) {
         event->ignore();
     }
 }
@@ -246,20 +265,33 @@ void ColorSwatchOverlay::leaveEvent(QEvent *event)
 {
     Q_UNUSED(event);
     
-    if (m_hoveredSwatch) {
-        m_hoveredSwatch = nullptr;
+    if (m_hoveredIndex >= 0) {
+        m_hoveredIndex = -1;
         update();
     }
 }
 
-ColorSwatchOverlay::ColorInfo* ColorSwatchOverlay::findSwatchAt(const QPoint &pos)
+int ColorSwatchOverlay::swatchIndexAt(const QPoint &pos) const
 {
     for (int i = 0; i < m_colors.size(); ++i) {
         if (m_colors[i].swatchRect.contains(pos)) {
-            return &m_colors[i];
+            return i;
         }
     }
-    return nullptr;
+    return -1;
+}
+
+int ColorSwatchOverlay::swatchIndexForStartPos(int startPos) const
+{
+    if (startPos < 0) {
+        return -1;
+    }
+    for (int i = 0; i < m_colors.size(); ++i) {
+        if (m_colors[i].startPos == startPos) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void ColorSwatchOverlay::onTextChanged()
@@ -276,23 +308,29 @@ void ColorSwatchOverlay::onScrolled()
 
 void ColorSwatchOverlay::onColorSelected(const QColor &color)
 {
-    if (!m_editingSwatch) return;
-    
-    QString oldCode = m_editingSwatch->colorCode;
-    QString newCode = colorToHex(color);
-    
-    if (oldCode != newCode) {
+    if (m_editingStartPos < 0 || !color.isValid()) return;
+
+    // The document may have been edited while the modeless dialog was open, so
+    // re-resolve the swatch from its offset rather than trusting a stale entry.
+    const int index = swatchIndexForStartPos(m_editingStartPos);
+    if (index < 0) {
+        // The color code the user clicked is gone; there is nothing to rewrite.
+        m_editingStartPos = -1;
+        return;
+    }
+
+    const ColorInfo info = m_colors.at(index);
+    const QString newCode = colorToHex(color);
+
+    if (info.colorCode != newCode) {
         // Replace the color in the document
         QTextCursor cursor(m_editor->document());
-        cursor.setPosition(m_editingSwatch->startPos);
-        cursor.setPosition(m_editingSwatch->startPos + m_editingSwatch->length, 
-                          QTextCursor::KeepAnchor);
+        cursor.setPosition(info.startPos);
+        cursor.setPosition(info.startPos + info.length, QTextCursor::KeepAnchor);
         cursor.insertText(newCode);
-        
-        emit colorChanged(oldCode, newCode);
+
+        emit colorChanged(info.colorCode, newCode);
     }
-    
-    m_editingSwatch = nullptr;
 }
 
 QString ColorSwatchOverlay::colorToHex(const QColor &color) const

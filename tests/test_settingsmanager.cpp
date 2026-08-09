@@ -23,24 +23,28 @@ void TestSettingsManager::cleanupTestCase()
 
 void TestSettingsManager::init()
 {
-    // Clear settings before each test using the same organization/app name as SettingsManager
-    QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+    // Clear settings before each test
+    // Default-constructed, matching SettingsManager: it takes its identity from
+    // the application metadata rather than hardcoding an organisation name.
+    QSettings settings;
     settings.remove(QStringLiteral("window/geometry"));
-    settings.remove(QStringLiteral("window/splitterState"));
     settings.remove(QStringLiteral("window/dockState"));
     settings.remove(QStringLiteral("appearance/baseStyle"));
+    settings.remove(QStringLiteral("appearance/themeMode"));
     settings.remove(QStringLiteral("recentProjects"));
     settings.remove(QStringLiteral("plugins/directory"));
 }
 
 void TestSettingsManager::cleanup()
 {
-    // Clean up after each test using the same organization/app name as SettingsManager
-    QSettings settings(QStringLiteral("QtVanity"), QStringLiteral("QtVanity"));
+    // Clean up after each test
+    // Default-constructed, matching SettingsManager: it takes its identity from
+    // the application metadata rather than hardcoding an organisation name.
+    QSettings settings;
     settings.remove(QStringLiteral("window/geometry"));
-    settings.remove(QStringLiteral("window/splitterState"));
     settings.remove(QStringLiteral("window/dockState"));
     settings.remove(QStringLiteral("appearance/baseStyle"));
+    settings.remove(QStringLiteral("appearance/themeMode"));
     settings.remove(QStringLiteral("recentProjects"));
     settings.remove(QStringLiteral("plugins/directory"));
 }
@@ -66,12 +70,6 @@ void TestSettingsManager::testDefaultValuesWhenNoSettingsExist()
              "hasWindowGeometry() should return false when no geometry saved");
     QVERIFY2(settingsManager.loadWindowGeometry().isEmpty(),
              "loadWindowGeometry() should return empty QByteArray when no geometry saved");
-    
-    // Test splitter state defaults
-    QVERIFY2(!settingsManager.hasSplitterState(),
-             "hasSplitterState() should return false when no state saved");
-    QVERIFY2(settingsManager.loadSplitterState().isEmpty(),
-             "loadSplitterState() should return empty QByteArray when no state saved");
     
     // Test dock state defaults
     QVERIFY2(!settingsManager.hasDockState(),
@@ -259,70 +257,6 @@ void TestSettingsManager::testBaseStyleRoundTrip()
                  qPrintable(QString("Round-trip failed: saved '%1', loaded '%2'")
                            .arg(styleName)
                            .arg(loadedStyle)));
-    }
-}
-
-/**
- * Feature: settings-persistence, Property 3: Splitter State Round-Trip
- * 
- * For any valid splitter state (list of panel widths), saving the state
- * and then loading it should return an equivalent state.
- */
-void TestSettingsManager::testSplitterStateRoundTrip_data()
-{
-    QTest::addColumn<QByteArray>("splitterState");
-    
-    QRandomGenerator *rng = QRandomGenerator::global();
-    
-    // Generate 100+ test cases with random splitter state data
-    for (int i = 0; i < 100; ++i) {
-        // Generate random splitter state byte array (simulating QSplitter::saveState() output)
-        // Real splitter state has a specific format, but for round-trip testing,
-        // any byte array should work since we're testing storage/retrieval
-        int size = rng->bounded(20, 100);  // Typical splitter state size range
-        QByteArray state;
-        state.resize(size);
-        for (int j = 0; j < size; ++j) {
-            state[j] = static_cast<char>(rng->bounded(256));
-        }
-        
-        QTest::newRow(qPrintable(QString("splitter_state_iteration_%1").arg(i))) << state;
-    }
-    
-    // Edge cases
-    QTest::newRow("empty_state") << QByteArray();
-    QTest::newRow("single_byte") << QByteArray(1, 'S');
-    QTest::newRow("large_state") << QByteArray(500, 'Y');
-}
-
-void TestSettingsManager::testSplitterStateRoundTrip()
-{
-    // Feature: settings-persistence, Property 3: Splitter State Round-Trip
-    
-    QFETCH(QByteArray, splitterState);
-    
-    // Create first SettingsManager and save the splitter state
-    {
-        SettingsManager settingsManager;
-        settingsManager.saveSplitterState(splitterState);
-        
-        // Verify hasSplitterState returns true after saving (unless empty)
-        if (!splitterState.isEmpty()) {
-            QVERIFY2(settingsManager.hasSplitterState(),
-                     "hasSplitterState() should return true after saving non-empty state");
-        }
-    }
-    
-    // Create a new SettingsManager instance - it should load the saved state
-    {
-        SettingsManager settingsManager;
-        QByteArray loadedState = settingsManager.loadSplitterState();
-        
-        // Property: The loaded state should equal the saved state
-        QVERIFY2(loadedState == splitterState,
-                 qPrintable(QString("Round-trip failed: saved %1 bytes, loaded %2 bytes")
-                           .arg(splitterState.size())
-                           .arg(loadedState.size())));
     }
 }
 

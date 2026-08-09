@@ -17,6 +17,29 @@
 #include <QStyle>
 #include <QFrame>
 
+namespace {
+
+/**
+ * @brief Gives a demo action a shortcut that displays but never fires.
+ *
+ * The menus on this page are specimens to be styled, not working commands.
+ * With the default Qt::WindowShortcut context their accelerators are live
+ * across the whole main window, so they collide with the real File and Edit
+ * menus - Qt then reports "Ambiguous shortcut overload" and fires neither,
+ * which silently breaks Ctrl+S, Ctrl+O, Ctrl+N and Ctrl+Q for the user.
+ *
+ * Qt::WidgetShortcut keeps the accelerator text visible in the menu (the
+ * whole point of the demonstration) while binding it to a widget that never
+ * takes focus, so it can never activate.
+ */
+void setDemoShortcut(QAction *action, QKeySequence::StandardKey key)
+{
+    action->setShortcut(key);
+    action->setShortcutContext(Qt::WidgetShortcut);
+}
+
+} // namespace
+
 MainWindowPage::MainWindowPage(QWidget *parent)
     : GalleryPage(parent)
 {
@@ -213,16 +236,16 @@ void MainWindowPage::setupMenuBar()
     QMenu *fileMenu = menuBar->addMenu(tr("&File"));
     
     QAction *newAction = fileMenu->addAction(style()->standardIcon(QStyle::SP_FileIcon), tr("&New"));
-    newAction->setShortcut(QKeySequence::New);
+    setDemoShortcut(newAction, QKeySequence::New);
     
     QAction *openAction = fileMenu->addAction(style()->standardIcon(QStyle::SP_DialogOpenButton), tr("&Open..."));
-    openAction->setShortcut(QKeySequence::Open);
+    setDemoShortcut(openAction, QKeySequence::Open);
     
     QAction *saveAction = fileMenu->addAction(style()->standardIcon(QStyle::SP_DialogSaveButton), tr("&Save"));
-    saveAction->setShortcut(QKeySequence::Save);
+    setDemoShortcut(saveAction, QKeySequence::Save);
     
     QAction *saveAsAction = fileMenu->addAction(tr("Save &As..."));
-    saveAsAction->setShortcut(QKeySequence::SaveAs);
+    setDemoShortcut(saveAsAction, QKeySequence::SaveAs);
     
     fileMenu->addSeparator();
     
@@ -236,24 +259,24 @@ void MainWindowPage::setupMenuBar()
     
     fileMenu->addSeparator();
     QAction *exitAction = fileMenu->addAction(tr("E&xit"));
-    exitAction->setShortcut(QKeySequence::Quit);
+    setDemoShortcut(exitAction, QKeySequence::Quit);
     
     // Edit menu
     QMenu *editMenu = menuBar->addMenu(tr("&Edit"));
     QAction *undoAction = editMenu->addAction(tr("&Undo"));
-    undoAction->setShortcut(QKeySequence::Undo);
+    setDemoShortcut(undoAction, QKeySequence::Undo);
     QAction *redoAction = editMenu->addAction(tr("&Redo"));
-    redoAction->setShortcut(QKeySequence::Redo);
+    setDemoShortcut(redoAction, QKeySequence::Redo);
     editMenu->addSeparator();
     QAction *cutAction = editMenu->addAction(tr("Cu&t"));
-    cutAction->setShortcut(QKeySequence::Cut);
+    setDemoShortcut(cutAction, QKeySequence::Cut);
     QAction *copyAction = editMenu->addAction(tr("&Copy"));
-    copyAction->setShortcut(QKeySequence::Copy);
+    setDemoShortcut(copyAction, QKeySequence::Copy);
     QAction *pasteAction = editMenu->addAction(tr("&Paste"));
-    pasteAction->setShortcut(QKeySequence::Paste);
+    setDemoShortcut(pasteAction, QKeySequence::Paste);
     editMenu->addSeparator();
     QAction *selectAllAction = editMenu->addAction(tr("Select &All"));
-    selectAllAction->setShortcut(QKeySequence::SelectAll);
+    setDemoShortcut(selectAllAction, QKeySequence::SelectAll);
     
     // View menu with checkable items
     QMenu *viewMenu = menuBar->addMenu(tr("&View"));
@@ -268,16 +291,16 @@ void MainWindowPage::setupMenuBar()
     // Zoom submenu
     QMenu *zoomMenu = viewMenu->addMenu(tr("&Zoom"));
     QAction *zoomInAction = zoomMenu->addAction(tr("Zoom &In"));
-    zoomInAction->setShortcut(QKeySequence::ZoomIn);
+    setDemoShortcut(zoomInAction, QKeySequence::ZoomIn);
     QAction *zoomOutAction = zoomMenu->addAction(tr("Zoom &Out"));
-    zoomOutAction->setShortcut(QKeySequence::ZoomOut);
+    setDemoShortcut(zoomOutAction, QKeySequence::ZoomOut);
     zoomMenu->addAction(tr("&Reset Zoom"));
     
     // Help menu
     QMenu *helpMenu = menuBar->addMenu(tr("&Help"));
     QAction *contentsAction = helpMenu->addAction(style()->standardIcon(QStyle::SP_DialogHelpButton), 
                         tr("&Contents"));
-    contentsAction->setShortcut(QKeySequence::HelpContents);
+    setDemoShortcut(contentsAction, QKeySequence::HelpContents);
     helpMenu->addSeparator();
     helpMenu->addAction(style()->standardIcon(QStyle::SP_MessageBoxInformation), 
                         tr("&About"));

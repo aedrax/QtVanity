@@ -152,6 +152,19 @@ private:
     void setupRecentProjectsMenu();
     void updateRecentProjectsMenu();
     void setupConnections();
+
+    /**
+     * @brief Removes the shortcut from every dock widget's Close action.
+     *
+     * Each closable QDockWidget installs a context-menu "Close" action bound
+     * to QKeySequence::Close at window scope. This window always holds at
+     * least two docks plus the demonstration dock in the gallery, so those
+     * bindings are mutually ambiguous and Qt disables all of them. Dropping
+     * the shortcut keeps the menu entries working and stops a dead binding
+     * from masking a real one.
+     */
+    void clearDockCloseShortcuts();
+
     void updateWindowTitle();
     void updateThemeActions();
 

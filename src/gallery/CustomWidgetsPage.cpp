@@ -29,11 +29,37 @@ void CustomWidgetsPage::setWidgetsEnabled(bool enabled)
     }
 }
 
+void CustomWidgetsPage::setPluginManager(PluginManager *pluginManager)
+{
+    if (!pluginManager || m_pluginManager == pluginManager) {
+        return;
+    }
+    m_pluginManager = pluginManager;
+    rebuildWidgets();
+}
+
 void CustomWidgetsPage::rebuildWidgets()
+{
+    clearContent();
+
+    // Rebuild widgets from current plugin state
+    setupWidgets();
+}
+
+void CustomWidgetsPage::releaseWidgets()
+{
+    // Tear the page down to nothing. The plugin libraries are about to be
+    // unloaded, so every widget they produced has to go first; the page is
+    // repopulated when pluginsLoaded() arrives.
+    clearContent();
+    setupEmptyState();
+}
+
+void CustomWidgetsPage::clearContent()
 {
     // Clear existing custom widgets list
     m_customWidgets.clear();
-    
+
     // Clear all existing content from the layout
     // Remove all widgets except the stretch at the end
     while (mainLayout()->count() > 1) {
@@ -43,9 +69,6 @@ void CustomWidgetsPage::rebuildWidgets()
         }
         delete item;
     }
-    
-    // Rebuild widgets from current plugin state
-    setupWidgets();
 }
 
 void CustomWidgetsPage::setupWidgets()

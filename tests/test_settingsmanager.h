@@ -25,9 +25,6 @@ private slots:
     void testBaseStyleRoundTrip();
     void testBaseStyleRoundTrip_data();
     
-    // Property 3: Splitter State Round-Trip
-    void testSplitterStateRoundTrip();
-    void testSplitterStateRoundTrip_data();
     
     // Unit tests for dock state API
     void testDockStateSaveStoresData();

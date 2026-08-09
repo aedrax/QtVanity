@@ -53,25 +53,6 @@ public:
      */
     bool hasWindowGeometry() const;
 
-    // Splitter state
-    /**
-     * @brief Saves the splitter state.
-     * @param state The state data from QSplitter::saveState().
-     */
-    void saveSplitterState(const QByteArray &state);
-
-    /**
-     * @brief Loads the saved splitter state.
-     * @return The saved state data, or empty QByteArray if none exists.
-     */
-    QByteArray loadSplitterState() const;
-
-    /**
-     * @brief Checks if splitter state has been saved.
-     * @return true if saved state exists, false otherwise.
-     */
-    bool hasSplitterState() const;
-
     // Dock state
     /**
      * @brief Saves the dock widget state.
@@ -109,6 +90,25 @@ public:
      * @return true if saved style exists, false otherwise.
      */
     bool hasBaseStyle() const;
+
+    // Theme mode
+    /**
+     * @brief Saves the theme mode preference.
+     * @param mode The ThemeManager::ThemeMode value as an int.
+     */
+    void saveThemeMode(int mode);
+
+    /**
+     * @brief Loads the saved theme mode preference.
+     * @return The saved mode as an int, or -1 if none has been saved.
+     */
+    int loadThemeMode() const;
+
+    /**
+     * @brief Checks if a theme mode has been saved.
+     * @return true if a saved mode exists, false otherwise.
+     */
+    bool hasThemeMode() const;
 
     // Plugin directory
     /**

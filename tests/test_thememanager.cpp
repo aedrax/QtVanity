@@ -1,6 +1,6 @@
 #include "test_thememanager.h"
 #include "ThemeManager.h"
-#include "StyleManager.h"
+#include "SettingsManager.h"
 
 #include <QSettings>
 #include <QSignalSpy>
@@ -39,8 +39,8 @@ void TestThemeManager::cleanup()
 
 void TestThemeManager::testDefaultModeIsSystem()
 {
-    StyleManager styleManager;
-    ThemeManager themeManager(&styleManager);
+    SettingsManager settings;
+    ThemeManager themeManager(&settings);
     
     // When no preference exists, default should be System
     QCOMPARE(themeManager.currentMode(), ThemeManager::ThemeMode::System);
@@ -48,8 +48,8 @@ void TestThemeManager::testDefaultModeIsSystem()
 
 void TestThemeManager::testSetThemeModeEmitsSignal()
 {
-    StyleManager styleManager;
-    ThemeManager themeManager(&styleManager);
+    SettingsManager settings;
+    ThemeManager themeManager(&settings);
     
     QSignalSpy spy(&themeManager, &ThemeManager::themeModeChanged);
     
@@ -61,8 +61,8 @@ void TestThemeManager::testSetThemeModeEmitsSignal()
 
 void TestThemeManager::testEffectiveThemeResolvesSystem()
 {
-    StyleManager styleManager;
-    ThemeManager themeManager(&styleManager);
+    SettingsManager settings;
+    ThemeManager themeManager(&settings);
     
     // Set to System mode
     themeManager.setThemeMode(ThemeManager::ThemeMode::System);
@@ -114,8 +114,8 @@ void TestThemeManager::testThemeModePersistenceRoundTrip()
     
     // Create first ThemeManager and set the mode
     {
-        StyleManager styleManager;
-        ThemeManager themeManager(&styleManager);
+        SettingsManager settings;
+        ThemeManager themeManager(&settings);
         themeManager.setThemeMode(originalMode);
         
         // Verify the mode was set
@@ -124,8 +124,8 @@ void TestThemeManager::testThemeModePersistenceRoundTrip()
     
     // Create a new ThemeManager instance - it should load the saved preference
     {
-        StyleManager styleManager;
-        ThemeManager themeManager(&styleManager);
+        SettingsManager settings;
+        ThemeManager themeManager(&settings);
         
         // Property: The loaded mode should equal the saved mode
         QVERIFY2(themeManager.currentMode() == originalMode,
@@ -162,8 +162,8 @@ void TestThemeManager::testSystemModeResolutionConsistency()
     QFETCH(int, iteration);
     Q_UNUSED(iteration);
     
-    StyleManager styleManager;
-    ThemeManager themeManager(&styleManager);
+    SettingsManager settings;
+    ThemeManager themeManager(&settings);
     
     // Set to System mode
     themeManager.setThemeMode(ThemeManager::ThemeMode::System);
@@ -190,22 +190,28 @@ void TestThemeManager::testSystemModeResolutionConsistency()
 
 /**
  * Feature: ui-theme-preference, Property 3: Theme Application Correctness
- * 
- * For any ThemeMode selection (Dark or Light), the applied stylesheet
- * should correspond to the selected mode's template.
+ *
+ * For any explicit ThemeMode selection (Dark or Light), that mode takes
+ * effect, and the application stylesheet - the channel the user's own QSS
+ * lives in - is left untouched.
+ *
+ * The second half is the regression guard. Themes used to be QSS templates
+ * pushed through qApp->setStyleSheet(), so switching theme silently discarded
+ * whatever the user had applied, and a missing template raised a modal error
+ * dialog that deadlocked this very suite.
  */
 void TestThemeManager::testThemeApplicationCorrectness_data()
 {
     QTest::addColumn<int>("themeModeValue");
-    QTest::addColumn<QString>("expectedTemplate");
-    
+    QTest::addColumn<QString>("themeName");
+
     // Generate 100+ test cases alternating between Dark and Light
     for (int i = 0; i < 50; ++i) {
-        QTest::newRow(qPrintable(QString("dark_application_%1").arg(i))) 
-            << static_cast<int>(ThemeManager::ThemeMode::Dark) 
+        QTest::newRow(qPrintable(QString("dark_application_%1").arg(i)))
+            << static_cast<int>(ThemeManager::ThemeMode::Dark)
             << QStringLiteral("dark");
-        QTest::newRow(qPrintable(QString("light_application_%1").arg(i))) 
-            << static_cast<int>(ThemeManager::ThemeMode::Light) 
+        QTest::newRow(qPrintable(QString("light_application_%1").arg(i)))
+            << static_cast<int>(ThemeManager::ThemeMode::Light)
             << QStringLiteral("light");
     }
 }
@@ -213,46 +219,33 @@ void TestThemeManager::testThemeApplicationCorrectness_data()
 void TestThemeManager::testThemeApplicationCorrectness()
 {
     // Feature: ui-theme-preference, Property 3: Theme Application Correctness
-    
+
     QFETCH(int, themeModeValue);
-    QFETCH(QString, expectedTemplate);
-    
+    QFETCH(QString, themeName);
+
     ThemeManager::ThemeMode mode = static_cast<ThemeManager::ThemeMode>(themeModeValue);
-    
-    // Create a temporary directory with test templates
-    QTemporaryDir tempDir;
-    QVERIFY(tempDir.isValid());
-    
-    // Create dark.qss template
-    QString darkContent = QStringLiteral("/* Dark Theme */\nQWidget { background-color: #2d2d2d; color: #ffffff; }");
-    QFile darkFile(tempDir.path() + QStringLiteral("/dark.qss"));
-    QVERIFY(darkFile.open(QIODevice::WriteOnly));
-    darkFile.write(darkContent.toUtf8());
-    darkFile.close();
-    
-    // Create light.qss template
-    QString lightContent = QStringLiteral("/* Light Theme */\nQWidget { background-color: #ffffff; color: #000000; }");
-    QFile lightFile(tempDir.path() + QStringLiteral("/light.qss"));
-    QVERIFY(lightFile.open(QIODevice::WriteOnly));
-    lightFile.write(lightContent.toUtf8());
-    lightFile.close();
-    
-    StyleManager styleManager;
-    styleManager.setTemplatesPath(tempDir.path());
-    
-    ThemeManager themeManager(&styleManager);
-    
-    // Set the theme mode
+
+    // Stand in for a stylesheet the user is editing.
+    const QString userStyleSheet =
+        QStringLiteral("/* user */ QPushButton { color: #123456; }");
+    qApp->setStyleSheet(userStyleSheet);
+
+    SettingsManager settings;
+    ThemeManager themeManager(&settings);
+
     themeManager.setThemeMode(mode);
-    
-    // Get the expected content
-    QString expectedContent = (expectedTemplate == QStringLiteral("dark")) ? darkContent : lightContent;
-    
-    // Property: The applied stylesheet should match the expected template
-    QVERIFY2(styleManager.currentStyleSheet() == expectedContent,
-             qPrintable(QString("Theme application incorrect for mode %1. Expected template: %2")
-                       .arg(static_cast<int>(mode))
-                       .arg(expectedTemplate)));
+
+    // Property: the requested appearance is the one in effect.
+    QCOMPARE(themeManager.currentMode(), mode);
+    QCOMPARE(themeManager.effectiveTheme(), mode);
+
+    // Property: the user's stylesheet survived the theme change untouched.
+    QVERIFY2(qApp->styleSheet() == userStyleSheet,
+             qPrintable(QString("Switching to the %1 theme modified the application "
+                                "stylesheet, discarding the user's QSS")
+                       .arg(themeName)));
+
+    qApp->setStyleSheet(QString());
 }
 
 
@@ -279,8 +272,8 @@ void TestThemeManager::testSystemThemeAutoUpdate()
     QFETCH(int, iteration);
     Q_UNUSED(iteration);
     
-    StyleManager styleManager;
-    ThemeManager themeManager(&styleManager);
+    SettingsManager settings;
+    ThemeManager themeManager(&settings);
     
     // Set to System mode
     themeManager.setThemeMode(ThemeManager::ThemeMode::System);
