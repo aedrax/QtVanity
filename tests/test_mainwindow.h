@@ -24,6 +24,9 @@ private slots:
     // Keyboard shortcut integrity
     void testNoAmbiguousShortcuts();
 
+    // Menu bar integrity
+    void testOnlyOneNativeMenuBar();
+
     // Live preview behaviour
     void testEditingDoesNotApplyWhenAutoApplyDisabled();
     void testAutoApplyIsDebounced();

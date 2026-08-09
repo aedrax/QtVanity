@@ -231,6 +231,13 @@ void MainWindowPage::setupMenuBar()
     
     // Create a menu bar with sample menus
     QMenuBar *menuBar = new QMenuBar(group);
+
+    // This one is a specimen to be styled, not the window's menu bar. macOS
+    // merges every native menu bar into the single global menu bar, so left
+    // native it both vanished from the gallery - the point of the group is to
+    // look at it - and put its inert File/Edit/View/Help into the system menu
+    // bar alongside the real ones, where picking Open did nothing.
+    menuBar->setNativeMenuBar(false);
     
     // File menu
     QMenu *fileMenu = menuBar->addMenu(tr("&File"));

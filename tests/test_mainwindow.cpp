@@ -428,6 +428,53 @@ void TestMainWindow::testNoAmbiguousShortcuts()
 }
 
 /**
+ * Test that exactly one menu bar in the window is a native menu bar.
+ *
+ * The Main Window gallery page builds a QMenuBar to demonstrate menu styling.
+ * On macOS every native menu bar is merged into the single global menu bar, so
+ * a second one both disappeared from the gallery - leaving that group empty,
+ * which defeats its purpose - and placed its inert File/Edit/View/Help
+ * alongside the real ones in the system menu bar, where choosing Open did
+ * nothing at all.
+ *
+ * Specimen menu bars must therefore set nativeMenuBar false.
+ */
+void TestMainWindow::testOnlyOneNativeMenuBar()
+{
+    MainWindow mainWindow;
+
+    // Assert the property this code controls: a specimen menu bar must never
+    // be native. Asserting instead that exactly one bar *is* native would be
+    // wrong, because whether any menu bar is native is a platform decision -
+    // under the offscreen platform used by this suite, none are.
+    //
+    // That also means this check only bites on platforms with a global menu
+    // bar (macOS). It is still worth having: it states the requirement, and it
+    // fails for anyone running the suite locally on a Mac.
+    QStringList offenders;
+    const QList<QMenuBar*> bars = mainWindow.findChildren<QMenuBar*>();
+    for (QMenuBar *bar : bars) {
+        if (bar == mainWindow.menuBar() || !bar->isNativeMenuBar()) {
+            continue;
+        }
+        offenders.append(bar->parentWidget()
+                         ? QString::fromLatin1(bar->parentWidget()->metaObject()->className())
+                         : QStringLiteral("no parent"));
+    }
+
+    QVERIFY2(offenders.isEmpty(),
+             qPrintable(QString("Specimen menu bars must not be native, or macOS merges "
+                                "them into the global menu bar where their inert actions "
+                                "shadow the real ones. Offenders: %1")
+                        .arg(offenders.join(", "))));
+
+    // There must still be a real menu bar carrying the application's commands.
+    QVERIFY2(mainWindow.menuBar() != nullptr, "MainWindow should have a menu bar");
+    QVERIFY2(!mainWindow.menuBar()->actions().isEmpty(),
+             "MainWindow's menu bar should have menus");
+}
+
+/**
  * Test that editing does not apply the stylesheet while Auto-Apply is off.
  *
  * MainWindow used to reapply the whole stylesheet from the contentsChanged
