@@ -62,6 +62,12 @@ public:
      */
     bool isBarVisible() const;
 
+    /**
+     * @brief Returns the index of the first match starting at or after @p position.
+     * @return That index, or 0 if @p position is past the last match.
+     */
+    int indexOfFirstMatchAtOrAfter(int position) const;
+
     // Search state
     /**
      * @brief Returns the current search text.
@@ -148,6 +154,11 @@ private slots:
     void onSearchTextChanged(const QString &text);
     void onCaseSensitivityChanged(bool checked);
     void updateHighlights();
+
+    /**
+     * @brief Re-runs the search after the document changed underneath us.
+     */
+    void onDocumentChanged();
     void updateMatchCountLabel();
 
 private:
@@ -181,6 +192,9 @@ private:
     int m_currentMatchIndex;
     bool m_caseSensitive;
     bool m_darkTheme;
+
+    /// True while this bar is editing the document, so it ignores its own changes.
+    bool m_replacing;
 
     // Highlight colors
     QColor m_matchHighlightColor;

@@ -145,6 +145,11 @@ public:
     static bool isValidVariableName(const QString &name);
 
     /**
+     * @brief Highest project-file format version this build can read and write.
+     */
+    static constexpr int CurrentProjectVersion = 1;
+
+    /**
      * @brief Checks if a value appears to be a color.
      * 
      * Recognizes hex color formats:

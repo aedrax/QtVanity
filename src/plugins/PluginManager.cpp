@@ -186,14 +186,28 @@ bool PluginManager::loadPlugin(const QString &filePath)
         return false;
     }
     
+    // Reject a name that is already taken. Inserting would overwrite the first
+    // plugin's interface while both stayed in the metadata list, so the gallery
+    // rendered two entries backed by one implementation.
+    const QString widgetName = interface->widgetName();
+    if (m_plugins.contains(widgetName)) {
+        QString errorMsg = QString("%1 declares widget name '%2', which is already provided by another plugin")
+                          .arg(QFileInfo(filePath).fileName(), widgetName);
+        m_errors.append(errorMsg);
+        emit pluginLoadError(filePath, errorMsg);
+        loader->unload();
+        delete loader;
+        return false;
+    }
+
     // Success - store loader and interface
     m_loaders.append(loader);
-    m_plugins.insert(interface->widgetName(), interface);
-    
+    m_plugins.insert(widgetName, interface);
+
     // Extract metadata
     PluginMetadata metadata;
     metadata.filePath = filePath;
-    metadata.name = interface->widgetName();
+    metadata.name = widgetName;
     metadata.description = interface->widgetDescription();
     metadata.icon = interface->widgetIcon();
     // Assign default "Custom" category if plugin returns empty category

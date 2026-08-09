@@ -148,15 +148,6 @@ public:
     void setDefaultStyleMarker(const QString &styleName);
 
     /**
-     * @brief Inserts a variable reference at the current cursor position.
-     * @param name The variable name to insert as a reference.
-     * 
-     * Inserts the formatted reference ${name} at the cursor position.
-     * If the variable name is empty, nothing is inserted.
-     */
-    void insertVariableReference(const QString &name);
-
-    /**
      * @brief Sets the syntax highlighter color scheme.
      * @param dark true for dark background colors, false for light.
      */

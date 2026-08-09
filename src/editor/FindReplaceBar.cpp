@@ -27,6 +27,7 @@ FindReplaceBar::FindReplaceBar(QTextEdit *editor, QWidget *parent)
     , m_currentMatchIndex(-1)
     , m_caseSensitive(false)
     , m_darkTheme(false)
+    , m_replacing(false)
     , m_matchHighlightColor(QColor("#FFFF00"))        // Yellow for light theme
     , m_currentMatchHighlightColor(QColor("#FF9632")) // Orange for light theme
 {
@@ -163,6 +164,45 @@ void FindReplaceBar::setupConnections()
             this, &FindReplaceBar::replaceCurrent);
     connect(m_replaceAllButton, &QPushButton::clicked,
             this, &FindReplaceBar::replaceAll);
+
+    // Keep results current while the bar is open. Stored cursors follow edits,
+    // but text typed after the search ran was never matched at all.
+    if (m_editor && m_editor->document()) {
+        connect(m_editor->document(), &QTextDocument::contentsChanged,
+                this, &FindReplaceBar::onDocumentChanged);
+    }
+}
+
+void FindReplaceBar::onDocumentChanged()
+{
+    // Ignore edits we are making ourselves, and any while the bar is hidden.
+    if (m_replacing || !QWidget::isVisible() || m_searchInput->text().isEmpty()) {
+        return;
+    }
+
+    const int caret = m_editor->textCursor().position();
+
+    m_matches.clear();
+    QString searchStr = m_searchInput->text();
+    QTextDocument *doc = m_editor->document();
+    QTextDocument::FindFlags flags;
+    if (m_caseSensitive) {
+        flags |= QTextDocument::FindCaseSensitively;
+    }
+
+    QTextCursor cursor(doc);
+    while (!cursor.isNull() && !cursor.atEnd()) {
+        cursor = doc->find(searchStr, cursor, flags);
+        if (!cursor.isNull()) {
+            m_matches.append(cursor);
+        }
+    }
+
+    // Re-anchor to where the user is rather than yanking them to match one.
+    m_currentMatchIndex = m_matches.isEmpty() ? -1 : indexOfFirstMatchAtOrAfter(caret);
+
+    updateMatchCountLabel();
+    highlightMatches();
 }
 
 // === Mode Control ===
@@ -298,28 +338,43 @@ void FindReplaceBar::replaceCurrent()
     if (m_matches.isEmpty() || m_currentMatchIndex < 0 || m_currentMatchIndex >= m_matches.count()) {
         return;
     }
-    
+
+    m_replacing = true;
     QTextCursor cursor = m_matches[m_currentMatchIndex];
     cursor.beginEditBlock();
     cursor.removeSelectedText();
     cursor.insertText(m_replaceInput->text());
     cursor.endEditBlock();
-    
+
+    m_replacing = false;
+
+    // Where the replacement left off. performSearch() resets the index to the
+    // first match, so without this the caret jumps back to the top of the
+    // document after every replacement and the user walks backwards.
+    const int resumeFrom = cursor.position();
+
     // Re-search to update matches
     performSearch();
-    
-    // Navigate to next match if any remain
+
     if (!m_matches.isEmpty()) {
-        // Adjust index if needed (current was removed)
-        if (m_currentMatchIndex >= m_matches.count()) {
-            m_currentMatchIndex = 0;
-        }
+        m_currentMatchIndex = indexOfFirstMatchAtOrAfter(resumeFrom);
         selectCurrentMatch();
         scrollToCurrentMatch();
     }
-    
+
     updateMatchCountLabel();
     highlightMatches();
+}
+
+int FindReplaceBar::indexOfFirstMatchAtOrAfter(int position) const
+{
+    for (int i = 0; i < m_matches.count(); ++i) {
+        if (m_matches[i].selectionStart() >= position) {
+            return i;
+        }
+    }
+    // Past the last match: wrap to the beginning.
+    return 0;
 }
 
 void FindReplaceBar::replaceAll()
@@ -332,6 +387,7 @@ void FindReplaceBar::replaceAll()
     QString replacementText = m_replaceInput->text();
     
     // Use a single edit block for atomic undo
+    m_replacing = true;
     QTextCursor cursor(m_editor->document());
     cursor.beginEditBlock();
     
@@ -343,7 +399,8 @@ void FindReplaceBar::replaceAll()
     }
     
     cursor.endEditBlock();
-    
+    m_replacing = false;
+
     // Re-search to update matches (should be empty now)
     performSearch();
     

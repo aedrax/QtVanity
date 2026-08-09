@@ -141,7 +141,7 @@ bool VariableManager::saveProject(const QString &filePath, const QString &qssTem
     }
 
     QJsonObject root;
-    root[QStringLiteral("version")] = 1;
+    root[QStringLiteral("version")] = CurrentProjectVersion;
     
     // Save variables
     QJsonObject varsObj;
@@ -193,26 +193,52 @@ bool VariableManager::loadProject(const QString &filePath, QString &qssTemplate)
     }
     
     QJsonObject root = doc.object();
-    
+
     // Check version
     if (!root.contains(QStringLiteral("version"))) {
         emit loadError(tr("Missing required field: version"));
         return false;
     }
-    
-    // Load variables
+
+    const int version = root[QStringLiteral("version")].toInt(-1);
+    if (version < 1 || version > CurrentProjectVersion) {
+        emit loadError(tr("Unsupported project version: %1 (this build understands up to %2)")
+                       .arg(root[QStringLiteral("version")].toVariant().toString())
+                       .arg(CurrentProjectVersion));
+        return false;
+    }
+
+    // A project without a template is almost certainly a wrong or damaged file;
+    // silently loading it presented the user with a blank editor and no reason.
+    if (!root.contains(QStringLiteral("qssTemplate"))) {
+        emit loadError(tr("Missing required field: qssTemplate"));
+        return false;
+    }
+
+    // Load variables, skipping any name the panel could not represent.
     m_variables.clear();
+    QStringList rejected;
     if (root.contains(QStringLiteral("variables"))) {
         QJsonObject varsObj = root[QStringLiteral("variables")].toObject();
         for (auto it = varsObj.constBegin(); it != varsObj.constEnd(); ++it) {
+            if (!isValidVariableName(it.key())) {
+                rejected.append(it.key());
+                continue;
+            }
             m_variables[it.key()] = it.value().toString();
         }
     }
-    
+
     // Load template
     qssTemplate = root[QStringLiteral("qssTemplate")].toString();
-    
+
     emit projectLoaded();
+
+    if (!rejected.isEmpty()) {
+        emit loadError(tr("Ignored %n variable(s) with invalid names: %1", "", rejected.size())
+                       .arg(rejected.join(QStringLiteral(", "))));
+    }
+
     return true;
 }
 

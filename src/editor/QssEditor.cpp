@@ -7,6 +7,8 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QFontDatabase>
+#include <QScrollBar>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -54,10 +56,10 @@ void QssEditor::setupUi()
     m_textEdit->setPlaceholderText(tr("Enter QSS code here..."));
     m_textEdit->setTabStopDistance(40); // 4 spaces equivalent
     
-    // Set a monospace font for code editing
-    QFont font("Monospace");
+    // Use the platform's fixed-pitch font. "Monospace" is an X11 alias that
+    // does not resolve on macOS or Windows, forcing a fallback lookup.
+    QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     font.setStyleHint(QFont::Monospace);
-    font.setPointSize(10);
     m_textEdit->setFont(font);
 
     // Attach syntax highlighter
@@ -259,21 +261,28 @@ void QssEditor::apply()
         emit styleModeChanged(true);
     }
     
-    // Store cursor position before applying
-    int cursorPosition = m_textEdit->textCursor().position();
-    
+    // Store the whole selection and the scroll offset, not just the caret.
+    // Restoring position alone collapsed any selection the user had made,
+    // which with Auto-Apply on happened while they were still working.
+    const QTextCursor before = m_textEdit->textCursor();
+    const int anchor = before.anchor();
+    const int position = before.position();
+    const int scrollValue = m_textEdit->verticalScrollBar()->value();
+
     // Set flag to indicate we're applying (for cursor preservation)
     m_isApplying = true;
-    
+
     // Emit the apply request
     emit applyRequested(m_textEdit->toPlainText());
-    
-    // Restore cursor position
+
+    // Restore selection and scroll position
+    const int maxPos = m_textEdit->toPlainText().length();
     QTextCursor cursor = m_textEdit->textCursor();
-    int maxPos = m_textEdit->toPlainText().length();
-    cursor.setPosition(qMin(cursorPosition, maxPos));
+    cursor.setPosition(qMin(anchor, maxPos));
+    cursor.setPosition(qMin(position, maxPos), QTextCursor::KeepAnchor);
     m_textEdit->setTextCursor(cursor);
-    
+    m_textEdit->verticalScrollBar()->setValue(scrollValue);
+
     m_isApplying = false;
 }
 
@@ -404,23 +413,6 @@ void QssEditor::setDefaultStyleMarker(const QString &styleName)
     }
 }
 
-void QssEditor::insertVariableReference(const QString &name)
-{
-    if (name.isEmpty()) {
-        return;
-    }
-    
-    // Format the variable reference as ${name}
-    QString reference = QStringLiteral("${%1}").arg(name);
-    
-    // Insert at current cursor position
-    QTextCursor cursor = m_textEdit->textCursor();
-    cursor.insertText(reference);
-    
-    // Verify the text edit has focus after insertion
-    m_textEdit->setFocus();
-}
-
 void QssEditor::setDarkColorScheme(bool dark)
 {
     if (m_highlighter) {
@@ -529,7 +521,10 @@ void QssEditor::setupFindReplaceShortcuts()
         }
     });
     
-    // Escape - Hide find/replace bar
+    // Escape - Hide find/replace bar. Scoped to this widget and its children:
+    // at window scope it swallowed Escape everywhere in the main window, even
+    // with the bar hidden.
     QShortcut *escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    escapeShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(escapeShortcut, &QShortcut::activated, this, &QssEditor::hideFindReplaceBar);
 }
