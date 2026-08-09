@@ -114,7 +114,7 @@ void CustomWidgetsPage::setupEmptyState()
         "1. Create a Qt plugin implementing WidgetPluginInterface\n"
         "2. Place the plugin file (.so, .dll, or .dylib) in the plugins directory\n"
         "3. Use View → Refresh Plugins or restart the application\n\n"
-        "The plugins directory can be configured in the application settings."
+        "The plugins directory is set under File → Plugin Directory."
     ));
     messageLabel->setWordWrap(true);
     groupLayout->addWidget(messageLabel);

@@ -64,12 +64,14 @@ void FindReplaceBar::setupUi()
     // Previous button
     m_prevButton = new QPushButton(tr("◀"), this);
     m_prevButton->setToolTip(tr("Previous match (Shift+Enter)"));
+    m_prevButton->setAccessibleName(tr("Previous match"));
     m_prevButton->setFixedWidth(30);
     m_prevButton->setEnabled(false);
 
     // Next button
     m_nextButton = new QPushButton(tr("▶"), this);
     m_nextButton->setToolTip(tr("Next match (Enter)"));
+    m_nextButton->setAccessibleName(tr("Next match"));
     m_nextButton->setFixedWidth(30);
     m_nextButton->setEnabled(false);
 
@@ -77,6 +79,7 @@ void FindReplaceBar::setupUi()
     m_caseSensitiveButton = new QToolButton(this);
     m_caseSensitiveButton->setText(tr("Aa"));
     m_caseSensitiveButton->setToolTip(tr("Match Case"));
+    m_caseSensitiveButton->setAccessibleName(tr("Match case"));
     m_caseSensitiveButton->setCheckable(true);
     m_caseSensitiveButton->setChecked(false);
 
@@ -89,6 +92,7 @@ void FindReplaceBar::setupUi()
     m_closeButton = new QToolButton(this);
     m_closeButton->setText(tr("✕"));
     m_closeButton->setToolTip(tr("Close (Escape)"));
+    m_closeButton->setAccessibleName(tr("Close find bar"));
 
     // Add widgets to find layout
     findLayout->addWidget(m_searchInput);

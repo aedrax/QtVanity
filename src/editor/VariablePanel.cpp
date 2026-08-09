@@ -8,11 +8,13 @@
 #include <QHeaderView>
 #include <QColorDialog>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
 
 VariablePanel::VariablePanel(QWidget *parent)
     : QWidget(parent)
     , m_variableManager(nullptr)
+    , m_filterEdit(nullptr)
     , m_variableTable(nullptr)
     , m_updatingTable(false)
 {
@@ -40,6 +42,15 @@ void VariablePanel::setupUi()
     titleLabel->setFont(titleFont);
     mainLayout->addWidget(titleLabel);
 
+    // The shipped templates carry 28-44 variables; a list that long needs a
+    // way to narrow it.
+    m_filterEdit = new QLineEdit(this);
+    m_filterEdit->setPlaceholderText(tr("Filter variables..."));
+    m_filterEdit->setClearButtonEnabled(true);
+    m_filterEdit->setAccessibleName(tr("Filter variables"));
+    connect(m_filterEdit, &QLineEdit::textChanged, this, &VariablePanel::setFilter);
+    mainLayout->addWidget(m_filterEdit);
+
     // Variable table with 5 columns: Delete, Name, Value, Color, Insert
     m_variableTable = new QTableWidget(this);
     m_variableTable->setColumnCount(5);
@@ -52,8 +63,9 @@ void VariablePanel::setupUi()
     // Name and Value columns - interactive
     m_variableTable->horizontalHeader()->setSectionResizeMode(COL_NAME, QHeaderView::Interactive);
     m_variableTable->horizontalHeader()->setSectionResizeMode(COL_VALUE, QHeaderView::Interactive);
-    m_variableTable->horizontalHeader()->resizeSection(COL_NAME, 70);
-    m_variableTable->horizontalHeader()->resizeSection(COL_VALUE, 70);
+    // 70px could not show "destructive-foreground" or anything like it.
+    m_variableTable->horizontalHeader()->resizeSection(COL_NAME, 150);
+    m_variableTable->horizontalHeader()->resizeSection(COL_VALUE, 110);
     
     // Color column - fixed width
     m_variableTable->horizontalHeader()->setSectionResizeMode(COL_COLOR, QHeaderView::Fixed);
@@ -130,6 +142,12 @@ void VariablePanel::onItemChanged(QTableWidgetItem *item)
         if (col == COL_NAME || col == COL_VALUE) {
             tryCreateVariableFromEmptyRow(row);
         }
+    } else if (col == COL_NAME) {
+        const QString oldName = item->data(Qt::UserRole).toString();
+        const QString newName = item->text().trimmed();
+        if (!oldName.isEmpty() && newName != oldName) {
+            tryRenameVariable(row, oldName, newName);
+        }
     } else {
         // Handle existing variable value change
         if (col == COL_VALUE) {
@@ -182,6 +200,67 @@ void VariablePanel::tryCreateVariableFromEmptyRow(int row)
     // Create the variable - this will trigger onVariableChanged which converts
     // the empty row to a proper variable row and adds a new empty row
     m_variableManager->setVariable(name, value);
+}
+
+bool VariablePanel::tryRenameVariable(int row, const QString &oldName, const QString &newName)
+{
+    QTableWidgetItem *nameItem = m_variableTable->item(row, COL_NAME);
+    auto revert = [&](const QString &title, const QString &message) {
+        QMessageBox::warning(this, title, message);
+        m_updatingTable = true;
+        if (nameItem) {
+            nameItem->setText(oldName);
+        }
+        m_updatingTable = false;
+        return false;
+    };
+
+    if (newName.isEmpty() || !VariableManager::isValidVariableName(newName)) {
+        return revert(tr("Invalid Name"),
+                      tr("Variable name must start with a letter or underscore "
+                         "and contain only letters, numbers, underscores, or hyphens."));
+    }
+    if (m_variableManager->hasVariable(newName)) {
+        return revert(tr("Duplicate Name"),
+                      tr("A variable named '%1' already exists.").arg(newName));
+    }
+
+    const QString value = m_variableManager->variable(oldName);
+
+    m_updatingTable = true;
+    nameItem->setData(Qt::UserRole, newName);
+    m_updatingTable = false;
+
+    // Remove then add, so the manager emits the pair of signals the rest of
+    // the app already listens to.
+    m_variableManager->removeVariable(oldName);
+    m_variableManager->setVariable(newName, value);
+
+    // References in the template still say ${oldName}; only the document's
+    // owner can rewrite them.
+    emit variableRenamed(oldName, newName);
+    return true;
+}
+
+void VariablePanel::setFilter(const QString &text)
+{
+    const QString needle = text.trimmed();
+    const int lastRow = m_variableTable->rowCount() - 1;
+
+    for (int row = 0; row < lastRow; ++row) {
+        const QTableWidgetItem *nameItem = m_variableTable->item(row, COL_NAME);
+        const QTableWidgetItem *valueItem = m_variableTable->item(row, COL_VALUE);
+        const bool matches =
+            needle.isEmpty() ||
+            (nameItem && nameItem->text().contains(needle, Qt::CaseInsensitive)) ||
+            (valueItem && valueItem->text().contains(needle, Qt::CaseInsensitive));
+        m_variableTable->setRowHidden(row, !matches);
+    }
+
+    // Keep the "add a variable" row reachable while filtering.
+    if (lastRow >= 0) {
+        m_variableTable->setRowHidden(lastRow, false);
+    }
 }
 
 void VariablePanel::onCellClicked(int row, int column)
@@ -303,7 +382,9 @@ void VariablePanel::onVariableChanged(const QString &name, const QString &value)
         createRowButtons(row, name);
         
         QTableWidgetItem *nameItem = new QTableWidgetItem(name);
-        nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
+        // Editable: renaming was previously impossible, so a typo meant
+        // deleting the variable and retyping it along with its value.
+        nameItem->setData(Qt::UserRole, name);
         m_variableTable->setItem(row, COL_NAME, nameItem);
         
         QTableWidgetItem *valueItem = new QTableWidgetItem(value);
@@ -328,18 +409,29 @@ void VariablePanel::onVariableChanged(const QString &name, const QString &value)
 
 void VariablePanel::createRowButtons(int row, const QString &name)
 {
-    Q_UNUSED(name);
     
     // Create delete button - let it size naturally
-    QPushButton *deleteBtn = new QPushButton(QStringLiteral("×"), this);
+    QPushButton *deleteBtn = new QPushButton(QStringLiteral("\u00d7"), this);
     deleteBtn->setToolTip(tr("Delete this variable"));
-    deleteBtn->setStyleSheet(QStringLiteral("QPushButton { color: #c00; font-weight: bold; padding: 2px; margin: 0; }"));
+    deleteBtn->setAccessibleName(tr("Delete variable %1").arg(name));
+    // Take the destructive colour from the palette. A hardcoded #c00 survives
+    // every theme change and can disappear against a dark red background.
+    {
+        QPalette deletePalette = deleteBtn->palette();
+        deletePalette.setColor(QPalette::ButtonText,
+                               deleteBtn->palette().color(QPalette::BrightText));
+        deleteBtn->setPalette(deletePalette);
+        QFont boldFont = deleteBtn->font();
+        boldFont.setBold(true);
+        deleteBtn->setFont(boldFont);
+    }
     connect(deleteBtn, &QPushButton::clicked, this, &VariablePanel::onRowDeleteClicked);
     m_variableTable->setCellWidget(row, COL_DELETE, deleteBtn);
     
     // Create insert button - let it size naturally
-    QPushButton *insertBtn = new QPushButton(QStringLiteral("→"), this);
+    QPushButton *insertBtn = new QPushButton(QStringLiteral("\u2192"), this);
     insertBtn->setToolTip(tr("Insert variable reference at cursor"));
+    insertBtn->setAccessibleName(tr("Insert reference to %1 at the cursor").arg(name));
     insertBtn->setStyleSheet(QStringLiteral("QPushButton { padding: 2px; margin: 0; }"));
     connect(insertBtn, &QPushButton::clicked, this, &VariablePanel::onRowInsertClicked);
     m_variableTable->setCellWidget(row, COL_INSERT, insertBtn);
@@ -423,7 +515,7 @@ void VariablePanel::refreshVariableList()
             createRowButtons(row, it.key());
             
             QTableWidgetItem *nameItem = new QTableWidgetItem(it.key());
-            nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
+            nameItem->setData(Qt::UserRole, it.key());
             m_variableTable->setItem(row, COL_NAME, nameItem);
             
             QTableWidgetItem *valueItem = new QTableWidgetItem(it.value());

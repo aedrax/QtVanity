@@ -74,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_cursorPositionLabel(nullptr)
     , m_undefinedVariablesLabel(nullptr)
     , m_previewStateLabel(nullptr)
+    , m_templateNameLabel(nullptr)
     , m_projectModified(false)
 {
     // Create settings manager first
@@ -149,6 +150,21 @@ MainWindow::MainWindow(QWidget *parent)
     // Restore saved window geometry if available
     if (m_settingsManager->hasWindowGeometry()) {
         restoreGeometry(m_settingsManager->loadWindowGeometry());
+    }
+
+    // On a genuinely first run, load a starter template. An empty editor over
+    // an unstyled gallery gives no hint that the most interesting thing this
+    // program does - type a colour, watch two hundred widgets change - is
+    // available at all.
+    if (m_settingsManager->recentProjects().isEmpty() &&
+        !m_settingsManager->hasWindowGeometry()) {
+        const QStringList templates = m_styleManager->availableTemplates();
+        for (const QString &preferred : {QStringLiteral("shadcn"), QStringLiteral("dark")}) {
+            if (templates.contains(preferred)) {
+                onLoadTemplate(preferred);
+                break;
+            }
+        }
     }
 
     updateWindowTitle();
@@ -432,9 +448,14 @@ void MainWindow::setupTemplatesSubmenu(QMenu *parentMenu)
         QAction *noTemplates = m_templatesMenu->addAction(tr("(No templates available)"));
         noTemplates->setEnabled(false);
     } else {
-        // Add action for each template
+        // Add action for each template, checkable so the active one is marked.
+        QActionGroup *templateGroup = new QActionGroup(this);
+        templateGroup->setExclusive(true);
         for (const QString &templateName : templates) {
             QAction *templateAction = m_templatesMenu->addAction(templateName);
+            templateAction->setCheckable(true);
+            templateAction->setData(templateName);
+            templateGroup->addAction(templateAction);
             connect(templateAction, &QAction::triggered, this, [this, templateName]() {
                 onLoadTemplate(templateName);
             });
@@ -469,7 +490,13 @@ void MainWindow::updateRecentProjectsMenu()
         // Add action for each recent project
         for (const QString &filePath : projects) {
             QFileInfo fileInfo(filePath);
-            QAction *action = m_recentProjectsMenu->addAction(fileInfo.fileName());
+            // Show the parent directory too: two projects called theme.qvp are
+            // otherwise indistinguishable until you hover for the tooltip.
+            const QString parent = fileInfo.dir().dirName();
+            const QString label = parent.isEmpty()
+                                  ? fileInfo.fileName()
+                                  : QStringLiteral("%1/%2").arg(parent, fileInfo.fileName());
+            QAction *action = m_recentProjectsMenu->addAction(label);
             action->setToolTip(filePath);  // Full path as tooltip
             action->setStatusTip(filePath);
             connect(action, &QAction::triggered, this, [this, filePath]() {
@@ -499,6 +526,8 @@ void MainWindow::setupConnections()
     m_cursorPositionLabel = new QLabel(this);
     m_undefinedVariablesLabel = new QLabel(this);
     m_previewStateLabel = new QLabel(this);
+    m_templateNameLabel = new QLabel(this);
+    statusBar()->addPermanentWidget(m_templateNameLabel);
     statusBar()->addPermanentWidget(m_undefinedVariablesLabel);
     statusBar()->addPermanentWidget(m_cursorPositionLabel);
     statusBar()->addPermanentWidget(m_previewStateLabel);
@@ -629,6 +658,29 @@ void MainWindow::setupConnections()
                 setProjectModified(true);
             });
 
+    // Renaming a variable has to rewrite its references, or the template is
+    // left pointing at a name that no longer exists.
+    connect(m_variablePanel, &VariablePanel::variableRenamed,
+            this, [this](const QString &oldName, const QString &newName) {
+                const QString before = m_editor->qssText();
+                QString after = before;
+                after.replace(QStringLiteral("${%1}").arg(oldName),
+                              QStringLiteral("${%1}").arg(newName));
+                if (after != before) {
+                    // Preserve the caret: setQssText() replaces the document.
+                    CodeEditor *edit = m_editor->textEdit();
+                    const int caret = edit->textCursor().position();
+                    m_editor->setQssText(after);
+                    QTextCursor cursor = edit->textCursor();
+                    cursor.setPosition(qMin(caret, after.length()));
+                    edit->setTextCursor(cursor);
+
+                    setProjectModified(true);
+                    onRegenerateStyle();
+                }
+                updateStatusIndicators();
+            });
+
     // Connect variable insertion from panel to editor
     // The signal emits the formatted reference (e.g., "${name}"), so we insert it directly
     connect(m_variablePanel, &VariablePanel::variableInsertRequested,
@@ -638,6 +690,18 @@ void MainWindow::setupConnections()
                 cursor.insertText(reference);
                 m_editor->textEdit()->setFocus();
             });
+}
+
+void MainWindow::updateTemplateMenuState()
+{
+    if (!m_templatesMenu) {
+        return;
+    }
+    for (QAction *action : m_templatesMenu->actions()) {
+        if (action->isCheckable()) {
+            action->setChecked(action->data().toString() == m_currentTemplateName);
+        }
+    }
 }
 
 void MainWindow::updateStatusIndicators()
@@ -662,6 +726,15 @@ void MainWindow::updateStatusIndicators()
         m_undefinedVariablesLabel->setText(
             tr("%n undefined variable(s)", "", undefined.size()));
         m_undefinedVariablesLabel->setToolTip(undefined.join(QStringLiteral(", ")));
+    }
+
+    if (!m_currentTemplateName.isEmpty()) {
+        m_templateNameLabel->setText(m_currentTemplateName);
+        m_templateNameLabel->setToolTip(tr("Loaded from the '%1' template")
+                                        .arg(m_currentTemplateName));
+    } else {
+        m_templateNameLabel->clear();
+        m_templateNameLabel->setToolTip(QString());
     }
 
     const bool live = m_editor->isAutoApplyEnabled();
@@ -778,6 +851,8 @@ void MainWindow::clearProject()
 
     m_currentProjectPath.clear();
     m_currentFilePath.clear();
+    m_currentTemplateName.clear();
+    updateTemplateMenuState();
     m_projectModified = false;
     m_editor->markAsSaved();
 
@@ -895,11 +970,14 @@ void MainWindow::onLoadTemplate(const QString &templateName)
         m_currentFilePath.clear();
         m_projectModified = false;
         m_editor->markAsSaved();
+        m_currentTemplateName = templateName;
+        updateTemplateMenuState();
         updateWindowTitle();
-        
+
         // Apply the loaded style
         onRegenerateStyle();
-        
+        updateStatusIndicators();
+
         statusBar()->showMessage(tr("Template '%1' loaded").arg(templateName), 2000);
     }
     // Error handling is done via VariableManager signals (onProjectLoadError)
@@ -955,10 +1033,11 @@ void MainWindow::onAbout()
         this,
         tr("About QtVanity"),
         tr("<h3>QtVanity</h3>"
-           "<p>Version 1.0</p>"
+           "<p>Version %1</p>"
            "<p>A QSS (Qt Style Sheets) editor and widget demonstration tool "
            "for Qt developers and designers.</p>"
-           "<p>Built with Qt %1</p>").arg(qVersion())
+           "<p>Built with Qt %2</p>")
+           .arg(QCoreApplication::applicationVersion(), QString::fromLatin1(qVersion()))
     );
 }
 

@@ -146,6 +146,11 @@ private slots:
     // Status bar indicators
     void updateStatusIndicators();
 
+    /**
+     * @brief Marks the loaded template in the Load Template submenu.
+     */
+    void updateTemplateMenuState();
+
 private:
     void setupCentralWidget();
     void setupToolBar();
@@ -251,9 +256,13 @@ private:
     QLabel *m_cursorPositionLabel;
     QLabel *m_undefinedVariablesLabel;
     QLabel *m_previewStateLabel;
+    QLabel *m_templateNameLabel;
 
     QString m_currentFilePath;
     QString m_currentProjectPath;
+
+    /// Name of the template the current content came from, if any.
+    QString m_currentTemplateName;
     bool m_projectModified;
 };
 
