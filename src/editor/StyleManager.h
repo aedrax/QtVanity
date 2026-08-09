@@ -4,14 +4,17 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QPointer>
+
+class QWidget;
 
 /**
  * @brief Manages stylesheet loading, saving, and application.
- * 
+ *
  * The StyleManager is responsible for:
- * - Loading QSS files from disk and applying them to the application
+ * - Loading QSS files from disk and applying them to the preview target
  * - Saving stylesheet content to .qss files
- * - Providing predefined style templates (Dark, Light, Solarized)
+ * - Providing predefined style templates
  * - Tracking the current stylesheet state
  */
 class StyleManager : public QObject
@@ -26,10 +29,42 @@ public:
     explicit StyleManager(QObject *parent = nullptr);
 
     /**
-     * @brief Applies a stylesheet to the entire application.
+     * @brief Applies a stylesheet to the current preview target.
      * @param qss The QSS content to apply.
+     *
+     * Goes to the widget set by setPreviewTarget(), or to the whole
+     * application if no target is set or applyToApplication() is true.
      */
     void applyStyleSheet(const QString &qss);
+
+    /**
+     * @brief Sets the widget the preview is applied to.
+     * @param target The widget to style, or nullptr for the application.
+     *
+     * Confining the preview to one widget means a stylesheet under test cannot
+     * make the rest of the program unreadable - which, with a rule as ordinary
+     * as `QWidget { color: black; }` on a dark theme, it otherwise can.
+     */
+    void setPreviewTarget(QWidget *target);
+
+    /**
+     * @brief Returns the widget the preview is applied to, or nullptr.
+     */
+    QWidget* previewTarget() const;
+
+    /**
+     * @brief Sets whether the preview covers the whole application.
+     * @param enabled true to style everything, false to style only the target.
+     *
+     * Application-wide is the only way to preview rules for QMainWindow,
+     * QDockWidget, QMenuBar and QStatusBar, so it stays available as a choice.
+     */
+    void setApplyToApplication(bool enabled);
+
+    /**
+     * @brief Returns whether the preview covers the whole application.
+     */
+    bool applyToApplication() const;
 
     /**
      * @brief Loads QSS content from a file.
@@ -151,8 +186,17 @@ signals:
     void styleChangeError(const QString &error);
 
 private:
+    /**
+     * @brief Sends @p qss to whichever destination is currently selected.
+     */
+    void routeStyleSheet(const QString &qss);
+
     QString m_templatesPath;
     QString m_currentStyleSheet;
+
+    /// QPointer: the target is a widget this object does not own.
+    QPointer<QWidget> m_previewTarget;
+    bool m_applyToApplication;
     QString m_currentStyle;
     QString m_defaultStyle;
 };

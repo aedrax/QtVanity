@@ -2,6 +2,7 @@
 #include "VariableManager.h"
 
 #include <QApplication>
+#include <QWidget>
 #include <QFile>
 #include <QSaveFile>
 #include <QTextStream>
@@ -13,6 +14,10 @@
 
 StyleManager::StyleManager(QObject *parent)
     : QObject(parent)
+    , m_previewTarget(nullptr)
+    // Defaults to the whole application so a StyleManager used on its own
+    // behaves as before; MainWindow narrows it to the gallery.
+    , m_applyToApplication(true)
 {
     // Detect the platform default style at startup
     QStyle *appStyle = QApplication::style();
@@ -67,8 +72,57 @@ StyleManager::StyleManager(QObject *parent)
 void StyleManager::applyStyleSheet(const QString &qss)
 {
     m_currentStyleSheet = qss;
-    qApp->setStyleSheet(qss);
+    routeStyleSheet(qss);
     emit styleApplied();
+}
+
+void StyleManager::routeStyleSheet(const QString &qss)
+{
+    const bool wholeApplication = m_applyToApplication || !m_previewTarget;
+
+    if (wholeApplication) {
+        if (m_previewTarget) {
+            m_previewTarget->setStyleSheet(QString());
+        }
+        qApp->setStyleSheet(qss);
+    } else {
+        // Clear the application sheet first, or the previous global preview
+        // would keep showing through underneath the scoped one.
+        qApp->setStyleSheet(QString());
+        m_previewTarget->setStyleSheet(qss);
+    }
+}
+
+void StyleManager::setPreviewTarget(QWidget *target)
+{
+    if (m_previewTarget == target) {
+        return;
+    }
+
+    if (m_previewTarget) {
+        m_previewTarget->setStyleSheet(QString());
+    }
+    m_previewTarget = target;
+    routeStyleSheet(m_currentStyleSheet);
+}
+
+QWidget* StyleManager::previewTarget() const
+{
+    return m_previewTarget;
+}
+
+void StyleManager::setApplyToApplication(bool enabled)
+{
+    if (m_applyToApplication == enabled) {
+        return;
+    }
+    m_applyToApplication = enabled;
+    routeStyleSheet(m_currentStyleSheet);
+}
+
+bool StyleManager::applyToApplication() const
+{
+    return m_applyToApplication;
 }
 
 QString StyleManager::loadFromFile(const QString &filePath)
@@ -169,6 +223,9 @@ QString StyleManager::currentStyleSheet() const
 void StyleManager::clearStyleSheet()
 {
     m_currentStyleSheet = QString();
+    if (m_previewTarget) {
+        m_previewTarget->setStyleSheet(QString());
+    }
     qApp->setStyleSheet(QString());
     emit styleCleared();
 }
@@ -238,7 +295,7 @@ void StyleManager::setStyle(const QString &styleName)
     
     // Reapply the current QSS to make sure it works with the new base style
     if (!m_currentStyleSheet.isEmpty()) {
-        qApp->setStyleSheet(m_currentStyleSheet);
+        routeStyleSheet(m_currentStyleSheet);
     }
     
     emit styleChanged(m_currentStyle);

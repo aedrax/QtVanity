@@ -122,7 +122,9 @@ void TestMainWindow::testStyleApplicationUpdatesWidgets()
     editor->apply();
     
     // Verify the application stylesheet was updated
-    QString appStyle = qApp->styleSheet();
+    // The preview is scoped to the gallery unless the user opts into
+    // application-wide styling, so that is where the sheet lands.
+    QString appStyle = mainWindow.gallery()->styleSheet();
     QVERIFY2(appStyle.contains("QPushButton"), 
              "Application stylesheet should contain the applied style");
     QVERIFY2(appStyle.contains("background-color"), 
@@ -444,12 +446,12 @@ void TestMainWindow::testEditingDoesNotApplyWhenAutoApplyDisabled()
     // Type the way a user does, through the text widget itself.
     editor->textEdit()->setPlainText(QStringLiteral("QLabel { color: #abcdef; }"));
 
-    QVERIFY2(!qApp->styleSheet().contains(QStringLiteral("#abcdef")),
+    QVERIFY2(!mainWindow.gallery()->styleSheet().contains(QStringLiteral("#abcdef")),
              "Editing applied the stylesheet even though Auto-Apply is disabled");
 
     // An explicit Apply still works.
     editor->apply();
-    QVERIFY2(qApp->styleSheet().contains(QStringLiteral("#abcdef")),
+    QVERIFY2(mainWindow.gallery()->styleSheet().contains(QStringLiteral("#abcdef")),
              "Explicit apply() did not apply the stylesheet");
 
     editor->cancelPendingApply();
@@ -470,10 +472,11 @@ void TestMainWindow::testAutoApplyIsDebounced()
 
     editor->textEdit()->setPlainText(QStringLiteral("QLabel { color: #abcdef; }"));
 
-    QVERIFY2(!qApp->styleSheet().contains(QStringLiteral("#abcdef")),
+    QVERIFY2(!mainWindow.gallery()->styleSheet().contains(QStringLiteral("#abcdef")),
              "Auto-Apply fired synchronously on edit instead of after the delay");
 
-    QTRY_VERIFY_WITH_TIMEOUT(qApp->styleSheet().contains(QStringLiteral("#abcdef")), 2000);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        mainWindow.gallery()->styleSheet().contains(QStringLiteral("#abcdef")), 2000);
 
     editor->setAutoApplyEnabled(false);
     editor->cancelPendingApply();
@@ -497,7 +500,7 @@ void TestMainWindow::testNewProjectClearsProjectState()
     variables->setVariable(QStringLiteral("bg"), QStringLiteral("#ff0000"));
     editor->setQssText(QStringLiteral("QWidget { background: ${bg}; }"));
     editor->apply();
-    QVERIFY2(qApp->styleSheet().contains(QStringLiteral("#ff0000")),
+    QVERIFY2(mainWindow.gallery()->styleSheet().contains(QStringLiteral("#ff0000")),
              "Precondition failed: the variable-substituted style was not applied");
 
     QMetaObject::invokeMethod(&mainWindow, "onNewProject");
@@ -506,9 +509,9 @@ void TestMainWindow::testNewProjectClearsProjectState()
              "New Project left text in the editor");
     QVERIFY2(variables->variableNames().isEmpty(),
              "New Project left variables defined");
-    QVERIFY2(!qApp->styleSheet().contains(QStringLiteral("${")),
+    QVERIFY2(!mainWindow.gallery()->styleSheet().contains(QStringLiteral("${")),
              "New Project left an unresolved variable reference applied");
-    QVERIFY2(qApp->styleSheet().isEmpty(),
+    QVERIFY2(mainWindow.gallery()->styleSheet().isEmpty(),
              "New Project left the previous stylesheet applied");
     QVERIFY2(!mainWindow.windowTitle().startsWith(QLatin1Char('*')),
              "New Project left the window marked as modified");
@@ -671,7 +674,7 @@ void TestMainWindow::testQssPreservationAcrossStyleChanges()
     QCOMPARE(editor->qssText(), testQss);
     
     // Verify QSS is still applied to the application
-    QVERIFY2(qApp->styleSheet().contains("background-color"), 
+    QVERIFY2(mainWindow.gallery()->styleSheet().contains("background-color"), 
              "QSS should be preserved after style change");
     
     // Clean up - reset stylesheet

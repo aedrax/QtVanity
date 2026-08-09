@@ -9,6 +9,8 @@ class QDockWidget;
 class QMenu;
 class QAction;
 class QActionGroup;
+class QToolBar;
+class QLabel;
 class WidgetGallery;
 class QssEditor;
 class StyleManager;
@@ -141,8 +143,12 @@ private slots:
     // Plugin directory
     void onPluginDirectory();
 
+    // Status bar indicators
+    void updateStatusIndicators();
+
 private:
     void setupCentralWidget();
+    void setupToolBar();
     void setupMenuBar();
     void setupFileMenu();
     void setupEditMenu();
@@ -235,6 +241,16 @@ private:
     // Plugin actions
     QAction *m_refreshPluginsAction;
     QAction *m_pluginDirectoryAction;
+
+    // Toolbar and its actions
+    QToolBar *m_toolBar;
+    QAction *m_livePreviewAction;
+    QAction *m_previewScopeAction;
+
+    // Status bar indicators
+    QLabel *m_cursorPositionLabel;
+    QLabel *m_undefinedVariablesLabel;
+    QLabel *m_previewStateLabel;
 
     QString m_currentFilePath;
     QString m_currentProjectPath;

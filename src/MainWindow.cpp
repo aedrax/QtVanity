@@ -22,7 +22,9 @@
 #include <QCloseEvent>
 #include <QApplication>
 #include <QDebug>
+#include <QLabel>
 #include <QStatusBar>
+#include <QToolBar>
 #include <QTextCursor>
 #include <QTextEdit>
 
@@ -66,6 +68,12 @@ MainWindow::MainWindow(QWidget *parent)
     , m_showGalleryAction(nullptr)
     , m_refreshPluginsAction(nullptr)
     , m_pluginDirectoryAction(nullptr)
+    , m_toolBar(nullptr)
+    , m_livePreviewAction(nullptr)
+    , m_previewScopeAction(nullptr)
+    , m_cursorPositionLabel(nullptr)
+    , m_undefinedVariablesLabel(nullptr)
+    , m_previewStateLabel(nullptr)
     , m_projectModified(false)
 {
     // Create settings manager first
@@ -125,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Setup UI components
     setupCentralWidget();
     setupMenuBar();
+    setupToolBar();
     setupConnections();
     clearDockCloseShortcuts();
 
@@ -175,6 +184,54 @@ void MainWindow::setupCentralWidget()
     m_galleryDock->setWidget(m_gallery);
     m_galleryDock->setAllowedAreas(Qt::AllDockWidgetAreas);
     addDockWidget(Qt::RightDockWidgetArea, m_galleryDock);
+}
+
+void MainWindow::setupToolBar()
+{
+    // The primary controls used to sit in a row underneath the text area - the
+    // last place the eye lands. A toolbar makes the app's state visible at rest.
+    m_toolBar = addToolBar(tr("Main"));
+    m_toolBar->setObjectName(QStringLiteral("MainToolBar"));
+    m_toolBar->setMovable(false);
+    m_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    m_toolBar->addAction(m_applyAction);
+
+    // "Live preview" states what it does. The old button was labelled with a
+    // mode name ("Custom"/"Default"), which reads equally as the mode you are
+    // in and the mode you would switch to.
+    m_livePreviewAction = new QAction(tr("Live preview"), this);
+    m_livePreviewAction->setCheckable(true);
+    m_livePreviewAction->setChecked(m_settingsManager->autoApply());
+    m_livePreviewAction->setStatusTip(tr("Apply edits automatically as you type"));
+    connect(m_livePreviewAction, &QAction::toggled, this, [this](bool enabled) {
+        m_editor->setAutoApplyEnabled(enabled);
+        m_settingsManager->saveAutoApply(enabled);
+        updateStatusIndicators();
+    });
+    m_toolBar->addAction(m_livePreviewAction);
+
+    m_toolBar->addSeparator();
+
+    // Preview scope. Off by default: a stylesheet under test should not be
+    // able to make the editor and menus unreadable, which leaves the user no
+    // visible way back.
+    m_previewScopeAction = new QAction(tr("Style whole app"), this);
+    m_previewScopeAction->setCheckable(true);
+    m_previewScopeAction->setChecked(m_settingsManager->previewAppliesToApplication());
+    m_previewScopeAction->setStatusTip(
+        tr("Apply the stylesheet to the entire application rather than only the "
+           "Widget Gallery. Needed to preview QMainWindow, QDockWidget, QMenuBar "
+           "and QStatusBar rules."));
+    connect(m_previewScopeAction, &QAction::toggled, this, [this](bool enabled) {
+        m_styleManager->setApplyToApplication(enabled);
+        m_settingsManager->savePreviewAppliesToApplication(enabled);
+        updateStatusIndicators();
+    });
+    m_toolBar->addAction(m_previewScopeAction);
+
+    m_toolBar->addSeparator();
+    m_toolBar->addAction(m_themeMenu->menuAction());
 }
 
 void MainWindow::setupMenuBar()
@@ -430,6 +487,28 @@ void MainWindow::updateRecentProjectsMenu()
 
 void MainWindow::setupConnections()
 {
+    // Confine the preview to the gallery unless the user asks for more. This
+    // is the difference between a bad stylesheet spoiling the specimen and a
+    // bad stylesheet making the program unusable.
+    m_styleManager->setPreviewTarget(m_gallery);
+    m_styleManager->setApplyToApplication(m_settingsManager->previewAppliesToApplication());
+    m_editor->setAutoApplyEnabled(m_settingsManager->autoApply());
+
+    // Persistent status bar indicators, so the app's state is legible at rest
+    // rather than only in 2-second flashes.
+    m_cursorPositionLabel = new QLabel(this);
+    m_undefinedVariablesLabel = new QLabel(this);
+    m_previewStateLabel = new QLabel(this);
+    statusBar()->addPermanentWidget(m_undefinedVariablesLabel);
+    statusBar()->addPermanentWidget(m_cursorPositionLabel);
+    statusBar()->addPermanentWidget(m_previewStateLabel);
+
+    connect(m_editor->textEdit(), &CodeEditor::cursorPositionChanged,
+            this, &MainWindow::updateStatusIndicators);
+    connect(m_editor, &QssEditor::contentsChanged,
+            this, &MainWindow::updateStatusIndicators);
+    updateStatusIndicators();
+
     // Connect editor apply request to style manager (with variable substitution)
     connect(m_editor, &QssEditor::applyRequested,
             this, [this](const QString &qss) {
@@ -555,6 +634,38 @@ void MainWindow::setupConnections()
                 cursor.insertText(reference);
                 m_editor->textEdit()->setFocus();
             });
+}
+
+void MainWindow::updateStatusIndicators()
+{
+    if (!m_cursorPositionLabel) {
+        return;
+    }
+
+    const QTextCursor cursor = m_editor->textEdit()->textCursor();
+    m_cursorPositionLabel->setText(tr("Ln %1, Col %2")
+                                   .arg(cursor.blockNumber() + 1)
+                                   .arg(cursor.positionInBlock() + 1));
+
+    // Undefined references pass through substitution untouched and reach the
+    // stylesheet as literal "${name}" text, where Qt silently drops the rule.
+    const QStringList undefined =
+        m_variableManager->findUndefinedReferences(m_editor->qssText());
+    if (undefined.isEmpty()) {
+        m_undefinedVariablesLabel->clear();
+        m_undefinedVariablesLabel->setToolTip(QString());
+    } else {
+        m_undefinedVariablesLabel->setText(
+            tr("%n undefined variable(s)", "", undefined.size()));
+        m_undefinedVariablesLabel->setToolTip(undefined.join(QStringLiteral(", ")));
+    }
+
+    const bool live = m_editor->isAutoApplyEnabled();
+    const bool wholeApp = m_styleManager->applyToApplication();
+    m_previewStateLabel->setText(live ? tr("Live") : tr("Paused"));
+    m_previewStateLabel->setToolTip(wholeApp
+        ? tr("Preview covers the whole application")
+        : tr("Preview covers the Widget Gallery only"));
 }
 
 void MainWindow::clearDockCloseShortcuts()

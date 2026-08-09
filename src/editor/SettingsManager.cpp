@@ -7,6 +7,8 @@ namespace {
     const QString KeyDockState = QStringLiteral("window/dockState");
     const QString KeyBaseStyle = QStringLiteral("appearance/baseStyle");
     const QString KeyThemeMode = QStringLiteral("appearance/themeMode");
+    const QString KeyPreviewWholeApp = QStringLiteral("preview/appliesToApplication");
+    const QString KeyAutoApply = QStringLiteral("preview/autoApply");
     const QString KeyRecentProjects = QStringLiteral("recentProjects");
     const QString KeyPluginDirectory = QStringLiteral("plugins/directory");
 }
@@ -85,6 +87,31 @@ int SettingsManager::loadThemeMode() const
 bool SettingsManager::hasThemeMode() const
 {
     return m_settings.contains(KeyThemeMode);
+}
+
+// Preview scope
+void SettingsManager::savePreviewAppliesToApplication(bool enabled)
+{
+    m_settings.setValue(KeyPreviewWholeApp, enabled);
+}
+
+bool SettingsManager::previewAppliesToApplication() const
+{
+    // Default false: an unreadable stylesheet under test should not be able to
+    // take the rest of the program with it.
+    return m_settings.value(KeyPreviewWholeApp, false).toBool();
+}
+
+// Live preview
+void SettingsManager::saveAutoApply(bool enabled)
+{
+    m_settings.setValue(KeyAutoApply, enabled);
+}
+
+bool SettingsManager::autoApply() const
+{
+    // Default true: watching the gallery change as you type is the point.
+    return m_settings.value(KeyAutoApply, true).toBool();
 }
 
 // Plugin directory

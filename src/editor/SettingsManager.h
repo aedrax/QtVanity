@@ -110,6 +110,30 @@ public:
      */
     bool hasThemeMode() const;
 
+    // Preview scope
+    /**
+     * @brief Saves whether the preview covers the whole application.
+     */
+    void savePreviewAppliesToApplication(bool enabled);
+
+    /**
+     * @brief Returns whether the preview should cover the whole application.
+     * @return The saved choice, defaulting to false (gallery only).
+     */
+    bool previewAppliesToApplication() const;
+
+    // Live preview
+    /**
+     * @brief Saves whether edits are applied automatically.
+     */
+    void saveAutoApply(bool enabled);
+
+    /**
+     * @brief Returns whether edits should be applied automatically.
+     * @return The saved choice, defaulting to true.
+     */
+    bool autoApply() const;
+
     // Plugin directory
     /**
      * @brief Returns the configured plugin directory path.
