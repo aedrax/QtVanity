@@ -524,6 +524,10 @@ void MainWindow::setupConnections()
     connect(m_editor, &QssEditor::styleModeChanged,
             this, &MainWindow::onStyleModeChanged);
 
+    // Surface Qt's stylesheet parse errors in the editor rather than on stderr.
+    connect(m_styleManager, &StyleManager::diagnosticsChanged,
+            m_editor, &QssEditor::setProblems);
+
     // Connect style manager signals
     connect(m_styleManager, &StyleManager::styleApplied,
             this, &MainWindow::onStyleApplied);

@@ -1,5 +1,6 @@
 #include "WidgetGallery.h"
 
+#include "GalleryPage.h"
 #include "ButtonsPage.h"
 #include "InputsPage.h"
 #include "ViewsPage.h"
@@ -11,6 +12,7 @@
 #include "CustomWidgetsPage.h"
 #include "PluginManager.h"
 
+#include <QApplication>
 #include <QTabWidget>
 #include <QCheckBox>
 #include <QVBoxLayout>
@@ -19,6 +21,11 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QTextEdit>
+#include <QPlainTextEdit>
+#include <QAbstractSpinBox>
+#include <QAbstractButton>
+#include <QSpinBox>
+#include <functional>
 
 WidgetGallery::WidgetGallery(QWidget *parent)
     : QWidget(parent)
@@ -35,6 +42,10 @@ WidgetGallery::WidgetGallery(QWidget *parent)
     , m_advancedPage(nullptr)
     , m_customWidgetsPage(nullptr)
     , m_pluginManager(nullptr)
+    , m_filterEdit(nullptr)
+    , m_rightToLeftCheckBox(nullptr)
+    , m_fontScaleSpin(nullptr)
+    , m_checkedCheckBox(nullptr)
 {
     setupUi();
 }
@@ -88,6 +99,10 @@ void WidgetGallery::setupPages()
 void WidgetGallery::setupToggleControls()
 {
     QGroupBox *controlsGroup = new QGroupBox(tr("Widget State Controls"), this);
+    // Named so that callers - and tests - can tell the gallery's own controls
+    // apart from the specimens on display, structurally rather than by
+    // matching against their label text.
+    controlsGroup->setObjectName(QStringLiteral("GalleryControls"));
     QHBoxLayout *controlsLayout = new QHBoxLayout(controlsGroup);
     controlsLayout->setContentsMargins(8, 8, 8, 8);
     controlsLayout->setSpacing(16);
@@ -104,14 +119,147 @@ void WidgetGallery::setupToggleControls()
     m_readOnlyCheckBox->setToolTip(tr("Toggle read-only state for input widgets"));
     connect(m_readOnlyCheckBox, &QCheckBox::toggled, this, &WidgetGallery::onReadOnlyToggled);
 
+    // Pinned :checked. Of the pseudo-states people struggle to style, this is
+    // one of the few that can be held; :hover and :pressed cannot be pinned on
+    // live widgets without injecting events.
+    m_checkedCheckBox = new QCheckBox(tr("Checkables Checked"), controlsGroup);
+    m_checkedCheckBox->setChecked(false);
+    m_checkedCheckBox->setToolTip(tr("Check every checkable widget, to inspect :checked"));
+    connect(m_checkedCheckBox, &QCheckBox::toggled,
+            this, &WidgetGallery::setCheckablesChecked);
+
+    // Layout direction changes which side padding and sub-controls land on.
+    m_rightToLeftCheckBox = new QCheckBox(tr("Right-to-Left"), controlsGroup);
+    m_rightToLeftCheckBox->setChecked(false);
+    m_rightToLeftCheckBox->setToolTip(tr("Mirror the gallery to check RTL layouts"));
+    connect(m_rightToLeftCheckBox, &QCheckBox::toggled,
+            this, &WidgetGallery::setRightToLeft);
+
+    QLabel *scaleLabel = new QLabel(tr("Font:"), controlsGroup);
+    m_fontScaleSpin = new QSpinBox(controlsGroup);
+    m_fontScaleSpin->setRange(50, 250);
+    m_fontScaleSpin->setSingleStep(10);
+    m_fontScaleSpin->setValue(100);
+    m_fontScaleSpin->setSuffix(tr("%"));
+    m_fontScaleSpin->setToolTip(tr("Scale gallery fonts, to check layouts at other sizes"));
+    m_fontScaleSpin->setAccessibleName(tr("Gallery font scale"));
+    connect(m_fontScaleSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &WidgetGallery::setFontScale);
+    scaleLabel->setBuddy(m_fontScaleSpin);
+
     controlsLayout->addWidget(m_enabledCheckBox);
     controlsLayout->addWidget(m_readOnlyCheckBox);
+    controlsLayout->addWidget(m_checkedCheckBox);
+    controlsLayout->addWidget(m_rightToLeftCheckBox);
+    controlsLayout->addWidget(scaleLabel);
+    controlsLayout->addWidget(m_fontScaleSpin);
     controlsLayout->addStretch();
 
     // Add to main layout (will be called before m_tabWidget is added)
     QVBoxLayout *mainLayout = qobject_cast<QVBoxLayout*>(layout());
     if (mainLayout) {
         mainLayout->addWidget(controlsGroup);
+    }
+
+    setupFilterRow();
+}
+
+void WidgetGallery::setupFilterRow()
+{
+    // Nine tabs and several hundred widgets, with no way to find one.
+    m_filterEdit = new QLineEdit(this);
+    m_filterEdit->setObjectName(QStringLiteral("GalleryControls_Filter"));
+    m_filterEdit->setPlaceholderText(tr("Filter widgets across all tabs..."));
+    m_filterEdit->setClearButtonEnabled(true);
+    m_filterEdit->setAccessibleName(tr("Widget filter"));
+    connect(m_filterEdit, &QLineEdit::textChanged, this, &WidgetGallery::setFilter);
+
+    QVBoxLayout *mainLayout = qobject_cast<QVBoxLayout*>(layout());
+    if (mainLayout) {
+        mainLayout->addWidget(m_filterEdit);
+    }
+}
+
+void WidgetGallery::setFilter(const QString &text)
+{
+    const QList<GalleryPage*> pages = {
+        m_buttonsPage, m_inputsPage, m_viewsPage, m_containersPage, m_dialogsPage,
+        m_displayPage, m_mainWindowPage, m_advancedPage, m_customWidgetsPage
+    };
+
+    for (int i = 0; i < pages.size(); ++i) {
+        GalleryPage *page = pages.at(i);
+        if (!page) {
+            continue;
+        }
+        const int visible = page->applyFilter(text);
+
+        // Grey out the tab of a page with nothing left to show, so the user
+        // is not left clicking through empty tabs.
+        const int tabIndex = m_tabWidget->indexOf(page);
+        if (tabIndex >= 0) {
+            m_tabWidget->setTabEnabled(tabIndex, visible > 0 || text.trimmed().isEmpty());
+        }
+    }
+}
+
+bool WidgetGallery::isGalleryControl(const QWidget *widget)
+{
+    for (const QObject *o = widget; o; o = o->parent()) {
+        if (o->objectName().startsWith(QLatin1String("GalleryControls"))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void WidgetGallery::setRightToLeft(bool rightToLeft)
+{
+    m_tabWidget->setLayoutDirection(rightToLeft ? Qt::RightToLeft : Qt::LeftToRight);
+
+    if (m_rightToLeftCheckBox && m_rightToLeftCheckBox->isChecked() != rightToLeft) {
+        m_rightToLeftCheckBox->blockSignals(true);
+        m_rightToLeftCheckBox->setChecked(rightToLeft);
+        m_rightToLeftCheckBox->blockSignals(false);
+    }
+}
+
+void WidgetGallery::setFontScale(int percent)
+{
+    QFont scaled = QApplication::font();
+    scaled.setPointSizeF(QApplication::font().pointSizeF() * percent / 100.0);
+    m_tabWidget->setFont(scaled);
+
+    // The pages set no font of their own, so clearing theirs lets the tab
+    // widget's font propagate down.
+    for (QWidget *child : m_tabWidget->findChildren<QWidget*>()) {
+        child->setFont(scaled);
+    }
+
+    if (m_fontScaleSpin && m_fontScaleSpin->value() != percent) {
+        m_fontScaleSpin->blockSignals(true);
+        m_fontScaleSpin->setValue(percent);
+        m_fontScaleSpin->blockSignals(false);
+    }
+}
+
+void WidgetGallery::setCheckablesChecked(bool checked)
+{
+    for (QAbstractButton *button : m_tabWidget->findChildren<QAbstractButton*>()) {
+        if (button->isCheckable()) {
+            button->setChecked(checked);
+        }
+    }
+    for (QGroupBox *group : m_tabWidget->findChildren<QGroupBox*>()) {
+        if (group->isCheckable()) {
+            group->setChecked(checked);
+        }
+    }
+
+    if (m_checkedCheckBox && m_checkedCheckBox->isChecked() != checked) {
+        m_checkedCheckBox->blockSignals(true);
+        m_checkedCheckBox->setChecked(checked);
+        m_checkedCheckBox->blockSignals(false);
     }
 }
 
@@ -158,16 +306,30 @@ void WidgetGallery::setWidgetsEnabled(bool enabled)
 
 void WidgetGallery::setInputsReadOnly(bool readOnly)
 {
-    // Set read-only state on all QLineEdit widgets in the gallery
-    QList<QLineEdit*> lineEdits = findChildren<QLineEdit*>();
-    for (QLineEdit *lineEdit : lineEdits) {
-        lineEdit->setReadOnly(readOnly);
+    // Some demo widgets are read-only on purpose - the "Read-only" specimens
+    // in Inputs, and the document view in the Main Window page. Blanket
+    // clearing used to make them writable and they never came back, so record
+    // each widget's original state the first time and restore that.
+    auto applyReadOnly = [this, readOnly](QWidget *widget, bool current,
+                                          const std::function<void(bool)> &setter) {
+        if (!m_originalReadOnly.contains(widget)) {
+            m_originalReadOnly.insert(widget, current);
+        }
+        setter(readOnly ? true : m_originalReadOnly.value(widget));
+    };
+
+    for (QLineEdit *w : findChildren<QLineEdit*>()) {
+        applyReadOnly(w, w->isReadOnly(), [w](bool ro) { w->setReadOnly(ro); });
     }
-    
-    // Set read-only state on all QTextEdit widgets in the gallery
-    QList<QTextEdit*> textEdits = findChildren<QTextEdit*>();
-    for (QTextEdit *textEdit : textEdits) {
-        textEdit->setReadOnly(readOnly);
+    for (QTextEdit *w : findChildren<QTextEdit*>()) {
+        applyReadOnly(w, w->isReadOnly(), [w](bool ro) { w->setReadOnly(ro); });
+    }
+    // Previously missed entirely:
+    for (QPlainTextEdit *w : findChildren<QPlainTextEdit*>()) {
+        applyReadOnly(w, w->isReadOnly(), [w](bool ro) { w->setReadOnly(ro); });
+    }
+    for (QAbstractSpinBox *w : findChildren<QAbstractSpinBox*>()) {
+        applyReadOnly(w, w->isReadOnly(), [w](bool ro) { w->setReadOnly(ro); });
     }
 
     // Update checkbox state if called programmatically

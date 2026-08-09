@@ -2,6 +2,7 @@
 #define WIDGETGALLERY_H
 
 #include <QWidget>
+#include <QHash>
 
 class QTabWidget;
 class QCheckBox;
@@ -68,6 +69,45 @@ public slots:
     void setInputsReadOnly(bool readOnly);
 
     /**
+     * @brief Filters the visible widget groups across every page.
+     * @param text Filter text; empty restores everything.
+     */
+    void setFilter(const QString &text);
+
+    /**
+     * @brief Returns true if @p widget is part of the gallery's own controls.
+     *
+     * The gallery contains both specimens (which the state toggles act on) and
+     * the controls that drive them. Callers that walk the widget tree need to
+     * tell them apart; identifying controls by their label text breaks as soon
+     * as a control is added or renamed.
+     */
+    static bool isGalleryControl(const QWidget *widget);
+
+    /**
+     * @brief Mirrors the gallery left-to-right.
+     * @param rightToLeft true for RTL layout.
+     *
+     * Layout direction changes which side padding, margins and sub-controls
+     * land on, and is easy to get wrong in a stylesheet without checking.
+     */
+    void setRightToLeft(bool rightToLeft);
+
+    /**
+     * @brief Scales the font of every gallery widget.
+     * @param percent Percentage of the application font size, e.g. 150.
+     */
+    void setFontScale(int percent);
+
+    /**
+     * @brief Sets every checkable widget in the gallery checked or unchecked.
+     *
+     * :checked is one of the few pseudo-states that can actually be pinned;
+     * :hover and :pressed cannot be held without injecting events.
+     */
+    void setCheckablesChecked(bool checked);
+
+    /**
      * @brief Sets the PluginManager for custom widget support.
      * @param pluginManager Pointer to the PluginManager instance.
      * 
@@ -96,6 +136,7 @@ private slots:
 
 private:
     void setupUi();
+    void setupFilterRow();
     void setupPages();
     void setupToggleControls();
 
@@ -113,6 +154,14 @@ private:
     AdvancedPage *m_advancedPage;
     CustomWidgetsPage *m_customWidgetsPage;
     PluginManager *m_pluginManager;
+
+    class QLineEdit *m_filterEdit;
+    class QCheckBox *m_rightToLeftCheckBox;
+    class QSpinBox *m_fontScaleSpin;
+    class QCheckBox *m_checkedCheckBox;
+
+    /// Read-only state each input had before the toggle first touched it.
+    QHash<QWidget*, bool> m_originalReadOnly;
 };
 
 #endif // WIDGETGALLERY_H

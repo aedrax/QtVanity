@@ -185,6 +185,15 @@ signals:
      */
     void styleChangeError(const QString &error);
 
+    /**
+     * @brief Emitted after every apply with any parse errors Qt reported.
+     * @param errors The messages, empty when the stylesheet parsed cleanly.
+     *
+     * Qt reports a malformed stylesheet by logging a warning and applying
+     * nothing, so this is the only signal that the user's QSS did not take.
+     */
+    void diagnosticsChanged(const QStringList &errors);
+
 private:
     /**
      * @brief Sends @p qss to whichever destination is currently selected.

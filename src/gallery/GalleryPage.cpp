@@ -2,6 +2,7 @@
 
 #include <QVBoxLayout>
 #include <QGroupBox>
+#include <QAbstractButton>
 #include <QLabel>
 
 GalleryPage::GalleryPage(QWidget *parent)
@@ -62,6 +63,49 @@ QWidget* GalleryPage::createGroup(const QString &title)
     int insertIndex = m_mainLayout->count() - 1;
     if (insertIndex < 0) insertIndex = 0;
     m_mainLayout->insertWidget(insertIndex, groupBox);
-    
+
+    m_groups.append(groupBox);
+
     return groupBox;
+}
+
+int GalleryPage::applyFilter(const QString &text)
+{
+    const QString needle = text.trimmed();
+    int visible = 0;
+
+    for (const QPointer<QGroupBox> &group : m_groups) {
+        if (!group) {
+            continue;
+        }
+
+        bool matches = needle.isEmpty() ||
+                       group->title().contains(needle, Qt::CaseInsensitive);
+
+        // Also search the visible text inside the group, so a widget can be
+        // found by its own label rather than only by its category.
+        if (!matches) {
+            for (const QLabel *label : group->findChildren<QLabel*>()) {
+                if (label->text().contains(needle, Qt::CaseInsensitive)) {
+                    matches = true;
+                    break;
+                }
+            }
+        }
+        if (!matches) {
+            for (const QAbstractButton *button : group->findChildren<QAbstractButton*>()) {
+                if (button->text().contains(needle, Qt::CaseInsensitive)) {
+                    matches = true;
+                    break;
+                }
+            }
+        }
+
+        group->setVisible(matches);
+        if (matches) {
+            ++visible;
+        }
+    }
+
+    return visible;
 }

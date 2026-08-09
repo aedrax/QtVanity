@@ -1,4 +1,6 @@
 #include "test_widgetgallery.h"
+
+#include <QHash>
 #include "WidgetGallery.h"
 #include "ButtonsPage.h"
 #include "InputsPage.h"
@@ -100,12 +102,9 @@ void TestWidgetGallery::testSetWidgetsEnabled()
         if (isInternalQtWidget(button)) {
             continue;
         }
-        QCheckBox *checkbox = qobject_cast<QCheckBox*>(button);
-        if (checkbox) {
-            QString text = checkbox->text();
-            if (text == "Widgets Enabled" || text == "Inputs Read-Only") {
-                continue; // Skip control checkboxes
-            }
+        // The gallery's own controls are not specimens.
+        if (WidgetGallery::isGalleryControl(button)) {
+            continue;
         }
         QVERIFY2(!button->isEnabled(), 
                  qPrintable(QString("Button '%1' should be disabled").arg(button->text())));
@@ -120,12 +119,9 @@ void TestWidgetGallery::testSetWidgetsEnabled()
         if (isInternalQtWidget(button)) {
             continue;
         }
-        QCheckBox *checkbox = qobject_cast<QCheckBox*>(button);
-        if (checkbox) {
-            QString text = checkbox->text();
-            if (text == "Widgets Enabled" || text == "Inputs Read-Only") {
-                continue; // Skip control checkboxes
-            }
+        // The gallery's own controls are not specimens.
+        if (WidgetGallery::isGalleryControl(button)) {
+            continue;
         }
         QVERIFY2(button->isEnabled(), 
                  qPrintable(QString("Button '%1' should be enabled").arg(button->text())));
@@ -269,12 +265,9 @@ void TestWidgetGallery::testWidgetEnabledStateToggle()
         if (isInternalQtWidget(button)) {
             continue;
         }
-        QCheckBox *checkbox = qobject_cast<QCheckBox*>(button);
-        if (checkbox) {
-            QString text = checkbox->text();
-            if (text == "Widgets Enabled" || text == "Inputs Read-Only") {
-                continue; // Skip control checkboxes
-            }
+        // The gallery's own controls are not specimens.
+        if (WidgetGallery::isGalleryControl(button)) {
+            continue;
         }
         galleryWidgets.append(button);
     }
@@ -283,7 +276,7 @@ void TestWidgetGallery::testWidgetEnabledStateToggle()
     QList<QLineEdit*> lineEdits = gallery.findChildren<QLineEdit*>();
     for (QLineEdit *lineEdit : lineEdits) {
         // Skip line edits that are part of internal Qt widgets (e.g., inside QComboBox)
-        if (isInternalQtWidget(lineEdit)) {
+        if (isInternalQtWidget(lineEdit) || WidgetGallery::isGalleryControl(lineEdit)) {
             continue;
         }
         galleryWidgets.append(lineEdit);
@@ -292,6 +285,9 @@ void TestWidgetGallery::testWidgetEnabledStateToggle()
     // Get all spin boxes
     QList<QSpinBox*> spinBoxes = gallery.findChildren<QSpinBox*>();
     for (QSpinBox *spinBox : spinBoxes) {
+        if (WidgetGallery::isGalleryControl(spinBox)) {
+            continue;   // the font-scale control is not a specimen
+        }
         galleryWidgets.append(spinBox);
     }
     
@@ -349,45 +345,55 @@ void TestWidgetGallery::testInputReadOnlyStateToggle_data()
 void TestWidgetGallery::testInputReadOnlyStateToggle()
 {
     // Feature: qtvanity, Property 4: Input Read-Only State Toggle
-    
+
     QFETCH(bool, readOnlyState);
     QFETCH(int, iteration);
     Q_UNUSED(iteration);
-    
+
     WidgetGallery gallery;
-    
-    // Apply the read-only state
-    gallery.setInputsReadOnly(readOnlyState);
-    
-    // Collect all input widgets that support read-only mode
-    // Note: We only check widgets in the InputsPage, as that's where
-    // the read-only toggle is propagated
-    
-    // Get all line edits
-    QList<QLineEdit*> lineEdits = gallery.findChildren<QLineEdit*>();
-    
-    // Get all text edits
-    QList<QTextEdit*> textEdits = gallery.findChildren<QTextEdit*>();
-    
-    // Verify we found some input widgets
-    QVERIFY2(!lineEdits.isEmpty() || !textEdits.isEmpty(), 
+
+    // Record how each input started. Some specimens are read-only by design -
+    // the "Read-only" examples in Inputs and the document view in Main Window -
+    // and turning the toggle off must give them back, not make them editable.
+    QHash<QWidget*, bool> originalState;
+    const QList<QLineEdit*> lineEdits = gallery.findChildren<QLineEdit*>();
+    const QList<QTextEdit*> textEdits = gallery.findChildren<QTextEdit*>();
+    for (QLineEdit *w : lineEdits) {
+        originalState.insert(w, w->isReadOnly());
+    }
+    for (QTextEdit *w : textEdits) {
+        originalState.insert(w, w->isReadOnly());
+    }
+
+    QVERIFY2(!lineEdits.isEmpty() || !textEdits.isEmpty(),
              "Should have found input widgets to test");
-    
-    // Verify line edits have the expected read-only state
+
+    gallery.setInputsReadOnly(readOnlyState);
+
+    auto expectedFor = [&](QWidget *w) {
+        // On: everything read-only. Off: back to how the widget started.
+        return readOnlyState ? true : originalState.value(w);
+    };
+
     for (QLineEdit *lineEdit : lineEdits) {
-        QVERIFY2(lineEdit->isReadOnly() == readOnlyState,
+        if (WidgetGallery::isGalleryControl(lineEdit)) {
+            continue;   // the filter box is a control, not a specimen
+        }
+        QVERIFY2(lineEdit->isReadOnly() == expectedFor(lineEdit),
                  qPrintable(QString("QLineEdit '%1' readOnly state should be %2, but is %3")
                            .arg(lineEdit->objectName().isEmpty() ? "unnamed" : lineEdit->objectName())
-                           .arg(readOnlyState ? "true" : "false")
+                           .arg(expectedFor(lineEdit) ? "true" : "false")
                            .arg(lineEdit->isReadOnly() ? "true" : "false")));
     }
-    
-    // Verify text edits have the expected read-only state
+
     for (QTextEdit *textEdit : textEdits) {
-        QVERIFY2(textEdit->isReadOnly() == readOnlyState,
+        if (WidgetGallery::isGalleryControl(textEdit)) {
+            continue;
+        }
+        QVERIFY2(textEdit->isReadOnly() == expectedFor(textEdit),
                  qPrintable(QString("QTextEdit '%1' readOnly state should be %2, but is %3")
                            .arg(textEdit->objectName().isEmpty() ? "unnamed" : textEdit->objectName())
-                           .arg(readOnlyState ? "true" : "false")
+                           .arg(expectedFor(textEdit) ? "true" : "false")
                            .arg(textEdit->isReadOnly() ? "true" : "false")));
     }
 }

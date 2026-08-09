@@ -1,4 +1,5 @@
 #include "StyleManager.h"
+#include "QssDiagnostics.h"
 #include "VariableManager.h"
 
 #include <QApplication>
@@ -72,7 +73,17 @@ StyleManager::StyleManager(QObject *parent)
 void StyleManager::applyStyleSheet(const QString &qss)
 {
     m_currentStyleSheet = qss;
-    routeStyleSheet(qss);
+
+    QStringList parseErrors;
+    {
+        // Qt logs a warning and applies nothing when a stylesheet is
+        // malformed; capture that for the duration of the call.
+        QssDiagnostics diagnostics;
+        routeStyleSheet(qss);
+        parseErrors = diagnostics.messages();
+    }
+
+    emit diagnosticsChanged(parseErrors);
     emit styleApplied();
 }
 

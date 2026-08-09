@@ -9,7 +9,9 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFontDatabase>
+#include <QLabel>
 #include <QScrollBar>
+#include <QToolButton>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -22,6 +24,8 @@ QssEditor::QssEditor(QWidget *parent)
     , m_highlighter(nullptr)
     , m_colorSwatchOverlay(nullptr)
     , m_findReplaceBar(nullptr)
+    , m_problemStrip(nullptr)
+    , m_problemLabel(nullptr)
     , m_applyButton(nullptr)
     , m_toggleButton(nullptr)
     , m_autoApplyCheckbox(nullptr)
@@ -76,6 +80,28 @@ void QssEditor::setupUi()
     // Create FindReplaceBar (initially hidden)
     m_findReplaceBar = new FindReplaceBar(m_textEdit, this);
 
+    // Problems strip. Qt reports a malformed stylesheet by logging a warning
+    // and applying nothing; without this the user sees no change and no reason.
+    m_problemStrip = new QWidget(this);
+    QHBoxLayout *problemLayout = new QHBoxLayout(m_problemStrip);
+    problemLayout->setContentsMargins(8, 4, 4, 4);
+    problemLayout->setSpacing(8);
+
+    m_problemLabel = new QLabel(m_problemStrip);
+    m_problemLabel->setWordWrap(true);
+    m_problemLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+    QToolButton *dismissProblems = new QToolButton(m_problemStrip);
+    dismissProblems->setText(tr("\u2715"));
+    dismissProblems->setToolTip(tr("Dismiss"));
+    dismissProblems->setAccessibleName(tr("Dismiss problems"));
+    connect(dismissProblems, &QToolButton::clicked,
+            m_problemStrip, &QWidget::hide);
+
+    problemLayout->addWidget(m_problemLabel, 1);
+    problemLayout->addWidget(dismissProblems);
+    m_problemStrip->hide();
+
     // Create button layout
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->setContentsMargins(0, 0, 0, 0);
@@ -109,6 +135,7 @@ void QssEditor::setupUi()
 
     // Add widgets to main layout
     mainLayout->addWidget(m_textEdit, 1); // Text edit takes all available space
+    mainLayout->addWidget(m_problemStrip);   // Problems sit directly under the code
     mainLayout->addWidget(m_findReplaceBar); // FindReplaceBar between text edit and buttons
     mainLayout->addLayout(buttonLayout);
 
@@ -416,6 +443,26 @@ void QssEditor::setDefaultStyleMarker(const QString &styleName)
         // Restore selection
         setCurrentStyle(currentSelection);
     }
+}
+
+void QssEditor::setProblems(const QStringList &problems)
+{
+    if (problems.isEmpty()) {
+        m_problemStrip->hide();
+        return;
+    }
+
+    // Take the warning colour from the palette rather than a literal, so the
+    // strip stays legible under either theme.
+    const QColor warning = palette().color(QPalette::LinkVisited).isValid()
+                           ? palette().color(QPalette::BrightText)
+                           : QColor(Qt::red);
+    QPalette stripPalette = m_problemLabel->palette();
+    stripPalette.setColor(QPalette::WindowText, warning);
+    m_problemLabel->setPalette(stripPalette);
+
+    m_problemLabel->setText(problems.join(QStringLiteral("\n")));
+    m_problemStrip->show();
 }
 
 void QssEditor::setCompletionVariables(const QStringList &variableNames)

@@ -13,6 +13,8 @@ class QTimer;
 class QssSyntaxHighlighter;
 class ColorSwatchOverlay;
 class FindReplaceBar;
+class QLabel;
+class QToolButton;
 
 /**
  * @brief QSS code editor widget with syntax highlighting and auto-apply.
@@ -148,6 +150,12 @@ public:
     void setDefaultStyleMarker(const QString &styleName);
 
     /**
+     * @brief Shows or clears the problems strip below the editor.
+     * @param problems Messages to show; an empty list hides the strip.
+     */
+    void setProblems(const QStringList &problems);
+
+    /**
      * @brief Rebuilds the completion word list.
      * @param variableNames Names of the variables currently defined.
      *
@@ -268,6 +276,8 @@ private:
     QssSyntaxHighlighter *m_highlighter;
     ColorSwatchOverlay *m_colorSwatchOverlay;
     FindReplaceBar *m_findReplaceBar;
+    QWidget *m_problemStrip;
+    QLabel *m_problemLabel;
     QPushButton *m_applyButton;
     QPushButton *m_toggleButton;
     QCheckBox *m_autoApplyCheckbox;

@@ -3,8 +3,11 @@
 
 #include <QScrollArea>
 #include <QWidget>
+#include <QList>
+#include <QPointer>
 
 class QVBoxLayout;
+class QGroupBox;
 
 /**
  * @brief Base class for gallery pages in the Widget Gallery.
@@ -42,6 +45,17 @@ public:
      */
     virtual void setWidgetsEnabled(bool enabled) = 0;
 
+    /**
+     * @brief Hides groups whose title and contents do not match @p text.
+     * @param text Filter text; empty shows everything.
+     * @return The number of groups still visible.
+     *
+     * Matching considers the group title and the text of the labels, buttons
+     * and check boxes inside it, so searching for "slider" or for "Read-only"
+     * both find something useful.
+     */
+    int applyFilter(const QString &text);
+
 protected:
     /**
      * @brief Returns the content widget for adding child widgets.
@@ -69,6 +83,9 @@ private:
 
     QWidget *m_contentWidget;
     QVBoxLayout *m_mainLayout;
+
+    /// Groups created through createGroup(), for filtering.
+    QList<QPointer<QGroupBox>> m_groups;
 };
 
 #endif // GALLERYPAGE_H
