@@ -43,3 +43,8 @@
 # CPack dir
 _CPack_Packages/
 build-wasm/
+
+# Build directories
+build/
+build-*/
+cmake-build-*/

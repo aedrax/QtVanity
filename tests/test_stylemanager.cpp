@@ -290,18 +290,20 @@ void TestStyleManager::testTemplateLoadingProperty()
     
     StyleManager manager;
     
-    // Set templates path to the project's styles directory
-    // This assumes tests are run from the build directory
-    QString stylesPath = QCoreApplication::applicationDirPath() + "/../styles";
+    // The styles directory lives in the source tree, which CMake tells us
+    // about. Guessing from applicationDirPath() only worked when the build
+    // directory happened to be a sibling of styles/, so any out-of-tree build
+    // failed this test.
+    QString stylesPath = QStringLiteral(QTVANITY_SOURCE_DIR) + "/styles";
     QDir stylesDir(stylesPath);
     if (!stylesDir.exists()) {
-        // Try relative to current working directory
-        stylesPath = QDir::currentPath() + "/styles";
+        // Fall back to the old guesses, for a build configured without the
+        // definition (an IDE importing the target, say).
+        stylesPath = QCoreApplication::applicationDirPath() + "/../styles";
         stylesDir.setPath(stylesPath);
     }
     if (!stylesDir.exists()) {
-        // Try parent directory (common for build directories)
-        stylesPath = QDir::currentPath() + "/../styles";
+        stylesPath = QDir::currentPath() + "/styles";
         stylesDir.setPath(stylesPath);
     }
     

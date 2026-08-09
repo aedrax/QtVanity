@@ -1,0 +1,52 @@
+name: build
+
+# Without CI, a regression like the modal-dialog-in-a-headless-run that made
+# ctest hang indefinitely goes unnoticed until someone runs the suite by hand.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / Qt ${{ matrix.qt }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            qt: '6.7.2'
+          - os: macos-latest
+            qt: '6.7.2'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt }}
+          cache: true
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      # The offscreen platform needs these on a headless Linux runner.
+      - name: Install test dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-x11-0 libxcb-cursor0
+
+      - name: Test
+        working-directory: build
+        env:
+          QT_QPA_PLATFORM: offscreen
+        # --timeout guards against a hang rather than waiting for the job limit.
+        run: ctest --output-on-failure --timeout 600
+
+      - name: Configure without tests
+        run: cmake -B build-notest -DBUILD_TESTING=OFF

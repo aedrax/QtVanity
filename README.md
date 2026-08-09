@@ -11,11 +11,14 @@ It serves two primary purposes:
 
 ## Features
 
-* **Real-time Editing:** Type QSS code and see changes apply instantly to the entire application.
+* **Real-time Editing:** Type QSS code and see the Widget Gallery restyle as you type.
+* **Scoped Preview:** By default the stylesheet under test is applied to the gallery only, so a stylesheet that renders text invisible cannot take the editor and menus with it. Toggle **Style whole app** in the toolbar to preview `QMainWindow`, `QDockWidget`, `QMenuBar` and `QStatusBar` rules.
 * **Complete Widget Zoo:** Includes specific tabs/pages for all standard widgets (Buttons, Inputs, Views, Containers, Dialogs, Display, MainWindow, Advanced) to make sure no UI element is left unstyled.
-* **State Simulation:** Easily toggle widgets between enabled/disabled and read-only/editable states to test pseudo-states like `:disabled` or `:hover`.
+* **State Simulation:** Toggle the gallery between enabled/disabled, read-only/editable and checked/unchecked states, mirror it right-to-left, and scale its fonts. (`:hover` and `:pressed` cannot be pinned on live widgets and are not offered.)
 * **Dual-Stack Support:** Native support for both **Qt 5 (5.15+)** and **Qt 6**.
-* **Syntax Highlighting:** Full syntax highlighting for QSS selectors, properties, pseudo-states, sub-controls, and comments.
+* **Code Editor:** Line numbers, current-line highlighting, bracket matching, auto-indent, Ctrl+scroll zoom, find/replace, and completion for selectors, properties, pseudo-states, sub-controls and your own variables.
+* **Syntax Highlighting:** Full syntax highlighting for QSS selectors, properties, pseudo-states, sub-controls, and comments, in light and dark schemes.
+* **Problem Reporting:** Qt reports a malformed stylesheet by logging a warning and applying nothing. QtVanity captures that and shows it under the editor, along with a count of undefined `${variable}` references.
 * **Color Swatch Overlay:** Visual color preview for color values in your stylesheet.
 * **Variable Management:** Define and manage QSS variables for reusable style values.
 
@@ -157,8 +160,11 @@ Generated packages will be placed in the build directory with names like:
 - `src/main.cpp`: Entry point detecting version and launching the app.
 - `src/MainWindow.cpp/h`: Main application window.
 - `src/editor/`: QSS editor components including:
-  - `QssEditor`: Main text editor widget
+  - `QssEditor`: Editor pane, holding the code editor, find bar and problems strip
+  - `CodeEditor`: QPlainTextEdit with gutter, bracket matching, indent and completion
   - `QssSyntaxHighlighter`: Syntax highlighting for QSS
+  - `QssVocabulary`: The QSS word lists shared by the highlighter and the completer
+  - `QssDiagnostics`: Captures the parse errors Qt logs when applying a stylesheet
   - `StyleManager`: Style application management
   - `ThemeManager`: Theme loading and management
   - `VariableManager` & `VariablePanel`: QSS variable handling
@@ -174,18 +180,34 @@ Generated packages will be placed in the build directory with names like:
   - `DisplayPage`: QLabel, QProgressBar, QLCDNumber, QCalendarWidget
   - `MainWindowPage`: QMenuBar, QToolBar, QStatusBar, QDockWidget
   - `AdvancedPage`: Complex widget configurations
-- `styles/`: Predefined QSS templates (dark.qss, light.qss, solarized.qss).
+- `styles/`: Predefined templates as `.qvp` project files (dark, light, solarized, shadcn, spotify, outrun, vscode-dark, vscode-light).
 - `resources/`: Application icons and platform-specific resources.
 - `tests/`: Qt Test-based unit tests.
 - `cmake/`: Platform-specific deployment helper scripts.
 
 ## Usage
 
-1. Launch QtVanity.
-2. On the left (or top) pane, navigate through the tabs to view different categories of widgets.
-3. On the right (or bottom) pane, enter your QSS code.
-4. Press **Apply** (or enable "Auto-Apply") to see your styles take effect immediately.
-5. Use **File > Load Style...** to import existing `.qss` files to test them against the full widget suite.
+1. Launch QtVanity. On first run it loads a starter template so you can see the effect immediately.
+2. The **Widget Gallery** dock shows every standard Qt widget, grouped into tabs. Use the filter box to find one across all tabs.
+3. The centre pane is the QSS editor. With **Live preview** on (the default) the gallery restyles shortly after you stop typing; otherwise press **Apply**.
+4. The **Variables** dock defines reusable values. Reference one as `${name}` in the editor; rename a variable and its references are rewritten for you.
+5. Use **File → Load Template** for a predefined style, **File → Import QSS...** to bring in a plain `.qss` file, and **File → Export QSS...** to write out the resolved stylesheet with all variables substituted.
+
+### Project files
+
+QtVanity projects are `.qvp` files: JSON holding your variables alongside the
+stylesheet template that references them.
+
+```json
+{
+  "version": 1,
+  "variables": { "background": "#1e1e1e", "radius": "6px" },
+  "qssTemplate": "QWidget { background: ${background}; border-radius: ${radius}; }"
+}
+```
+
+`Export QSS` writes the same content with every `${...}` resolved, ready to
+ship in your own application.
 
 ## Contributing
 

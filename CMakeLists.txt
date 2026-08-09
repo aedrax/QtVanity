@@ -890,6 +890,12 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_SOURCE_DIR}/tests
     )
     
+    # Tests that read the shipped style templates need the source tree, which
+    # they cannot find by guessing relative to the executable in an
+    # out-of-tree build.
+    target_compile_definitions(qtvanity_tests PRIVATE
+        QTVANITY_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
     # Register tests with CTest
     add_test(NAME qtvanity_tests COMMAND qtvanity_tests)
 
